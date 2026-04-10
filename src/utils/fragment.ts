@@ -66,7 +66,7 @@ export function addFragmentFeatures(fragment: Fragment, features: FragmentFeatur
 }
 
 export function getExportAllFragment(module: string): Fragment {
-    return fragment`export * from '${module}';`;
+    return fragment`export * from '${module}.js';`;
 }
 
 export function getDocblockFragment(lines: Docs, withLineJump = false): Fragment | undefined {

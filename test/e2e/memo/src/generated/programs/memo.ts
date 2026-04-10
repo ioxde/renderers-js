@@ -13,7 +13,7 @@ import {
     type ClientWithTransactionSending,
 } from '@solana/kit';
 import { addSelfPlanAndSendFunctions, type SelfPlanAndSendFunctions } from '@solana/kit/program-client-core';
-import { getAddMemoInstruction, type AddMemoInput, type ParsedAddMemoInstruction } from '../instructions';
+import { getAddMemoInstruction, type AddMemoInput, type ParsedAddMemoInstruction } from '../instructions/index.js';
 
 export const MEMO_PROGRAM_ADDRESS =
     'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr' as Address<'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'>;

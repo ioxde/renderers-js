@@ -41,7 +41,7 @@ import {
     type MultisigArgs,
     type Token,
     type TokenArgs,
-} from '../accounts';
+} from '../accounts/index.js';
 import {
     getAmountToUiAmountInstruction,
     getApproveCheckedInstruction,
@@ -143,7 +143,7 @@ import {
     type TransferCheckedInput,
     type TransferInput,
     type UiAmountToAmountInput,
-} from '../instructions';
+} from '../instructions/index.js';
 
 export const TOKEN_PROGRAM_ADDRESS =
     'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
