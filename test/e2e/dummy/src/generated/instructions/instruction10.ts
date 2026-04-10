@@ -21,8 +21,8 @@ import {
     type InstructionWithData,
     type ReadonlyUint8Array,
 } from '@solana/kit';
-import { DUMMY_PROGRAM_ADDRESS } from '../programs';
-import { getKeyDecoder, getKeyEncoder, Key } from '../types';
+import { DUMMY_PROGRAM_ADDRESS } from '../programs/index.js';
+import { getKeyDecoder, getKeyEncoder, Key } from '../types/index.js';
 
 export const INSTRUCTION10_DISCRIMINATOR: Key = Key.Asset;
 
