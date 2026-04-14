@@ -46,6 +46,14 @@ import {
     type PoolStateArgs,
 } from '../accounts/index.js';
 import {
+    getLpChangeEventDecoder,
+    getSwapEventDecoder,
+    LP_CHANGE_EVENT_DISCRIMINATOR,
+    SWAP_EVENT_DISCRIMINATOR,
+    type LpChangeEvent,
+    type SwapEvent,
+} from '../events/index.js';
+import {
     COLLECT_FUND_FEE_DISCRIMINATOR,
     COLLECT_PROTOCOL_FEE_DISCRIMINATOR,
     CREATE_AMM_CONFIG_DISCRIMINATOR,
@@ -132,6 +140,53 @@ export function identifyRaydiumCpSwapAccount(
         accountData: data,
         programName: 'raydiumCpSwap',
     });
+}
+
+export enum RaydiumCpSwapEvent {
+    LpChangeEvent,
+    SwapEvent,
+}
+
+export function identifyRaydiumCpSwapEvent(
+    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+): RaydiumCpSwapEvent {
+    const data = 'data' in event ? event.data : event;
+    if (containsBytes(data, LP_CHANGE_EVENT_DISCRIMINATOR, 0)) {
+        return RaydiumCpSwapEvent.LpChangeEvent;
+    }
+    if (containsBytes(data, SWAP_EVENT_DISCRIMINATOR, 0)) {
+        return RaydiumCpSwapEvent.SwapEvent;
+    }
+    // TODO: Use SolanaError once event-specific error codes are added to @solana/errors.
+    throw new Error('The provided event data does not match any known raydiumCpSwap event.');
+}
+
+export type ParsedRaydiumCpSwapEvent =
+    | ({ eventType: RaydiumCpSwapEvent.LpChangeEvent } & LpChangeEvent)
+    | ({ eventType: RaydiumCpSwapEvent.SwapEvent } & SwapEvent);
+
+export function parseRaydiumCpSwapEvent(
+    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+): ParsedRaydiumCpSwapEvent {
+    const data = 'data' in event ? event.data : event;
+    const eventType = identifyRaydiumCpSwapEvent(event);
+    switch (eventType) {
+        case RaydiumCpSwapEvent.LpChangeEvent: {
+            return {
+                eventType: RaydiumCpSwapEvent.LpChangeEvent,
+                ...getLpChangeEventDecoder().decode(data, LP_CHANGE_EVENT_DISCRIMINATOR.length),
+            };
+        }
+        case RaydiumCpSwapEvent.SwapEvent: {
+            return {
+                eventType: RaydiumCpSwapEvent.SwapEvent,
+                ...getSwapEventDecoder().decode(data, SWAP_EVENT_DISCRIMINATOR.length),
+            };
+        }
+        // TODO: Use SolanaError once event-specific error codes are added to @solana/errors.
+        default:
+            throw new Error('Unknown event type: ' + (eventType as string));
+    }
 }
 
 export enum RaydiumCpSwapInstruction {
@@ -275,6 +330,7 @@ export function parseRaydiumCpSwapInstruction<TProgram extends string>(
 
 export type RaydiumCpSwapPlugin = {
     accounts: RaydiumCpSwapPluginAccounts;
+    events: RaydiumCpSwapPluginEvents;
     instructions: RaydiumCpSwapPluginInstructions;
     pdas: RaydiumCpSwapPluginPdas;
     identifyAccount: typeof identifyRaydiumCpSwapAccount;
@@ -287,6 +343,11 @@ export type RaydiumCpSwapPluginAccounts = {
     observationState: ReturnType<typeof getObservationStateCodec> &
         SelfFetchFunctions<ObservationStateArgs, ObservationState>;
     poolState: ReturnType<typeof getPoolStateCodec> & SelfFetchFunctions<PoolStateArgs, PoolState>;
+};
+
+export type RaydiumCpSwapPluginEvents = {
+    lpChangeEvent: ReturnType<typeof getLpChangeEventDecoder>;
+    swapEvent: ReturnType<typeof getSwapEventDecoder>;
 };
 
 export type RaydiumCpSwapPluginInstructions = {
@@ -343,6 +404,7 @@ export function raydiumCpSwapProgram() {
                     observationState: addSelfFetchFunctions(client, getObservationStateCodec()),
                     poolState: addSelfFetchFunctions(client, getPoolStateCodec()),
                 },
+                events: { lpChangeEvent: getLpChangeEventDecoder(), swapEvent: getSwapEventDecoder() },
                 instructions: {
                     collectFundFee: input =>
                         addSelfPlanAndSendFunctions(client, getCollectFundFeeInstructionAsync(input)),

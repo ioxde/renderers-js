@@ -13,7 +13,7 @@ import { pipe, visit } from '@codama/visitors-core';
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConstantName } from './discriminatorConstants';
 
-type ConstantSource = 'generatedAccounts' | 'generatedInstructions';
+type ConstantSource = 'generatedAccounts' | 'generatedEvents' | 'generatedInstructions';
 
 /**
  * ```

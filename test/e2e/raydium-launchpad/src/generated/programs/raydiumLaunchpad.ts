@@ -50,6 +50,24 @@ import {
     VESTING_RECORD_DISCRIMINATOR,
 } from '../accounts/index.js';
 import {
+    CLAIM_VESTED_EVENT_DISCRIMINATOR,
+    CLAIM_VESTED_EVENT_DISCRIMINATOR2,
+    CREATE_VESTING_EVENT_DISCRIMINATOR,
+    CREATE_VESTING_EVENT_DISCRIMINATOR2,
+    getClaimVestedEventDecoder,
+    getCreateVestingEventDecoder,
+    getPoolCreateEventDecoder,
+    getTradeEventDecoder,
+    POOL_CREATE_EVENT_DISCRIMINATOR,
+    POOL_CREATE_EVENT_DISCRIMINATOR2,
+    TRADE_EVENT_DISCRIMINATOR,
+    TRADE_EVENT_DISCRIMINATOR2,
+    type ClaimVestedEvent,
+    type CreateVestingEvent,
+    type PoolCreateEvent,
+    type TradeEvent,
+} from '../events/index.js';
+import {
     BUY_EXACT_IN_DISCRIMINATOR,
     BUY_EXACT_OUT_DISCRIMINATOR,
     CLAIM_PLATFORM_FEE_DISCRIMINATOR,
@@ -186,6 +204,81 @@ export function identifyRaydiumLaunchpadAccount(
         accountData: data,
         programName: 'raydiumLaunchpad',
     });
+}
+
+export enum RaydiumLaunchpadEvent {
+    ClaimVestedEvent,
+    CreateVestingEvent,
+    PoolCreateEvent,
+    TradeEvent,
+}
+
+export function identifyRaydiumLaunchpadEvent(
+    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+): RaydiumLaunchpadEvent {
+    const data = 'data' in event ? event.data : event;
+    if (
+        containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 0) &&
+        containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR2, 8)
+    ) {
+        return RaydiumLaunchpadEvent.ClaimVestedEvent;
+    }
+    if (
+        containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 0) &&
+        containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR2, 8)
+    ) {
+        return RaydiumLaunchpadEvent.CreateVestingEvent;
+    }
+    if (
+        containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 0) &&
+        containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR2, 8)
+    ) {
+        return RaydiumLaunchpadEvent.PoolCreateEvent;
+    }
+    if (containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR2, 8)) {
+        return RaydiumLaunchpadEvent.TradeEvent;
+    }
+    // TODO: Use SolanaError once event-specific error codes are added to @solana/errors.
+    throw new Error('The provided event data does not match any known raydiumLaunchpad event.');
+}
+
+export type ParsedRaydiumLaunchpadEvent =
+    | ({ eventType: RaydiumLaunchpadEvent.ClaimVestedEvent } & ClaimVestedEvent)
+    | ({ eventType: RaydiumLaunchpadEvent.CreateVestingEvent } & CreateVestingEvent)
+    | ({ eventType: RaydiumLaunchpadEvent.PoolCreateEvent } & PoolCreateEvent)
+    | ({ eventType: RaydiumLaunchpadEvent.TradeEvent } & TradeEvent);
+
+export function parseRaydiumLaunchpadEvent(
+    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+): ParsedRaydiumLaunchpadEvent {
+    const data = 'data' in event ? event.data : event;
+    const eventType = identifyRaydiumLaunchpadEvent(event);
+    switch (eventType) {
+        case RaydiumLaunchpadEvent.ClaimVestedEvent: {
+            return {
+                eventType: RaydiumLaunchpadEvent.ClaimVestedEvent,
+                ...getClaimVestedEventDecoder().decode(data, 16),
+            };
+        }
+        case RaydiumLaunchpadEvent.CreateVestingEvent: {
+            return {
+                eventType: RaydiumLaunchpadEvent.CreateVestingEvent,
+                ...getCreateVestingEventDecoder().decode(data, 16),
+            };
+        }
+        case RaydiumLaunchpadEvent.PoolCreateEvent: {
+            return {
+                eventType: RaydiumLaunchpadEvent.PoolCreateEvent,
+                ...getPoolCreateEventDecoder().decode(data, 16),
+            };
+        }
+        case RaydiumLaunchpadEvent.TradeEvent: {
+            return { eventType: RaydiumLaunchpadEvent.TradeEvent, ...getTradeEventDecoder().decode(data, 16) };
+        }
+        // TODO: Use SolanaError once event-specific error codes are added to @solana/errors.
+        default:
+            throw new Error('Unknown event type: ' + (eventType as string));
+    }
 }
 
 export enum RaydiumLaunchpadInstruction {
@@ -418,6 +511,7 @@ export function parseRaydiumLaunchpadInstruction<TProgram extends string>(
 
 export type RaydiumLaunchpadPlugin = {
     accounts: RaydiumLaunchpadPluginAccounts;
+    events: RaydiumLaunchpadPluginEvents;
     instructions: RaydiumLaunchpadPluginInstructions;
     pdas: RaydiumLaunchpadPluginPdas;
     identifyAccount: typeof identifyRaydiumLaunchpadAccount;
@@ -430,6 +524,13 @@ export type RaydiumLaunchpadPluginAccounts = {
     platformConfig: ReturnType<typeof getPlatformConfigCodec> & SelfFetchFunctions<PlatformConfigArgs, PlatformConfig>;
     poolState: ReturnType<typeof getPoolStateCodec> & SelfFetchFunctions<PoolStateArgs, PoolState>;
     vestingRecord: ReturnType<typeof getVestingRecordCodec> & SelfFetchFunctions<VestingRecordArgs, VestingRecord>;
+};
+
+export type RaydiumLaunchpadPluginEvents = {
+    claimVestedEvent: ReturnType<typeof getClaimVestedEventDecoder>;
+    createVestingEvent: ReturnType<typeof getCreateVestingEventDecoder>;
+    poolCreateEvent: ReturnType<typeof getPoolCreateEventDecoder>;
+    tradeEvent: ReturnType<typeof getTradeEventDecoder>;
 };
 
 export type RaydiumLaunchpadPluginInstructions = {
@@ -524,6 +625,12 @@ export function raydiumLaunchpadProgram() {
                     platformConfig: addSelfFetchFunctions(client, getPlatformConfigCodec()),
                     poolState: addSelfFetchFunctions(client, getPoolStateCodec()),
                     vestingRecord: addSelfFetchFunctions(client, getVestingRecordCodec()),
+                },
+                events: {
+                    claimVestedEvent: getClaimVestedEventDecoder(),
+                    createVestingEvent: getCreateVestingEventDecoder(),
+                    poolCreateEvent: getPoolCreateEventDecoder(),
+                    tradeEvent: getTradeEventDecoder(),
                 },
                 instructions: {
                     buyExactIn: input =>
