@@ -24,6 +24,7 @@ import {
 } from '@solana/kit';
 import { addSelfPlanAndSendFunctions, type SelfPlanAndSendFunctions } from '@solana/kit/program-client-core';
 import {
+    CREATE_ACCOUNT_DISCRIMINATOR,
     getCreateAccountInstruction,
     parseCreateAccountInstruction,
     type CreateAccountInput,
@@ -40,7 +41,7 @@ export function identifySystemInstruction(
     instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): SystemInstruction {
     const data = 'data' in instruction ? instruction.data : instruction;
-    if (containsBytes(data, getU32Encoder().encode(0), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(CREATE_ACCOUNT_DISCRIMINATOR), 0)) {
         return SystemInstruction.CreateAccount;
     }
     throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, {

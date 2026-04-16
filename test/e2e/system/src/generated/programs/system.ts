@@ -33,6 +33,14 @@ import {
 } from '@solana/kit/program-client-core';
 import { getNonceCodec, type Nonce, type NonceArgs } from '../accounts/index.js';
 import {
+    ADVANCE_NONCE_ACCOUNT_DISCRIMINATOR,
+    ALLOCATE_DISCRIMINATOR,
+    ALLOCATE_WITH_SEED_DISCRIMINATOR,
+    ASSIGN_DISCRIMINATOR,
+    ASSIGN_WITH_SEED_DISCRIMINATOR,
+    AUTHORIZE_NONCE_ACCOUNT_DISCRIMINATOR,
+    CREATE_ACCOUNT_DISCRIMINATOR,
+    CREATE_ACCOUNT_WITH_SEED_DISCRIMINATOR,
     getAdvanceNonceAccountInstruction,
     getAllocateInstruction,
     getAllocateWithSeedInstruction,
@@ -46,6 +54,7 @@ import {
     getTransferSolWithSeedInstruction,
     getUpgradeNonceAccountInstruction,
     getWithdrawNonceAccountInstruction,
+    INITIALIZE_NONCE_ACCOUNT_DISCRIMINATOR,
     parseAdvanceNonceAccountInstruction,
     parseAllocateInstruction,
     parseAllocateWithSeedInstruction,
@@ -59,6 +68,8 @@ import {
     parseTransferSolWithSeedInstruction,
     parseUpgradeNonceAccountInstruction,
     parseWithdrawNonceAccountInstruction,
+    TRANSFER_SOL_DISCRIMINATOR,
+    TRANSFER_SOL_WITH_SEED_DISCRIMINATOR,
     type AdvanceNonceAccountInput,
     type AllocateInput,
     type AllocateWithSeedInput,
@@ -85,6 +96,8 @@ import {
     type TransferSolWithSeedInput,
     type UpgradeNonceAccountInput,
     type WithdrawNonceAccountInput,
+    UPGRADE_NONCE_ACCOUNT_DISCRIMINATOR,
+    WITHDRAW_NONCE_ACCOUNT_DISCRIMINATOR,
 } from '../instructions/index.js';
 
 export const SYSTEM_PROGRAM_ADDRESS = '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -113,43 +126,43 @@ export function identifySystemInstruction(
     instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): SystemInstruction {
     const data = 'data' in instruction ? instruction.data : instruction;
-    if (containsBytes(data, getU32Encoder().encode(0), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(CREATE_ACCOUNT_DISCRIMINATOR), 0)) {
         return SystemInstruction.CreateAccount;
     }
-    if (containsBytes(data, getU32Encoder().encode(1), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(ASSIGN_DISCRIMINATOR), 0)) {
         return SystemInstruction.Assign;
     }
-    if (containsBytes(data, getU32Encoder().encode(2), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(TRANSFER_SOL_DISCRIMINATOR), 0)) {
         return SystemInstruction.TransferSol;
     }
-    if (containsBytes(data, getU32Encoder().encode(3), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(CREATE_ACCOUNT_WITH_SEED_DISCRIMINATOR), 0)) {
         return SystemInstruction.CreateAccountWithSeed;
     }
-    if (containsBytes(data, getU32Encoder().encode(4), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(ADVANCE_NONCE_ACCOUNT_DISCRIMINATOR), 0)) {
         return SystemInstruction.AdvanceNonceAccount;
     }
-    if (containsBytes(data, getU32Encoder().encode(5), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(WITHDRAW_NONCE_ACCOUNT_DISCRIMINATOR), 0)) {
         return SystemInstruction.WithdrawNonceAccount;
     }
-    if (containsBytes(data, getU32Encoder().encode(6), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(INITIALIZE_NONCE_ACCOUNT_DISCRIMINATOR), 0)) {
         return SystemInstruction.InitializeNonceAccount;
     }
-    if (containsBytes(data, getU32Encoder().encode(7), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(AUTHORIZE_NONCE_ACCOUNT_DISCRIMINATOR), 0)) {
         return SystemInstruction.AuthorizeNonceAccount;
     }
-    if (containsBytes(data, getU32Encoder().encode(8), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(ALLOCATE_DISCRIMINATOR), 0)) {
         return SystemInstruction.Allocate;
     }
-    if (containsBytes(data, getU32Encoder().encode(9), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(ALLOCATE_WITH_SEED_DISCRIMINATOR), 0)) {
         return SystemInstruction.AllocateWithSeed;
     }
-    if (containsBytes(data, getU32Encoder().encode(10), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(ASSIGN_WITH_SEED_DISCRIMINATOR), 0)) {
         return SystemInstruction.AssignWithSeed;
     }
-    if (containsBytes(data, getU32Encoder().encode(11), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(TRANSFER_SOL_WITH_SEED_DISCRIMINATOR), 0)) {
         return SystemInstruction.TransferSolWithSeed;
     }
-    if (containsBytes(data, getU32Encoder().encode(12), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(UPGRADE_NONCE_ACCOUNT_DISCRIMINATOR), 0)) {
         return SystemInstruction.UpgradeNonceAccount;
     }
     throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, {

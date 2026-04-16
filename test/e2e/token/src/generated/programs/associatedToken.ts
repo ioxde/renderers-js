@@ -24,12 +24,15 @@ import {
 } from '@solana/kit';
 import { addSelfPlanAndSendFunctions, type SelfPlanAndSendFunctions } from '@solana/kit/program-client-core';
 import {
+    CREATE_ASSOCIATED_TOKEN_DISCRIMINATOR,
+    CREATE_ASSOCIATED_TOKEN_IDEMPOTENT_DISCRIMINATOR,
     getCreateAssociatedTokenIdempotentInstructionAsync,
     getCreateAssociatedTokenInstructionAsync,
     getRecoverNestedAssociatedTokenInstructionAsync,
     parseCreateAssociatedTokenIdempotentInstruction,
     parseCreateAssociatedTokenInstruction,
     parseRecoverNestedAssociatedTokenInstruction,
+    RECOVER_NESTED_ASSOCIATED_TOKEN_DISCRIMINATOR,
     type CreateAssociatedTokenAsyncInput,
     type CreateAssociatedTokenIdempotentAsyncInput,
     type ParsedCreateAssociatedTokenIdempotentInstruction,
@@ -52,13 +55,13 @@ export function identifyAssociatedTokenInstruction(
     instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): AssociatedTokenInstruction {
     const data = 'data' in instruction ? instruction.data : instruction;
-    if (containsBytes(data, getU8Encoder().encode(0), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(CREATE_ASSOCIATED_TOKEN_DISCRIMINATOR), 0)) {
         return AssociatedTokenInstruction.CreateAssociatedToken;
     }
-    if (containsBytes(data, getU8Encoder().encode(1), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(CREATE_ASSOCIATED_TOKEN_IDEMPOTENT_DISCRIMINATOR), 0)) {
         return AssociatedTokenInstruction.CreateAssociatedTokenIdempotent;
     }
-    if (containsBytes(data, getU8Encoder().encode(2), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(RECOVER_NESTED_ASSOCIATED_TOKEN_DISCRIMINATOR), 0)) {
         return AssociatedTokenInstruction.RecoverNestedAssociatedToken;
     }
     throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, {

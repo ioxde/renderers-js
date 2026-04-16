@@ -65,9 +65,11 @@ function getProgramInstructionsIdentifierFunctionFragment(
             const variant = nameApi.programInstructionsEnumVariant(instruction.name);
             return getDiscriminatorConditionFragment({
                 ...scope,
+                constantSource: 'generatedInstructions',
                 dataName: 'data',
                 discriminators: instruction.discriminators ?? [],
                 ifTrue: `return ${programInstructionsEnum}.${variant};`,
+                prefix: instruction.name,
                 struct: structTypeNodeFromInstructionArgumentNodes(instruction.arguments),
             });
         }),

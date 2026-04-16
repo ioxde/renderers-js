@@ -93,20 +93,53 @@ test('it renders an function that identifies accounts in a program', async () =>
     await renderMapContains(renderMap, 'programs/splToken.ts', [
         `export function identifySplTokenAccount( account: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenAccount { ` +
             `const data = 'data' in account ? account.data : account; ` +
-            `if ( containsBytes(data, getU8Encoder().encode(5), 0) ) { return SplTokenAccount.Metadata; } ` +
-            `if ( data.length === 72 && containsBytes(data, new Uint8Array([1, 2, 3]), 4) ) { return SplTokenAccount.Token; } ` +
+            `if ( containsBytes(data, getU8Encoder().encode(METADATA_KEY), 0) ) { return SplTokenAccount.Metadata; } ` +
+            `if ( data.length === 72 && containsBytes(data, TOKEN_DISCRIMINATOR, 4) ) { return SplTokenAccount.Token; } ` +
             `throw new SolanaError( SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT, { accountData: data, programName: 'splToken' } ); ` +
             `}`,
     ]);
 
     // And we expect the following imports.
     await renderMapContainsImports(renderMap, 'programs/splToken.ts', {
+        '../accounts/index.js': ['METADATA_KEY', 'TOKEN_DISCRIMINATOR'],
         '@solana/kit': [
             'containsBytes',
             'ReadonlyUint8Array',
             'SolanaError',
             'SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT',
         ],
+    });
+});
+
+test('it reuses suffixed constants when a node has multiple constant discriminators', async () => {
+    // Given an account with two constant discriminators.
+    const node = programNode({
+        accounts: [
+            accountNode({
+                discriminators: [
+                    constantDiscriminatorNode(constantValueNodeFromBytes('base16', '010203'), 0),
+                    constantDiscriminatorNode(constantValueNodeFromBytes('base16', '040506'), 8),
+                ],
+                name: 'token',
+            }),
+        ],
+        name: 'splToken',
+        publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the identify condition references both constants, the second suffixed,
+    // matching the names emitted in the accounts module.
+    await renderMapContains(renderMap, 'programs/splToken.ts', [
+        `if ( containsBytes(data, TOKEN_DISCRIMINATOR, 0) && containsBytes(data, TOKEN_DISCRIMINATOR2, 8) ) ` +
+            `{ return SplTokenAccount.Token; }`,
+    ]);
+
+    // And both constants are imported from the accounts module.
+    await renderMapContainsImports(renderMap, 'programs/splToken.ts', {
+        '../accounts/index.js': ['TOKEN_DISCRIMINATOR', 'TOKEN_DISCRIMINATOR2'],
     });
 });
 
@@ -170,14 +203,15 @@ test('it renders an function that identifies instructions in a program', async (
     await renderMapContains(renderMap, 'programs/splToken.ts', [
         `export function identifySplTokenInstruction ( instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenInstruction { ` +
             `const data = 'data' in instruction ? instruction.data : instruction; ` +
-            `if ( containsBytes(data, getU8Encoder().encode(1), 0) ) { return SplTokenInstruction.MintTokens; } ` +
-            `if ( data.length === 72 && containsBytes(data, new Uint8Array([1, 2, 3]), 4) ) { return SplTokenInstruction.TransferTokens; } ` +
+            `if ( containsBytes(data, getU8Encoder().encode(MINT_TOKENS_DISCRIMINATOR), 0) ) { return SplTokenInstruction.MintTokens; } ` +
+            `if ( data.length === 72 && containsBytes(data, TRANSFER_TOKENS_DISCRIMINATOR, 4) ) { return SplTokenInstruction.TransferTokens; } ` +
             `throw new SolanaError( SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, { instructionData: data, programName: 'splToken' } ); ` +
             `}`,
     ]);
 
     // And we expect the following imports.
     await renderMapContainsImports(renderMap, 'programs/splToken.ts', {
+        '../instructions/index.js': ['MINT_TOKENS_DISCRIMINATOR', 'TRANSFER_TOKENS_DISCRIMINATOR'],
         '@solana/kit': ['containsBytes', 'ReadonlyUint8Array'],
     });
 });
@@ -234,9 +268,10 @@ test('it checks the discriminator of sub-instructions before their parents.', as
 
     // Then we expect the sub-instruction condition to be rendered before the parent instruction condition.
     await renderMapContains(renderMap, 'programs/splToken.ts', [
-        `if ( containsBytes(data, getU8Encoder().encode(1), 0) && containsBytes(data, getU32Encoder().encode(1), 1) ) ` +
+        `if ( containsBytes( data, getU8Encoder().encode(MINT_TOKENS_V1_PARENT_DISCRIMINATOR), 0 ) && ` +
+            `containsBytes( data, getU32Encoder().encode(MINT_TOKENS_V1_SUB_DISCRIMINATOR), 1 ) ) ` +
             `{ return SplTokenInstruction.MintTokensV1; } ` +
-            `if ( containsBytes(data, getU8Encoder().encode(1), 0) ) ` +
+            `if ( containsBytes( data, getU8Encoder().encode(MINT_TOKENS_PARENT_DISCRIMINATOR), 0 ) ) ` +
             `{ return SplTokenInstruction.MintTokens; }`,
     ]);
 });

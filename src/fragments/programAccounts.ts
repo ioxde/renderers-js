@@ -48,9 +48,11 @@ function getProgramAccountsIdentifierFunctionFragment(
             const variant = nameApi.programAccountsEnumVariant(account.name);
             return getDiscriminatorConditionFragment({
                 ...scope,
+                constantSource: 'generatedAccounts',
                 dataName: 'data',
                 discriminators: account.discriminators ?? [],
                 ifTrue: `return ${programAccountsEnum}.${variant};`,
+                prefix: account.name,
                 struct: resolveNestedTypeNode(account.data),
             });
         }),

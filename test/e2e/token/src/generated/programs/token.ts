@@ -43,6 +43,14 @@ import {
     type TokenArgs,
 } from '../accounts/index.js';
 import {
+    AMOUNT_TO_UI_AMOUNT_DISCRIMINATOR,
+    APPROVE_CHECKED_DISCRIMINATOR,
+    APPROVE_DISCRIMINATOR,
+    BURN_CHECKED_DISCRIMINATOR,
+    BURN_DISCRIMINATOR,
+    CLOSE_ACCOUNT_DISCRIMINATOR,
+    FREEZE_ACCOUNT_DISCRIMINATOR,
+    GET_ACCOUNT_DATA_SIZE_DISCRIMINATOR,
     getAmountToUiAmountInstruction,
     getApproveCheckedInstruction,
     getApproveInstruction,
@@ -68,6 +76,16 @@ import {
     getTransferCheckedInstruction,
     getTransferInstruction,
     getUiAmountToAmountInstruction,
+    INITIALIZE_ACCOUNT_DISCRIMINATOR,
+    INITIALIZE_ACCOUNT2_DISCRIMINATOR,
+    INITIALIZE_ACCOUNT3_DISCRIMINATOR,
+    INITIALIZE_IMMUTABLE_OWNER_DISCRIMINATOR,
+    INITIALIZE_MINT_DISCRIMINATOR,
+    INITIALIZE_MINT2_DISCRIMINATOR,
+    INITIALIZE_MULTISIG_DISCRIMINATOR,
+    INITIALIZE_MULTISIG2_DISCRIMINATOR,
+    MINT_TO_CHECKED_DISCRIMINATOR,
+    MINT_TO_DISCRIMINATOR,
     parseAmountToUiAmountInstruction,
     parseApproveCheckedInstruction,
     parseApproveInstruction,
@@ -93,6 +111,12 @@ import {
     parseTransferCheckedInstruction,
     parseTransferInstruction,
     parseUiAmountToAmountInstruction,
+    REVOKE_DISCRIMINATOR,
+    SET_AUTHORITY_DISCRIMINATOR,
+    SYNC_NATIVE_DISCRIMINATOR,
+    THAW_ACCOUNT_DISCRIMINATOR,
+    TRANSFER_CHECKED_DISCRIMINATOR,
+    TRANSFER_DISCRIMINATOR,
     type AmountToUiAmountInput,
     type ApproveCheckedInput,
     type ApproveInput,
@@ -143,6 +167,7 @@ import {
     type TransferCheckedInput,
     type TransferInput,
     type UiAmountToAmountInput,
+    UI_AMOUNT_TO_AMOUNT_DISCRIMINATOR,
 } from '../instructions/index.js';
 
 export const TOKEN_PROGRAM_ADDRESS =
@@ -203,79 +228,79 @@ export function identifyTokenInstruction(
     instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): TokenInstruction {
     const data = 'data' in instruction ? instruction.data : instruction;
-    if (containsBytes(data, getU8Encoder().encode(0), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_MINT_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeMint;
     }
-    if (containsBytes(data, getU8Encoder().encode(1), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_ACCOUNT_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeAccount;
     }
-    if (containsBytes(data, getU8Encoder().encode(2), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_MULTISIG_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeMultisig;
     }
-    if (containsBytes(data, getU8Encoder().encode(3), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(TRANSFER_DISCRIMINATOR), 0)) {
         return TokenInstruction.Transfer;
     }
-    if (containsBytes(data, getU8Encoder().encode(4), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(APPROVE_DISCRIMINATOR), 0)) {
         return TokenInstruction.Approve;
     }
-    if (containsBytes(data, getU8Encoder().encode(5), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(REVOKE_DISCRIMINATOR), 0)) {
         return TokenInstruction.Revoke;
     }
-    if (containsBytes(data, getU8Encoder().encode(6), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(SET_AUTHORITY_DISCRIMINATOR), 0)) {
         return TokenInstruction.SetAuthority;
     }
-    if (containsBytes(data, getU8Encoder().encode(7), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(MINT_TO_DISCRIMINATOR), 0)) {
         return TokenInstruction.MintTo;
     }
-    if (containsBytes(data, getU8Encoder().encode(8), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(BURN_DISCRIMINATOR), 0)) {
         return TokenInstruction.Burn;
     }
-    if (containsBytes(data, getU8Encoder().encode(9), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(CLOSE_ACCOUNT_DISCRIMINATOR), 0)) {
         return TokenInstruction.CloseAccount;
     }
-    if (containsBytes(data, getU8Encoder().encode(10), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(FREEZE_ACCOUNT_DISCRIMINATOR), 0)) {
         return TokenInstruction.FreezeAccount;
     }
-    if (containsBytes(data, getU8Encoder().encode(11), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(THAW_ACCOUNT_DISCRIMINATOR), 0)) {
         return TokenInstruction.ThawAccount;
     }
-    if (containsBytes(data, getU8Encoder().encode(12), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(TRANSFER_CHECKED_DISCRIMINATOR), 0)) {
         return TokenInstruction.TransferChecked;
     }
-    if (containsBytes(data, getU8Encoder().encode(13), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(APPROVE_CHECKED_DISCRIMINATOR), 0)) {
         return TokenInstruction.ApproveChecked;
     }
-    if (containsBytes(data, getU8Encoder().encode(14), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(MINT_TO_CHECKED_DISCRIMINATOR), 0)) {
         return TokenInstruction.MintToChecked;
     }
-    if (containsBytes(data, getU8Encoder().encode(15), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(BURN_CHECKED_DISCRIMINATOR), 0)) {
         return TokenInstruction.BurnChecked;
     }
-    if (containsBytes(data, getU8Encoder().encode(16), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_ACCOUNT2_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeAccount2;
     }
-    if (containsBytes(data, getU8Encoder().encode(17), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(SYNC_NATIVE_DISCRIMINATOR), 0)) {
         return TokenInstruction.SyncNative;
     }
-    if (containsBytes(data, getU8Encoder().encode(18), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_ACCOUNT3_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeAccount3;
     }
-    if (containsBytes(data, getU8Encoder().encode(19), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_MULTISIG2_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeMultisig2;
     }
-    if (containsBytes(data, getU8Encoder().encode(20), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_MINT2_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeMint2;
     }
-    if (containsBytes(data, getU8Encoder().encode(21), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(GET_ACCOUNT_DATA_SIZE_DISCRIMINATOR), 0)) {
         return TokenInstruction.GetAccountDataSize;
     }
-    if (containsBytes(data, getU8Encoder().encode(22), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(INITIALIZE_IMMUTABLE_OWNER_DISCRIMINATOR), 0)) {
         return TokenInstruction.InitializeImmutableOwner;
     }
-    if (containsBytes(data, getU8Encoder().encode(23), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(AMOUNT_TO_UI_AMOUNT_DISCRIMINATOR), 0)) {
         return TokenInstruction.AmountToUiAmount;
     }
-    if (containsBytes(data, getU8Encoder().encode(24), 0)) {
+    if (containsBytes(data, getU8Encoder().encode(UI_AMOUNT_TO_AMOUNT_DISCRIMINATOR), 0)) {
         return TokenInstruction.UiAmountToAmount;
     }
     throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, {

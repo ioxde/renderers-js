@@ -34,6 +34,8 @@ import {
     getInstruction7Instruction,
     getInstruction8Instruction,
     getInstruction9Instruction,
+    INSTRUCTION10_DISCRIMINATOR,
+    INSTRUCTION3_DISCRIMINATOR,
     parseInstruction10Instruction,
     parseInstruction1Instruction,
     parseInstruction2Instruction,
@@ -65,7 +67,7 @@ import {
     type ParsedInstruction8Instruction,
     type ParsedInstruction9Instruction,
 } from '../instructions/index.js';
-import { getKeyEncoder, Key } from '../types/index.js';
+import { getKeyEncoder } from '../types/index.js';
 
 export const DUMMY_PROGRAM_ADDRESS =
     'Dummy1111111111111111111111111111111111' as Address<'Dummy1111111111111111111111111111111111'>;
@@ -87,10 +89,10 @@ export function identifyDummyInstruction(
     instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): DummyInstruction {
     const data = 'data' in instruction ? instruction.data : instruction;
-    if (containsBytes(data, getU32Encoder().encode(42), 0)) {
+    if (containsBytes(data, getU32Encoder().encode(INSTRUCTION3_DISCRIMINATOR), 0)) {
         return DummyInstruction.Instruction3;
     }
-    if (containsBytes(data, getKeyEncoder().encode(Key.Asset), 0)) {
+    if (containsBytes(data, getKeyEncoder().encode(INSTRUCTION10_DISCRIMINATOR), 0)) {
         return DummyInstruction.Instruction10;
     }
     throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, {

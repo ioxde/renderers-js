@@ -13,6 +13,23 @@ import { visit } from '@codama/visitors-core';
 
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 
+/**
+ * Resolves the exported constant name for a discriminator. Call this from both the constant
+ * definition and the `identify*` conditions so the emitted name and its reference stay in sync.
+ */
+export function getDiscriminatorConstantName(
+    prefix: string,
+    discriminator: ConstantDiscriminatorNode | FieldDiscriminatorNode,
+    discriminators: DiscriminatorNode[] = [],
+): string {
+    if (isNode(discriminator, 'fieldDiscriminatorNode')) {
+        return camelCase(`${prefix}_${discriminator.name}`);
+    }
+    const index = discriminators.filter(isNodeFilter('constantDiscriminatorNode')).indexOf(discriminator);
+    const suffix = index <= 0 ? '' : `_${index + 1}`;
+    return camelCase(`${prefix}_discriminator${suffix}`);
+}
+
 export function getDiscriminatorConstantsFragment(
     scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
         discriminatorNodes: DiscriminatorNode[];
@@ -54,10 +71,7 @@ export function getConstantDiscriminatorConstantFragment(
 ): Fragment | null {
     const { discriminatorNodes, typeManifestVisitor, prefix } = scope;
 
-    const index = discriminatorNodes.filter(isNodeFilter('constantDiscriminatorNode')).indexOf(discriminatorNode);
-    const suffix = index <= 0 ? '' : `_${index + 1}`;
-
-    const name = camelCase(`${prefix}_discriminator${suffix}`);
+    const name = getDiscriminatorConstantName(prefix, discriminatorNode, discriminatorNodes);
     const typeManifest = visit(discriminatorNode.constant.type, typeManifestVisitor);
     const encoder = typeManifest.encoder;
     const { value, valueType } = resolveDiscriminatorValue(
@@ -82,7 +96,7 @@ export function getFieldDiscriminatorConstantFragment(
         return null;
     }
 
-    const name = camelCase(`${prefix}_${discriminatorNode.name}`);
+    const name = getDiscriminatorConstantName(prefix, discriminatorNode);
     const typeManifest = visit(field.type, typeManifestVisitor);
     const encoder = typeManifest.encoder;
     const { value, valueType } = resolveDiscriminatorValue(
