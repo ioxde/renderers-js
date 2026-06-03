@@ -69,6 +69,12 @@ importers:
         specifier: ^6.4.0
         version: 6.8.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
 
+  raydium-launchpad:
+    dependencies:
+      '@solana/kit':
+        specifier: ^6.4.0
+        version: 6.8.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
+
   system:
     dependencies:
       '@solana/kit':
