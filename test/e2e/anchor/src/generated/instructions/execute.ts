@@ -10,10 +10,8 @@ import {
     combineCodec,
     fixDecoderSize,
     fixEncoderSize,
-    getAddressEncoder,
     getBytesDecoder,
     getBytesEncoder,
-    getProgramDerivedAddress,
     getStructDecoder,
     getStructEncoder,
     getU64Decoder,
@@ -35,8 +33,10 @@ import {
 import {
     getAccountMetaFactory,
     getAddressFromResolvedInstructionAccount,
+    getNonNullResolvedInstructionInput,
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
+import { findExtraMetasAccountPda, findGuardPda } from '../pdas/index.js';
 import { WEN_TRANSFER_GUARD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const EXECUTE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([105, 37, 101, 197, 75, 251, 102, 26]);
@@ -102,6 +102,8 @@ export function getExecuteInstructionDataCodec(): FixedSizeCodec<ExecuteInstruct
     return combineCodec(getExecuteInstructionDataEncoder(), getExecuteInstructionDataDecoder());
 }
 
+export type ExecuteInstructionExtraArgs = { guardMint: Address };
+
 export type ExecuteAsyncInput<
     TAccountSourceAccount extends string = string,
     TAccountMint extends string = string,
@@ -116,9 +118,10 @@ export type ExecuteAsyncInput<
     destinationAccount: Address<TAccountDestinationAccount>;
     ownerDelegate: Address<TAccountOwnerDelegate>;
     extraMetasAccount?: Address<TAccountExtraMetasAccount>;
-    guard: Address<TAccountGuard>;
+    guard?: Address<TAccountGuard>;
     instructionSysvarAccount?: Address<TAccountInstructionSysvarAccount>;
     amount: ExecuteInstructionDataArgs['amount'];
+    guardMint: ExecuteInstructionExtraArgs['guardMint'];
 };
 
 export async function getExecuteInstructionAsync<
@@ -173,16 +176,13 @@ export async function getExecuteInstructionAsync<
 
     // Resolve default values.
     if (!accounts.extraMetasAccount.value) {
-        accounts.extraMetasAccount.value = await getProgramDerivedAddress({
-            programAddress,
-            seeds: [
-                getBytesEncoder().encode(
-                    new Uint8Array([
-                        101, 120, 116, 114, 97, 45, 97, 99, 99, 111, 117, 110, 116, 45, 109, 101, 116, 97, 115,
-                    ]),
-                ),
-                getAddressEncoder().encode(getAddressFromResolvedInstructionAccount('mint', accounts.mint.value)),
-            ],
+        accounts.extraMetasAccount.value = await findExtraMetasAccountPda({
+            mint: getAddressFromResolvedInstructionAccount('mint', accounts.mint.value),
+        });
+    }
+    if (!accounts.guard.value) {
+        accounts.guard.value = await findGuardPda({
+            mint: getNonNullResolvedInstructionInput('guardMint', args.guardMint),
         });
     }
     if (!accounts.instructionSysvarAccount.value) {
@@ -232,6 +232,7 @@ export type ExecuteInput<
     guard: Address<TAccountGuard>;
     instructionSysvarAccount?: Address<TAccountInstructionSysvarAccount>;
     amount: ExecuteInstructionDataArgs['amount'];
+    guardMint: ExecuteInstructionExtraArgs['guardMint'];
 };
 
 export function getExecuteInstruction<

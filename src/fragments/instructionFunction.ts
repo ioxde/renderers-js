@@ -90,22 +90,31 @@ export function getInstructionFunctionFragment(
     const returnType = getReturnTypeFragment(instructionTypeFragment, hasByteDeltas, useAsync);
     const inputType = getInstructionInputTypeFragment(scope);
     const inputArg = mapFragmentContent(getInputTypeCallFragment(scope), c => (hasInput ? `input: ${c}, ` : ''));
+    const resolverScopeFragment = getResolverScopeInitializationFragment(hasResolver, hasAccounts, hasAnyArgs);
+    const returnStatementFragment = getReturnStatementFragment({
+        ...scope,
+        hasByteDeltas,
+        hasData,
+        hasDataArgs,
+        hasRemainingAccounts,
+        instructionNode,
+        syncReturnTypeFragment: getReturnTypeFragment(instructionTypeFragment, hasByteDeltas, false),
+    });
+    // Skip the `args` declaration unless a fragment actually references it; otherwise
+    // it's dead (e.g. a sync builder whose only arg feeds an async-only PDA seed).
+    const argsIsReferenced =
+        hasAnyArgs &&
+        [resolverScopeFragment, resolvedInputFragment, returnStatementFragment].some(
+            f => f !== undefined && /\bargs\b/.test(f.content),
+        );
     const functionBody = mergeFragments(
         [
             getProgramAddressInitializationFragment(programAddressConstant),
             getAccountsInitializationFragment(instructionNode),
-            getArgumentsInitializationFragment(hasAnyArgs, renamedArgs),
-            getResolverScopeInitializationFragment(hasResolver, hasAccounts, hasAnyArgs),
+            argsIsReferenced ? getArgumentsInitializationFragment(hasAnyArgs, renamedArgs) : undefined,
+            resolverScopeFragment,
             resolvedInputFragment,
-            getReturnStatementFragment({
-                ...scope,
-                hasByteDeltas,
-                hasData,
-                hasDataArgs,
-                hasRemainingAccounts,
-                instructionNode,
-                syncReturnTypeFragment: getReturnTypeFragment(instructionTypeFragment, hasByteDeltas, false),
-            }),
+            returnStatementFragment,
         ],
         cs => cs.join('\n\n'),
     );

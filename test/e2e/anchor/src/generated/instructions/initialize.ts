@@ -10,10 +10,8 @@ import {
     combineCodec,
     fixDecoderSize,
     fixEncoderSize,
-    getAddressEncoder,
     getBytesDecoder,
     getBytesEncoder,
-    getProgramDerivedAddress,
     getStructDecoder,
     getStructEncoder,
     SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
@@ -37,8 +35,10 @@ import {
 import {
     getAccountMetaFactory,
     getAddressFromResolvedInstructionAccount,
+    getNonNullResolvedInstructionInput,
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
+import { findExtraMetasAccountPda, findGuardPda } from '../pdas/index.js';
 import { WEN_TRANSFER_GUARD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const INITIALIZE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([43, 34, 13, 49, 167, 88, 235, 235]);
@@ -99,6 +99,8 @@ export function getInitializeInstructionDataCodec(): FixedSizeCodec<
     return combineCodec(getInitializeInstructionDataEncoder(), getInitializeInstructionDataDecoder());
 }
 
+export type InitializeInstructionExtraArgs = { guardMint: Address };
+
 export type InitializeAsyncInput<
     TAccountExtraMetasAccount extends string = string,
     TAccountGuard extends string = string,
@@ -108,11 +110,12 @@ export type InitializeAsyncInput<
     TAccountPayer extends string = string,
 > = {
     extraMetasAccount?: Address<TAccountExtraMetasAccount>;
-    guard: Address<TAccountGuard>;
+    guard?: Address<TAccountGuard>;
     mint: Address<TAccountMint>;
     transferHookAuthority: TransactionSigner<TAccountTransferHookAuthority>;
     systemProgram?: Address<TAccountSystemProgram>;
     payer: TransactionSigner<TAccountPayer>;
+    guardMint: InitializeInstructionExtraArgs['guardMint'];
 };
 
 export async function getInitializeInstructionAsync<
@@ -158,18 +161,18 @@ export async function getInitializeInstructionAsync<
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
+    // Original args.
+    const args = { ...input };
+
     // Resolve default values.
     if (!accounts.extraMetasAccount.value) {
-        accounts.extraMetasAccount.value = await getProgramDerivedAddress({
-            programAddress,
-            seeds: [
-                getBytesEncoder().encode(
-                    new Uint8Array([
-                        101, 120, 116, 114, 97, 45, 97, 99, 99, 111, 117, 110, 116, 45, 109, 101, 116, 97, 115,
-                    ]),
-                ),
-                getAddressEncoder().encode(getAddressFromResolvedInstructionAccount('mint', accounts.mint.value)),
-            ],
+        accounts.extraMetasAccount.value = await findExtraMetasAccountPda({
+            mint: getAddressFromResolvedInstructionAccount('mint', accounts.mint.value),
+        });
+    }
+    if (!accounts.guard.value) {
+        accounts.guard.value = await findGuardPda({
+            mint: getNonNullResolvedInstructionInput('guardMint', args.guardMint),
         });
     }
     if (!accounts.systemProgram.value) {
@@ -214,6 +217,7 @@ export type InitializeInput<
     transferHookAuthority: TransactionSigner<TAccountTransferHookAuthority>;
     systemProgram?: Address<TAccountSystemProgram>;
     payer: TransactionSigner<TAccountPayer>;
+    guardMint: InitializeInstructionExtraArgs['guardMint'];
 };
 
 export function getInitializeInstruction<

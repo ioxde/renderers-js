@@ -54,6 +54,7 @@ import {
     type UpdateGuardAsyncInput,
     UPDATE_GUARD_DISCRIMINATOR,
 } from '../instructions/index.js';
+import { findExtraMetasAccountPda, findGuardPda } from '../pdas/index.js';
 
 export const WEN_TRANSFER_GUARD_PROGRAM_ADDRESS =
     'LockdqYQ9X2kwtWB99ioSbxubAmEi8o9jqYwbXgrrRw' as Address<'LockdqYQ9X2kwtWB99ioSbxubAmEi8o9jqYwbXgrrRw'>;
@@ -151,6 +152,7 @@ export function parseWenTransferGuardInstruction<TProgram extends string>(
 export type WenTransferGuardPlugin = {
     accounts: WenTransferGuardPluginAccounts;
     instructions: WenTransferGuardPluginInstructions;
+    pdas: WenTransferGuardPluginPdas;
     identifyAccount: typeof identifyWenTransferGuardAccount;
     identifyInstruction: typeof identifyWenTransferGuardInstruction;
     parseInstruction: typeof parseWenTransferGuardInstruction;
@@ -171,6 +173,11 @@ export type WenTransferGuardPluginInstructions = {
     updateGuard: (
         input: UpdateGuardAsyncInput,
     ) => ReturnType<typeof getUpdateGuardInstructionAsync> & SelfPlanAndSendFunctions;
+};
+
+export type WenTransferGuardPluginPdas = {
+    guard: typeof findGuardPda;
+    extraMetasAccount: typeof findExtraMetasAccountPda;
 };
 
 export type WenTransferGuardPluginRequirements = ClientWithRpc<GetAccountInfoApi & GetMultipleAccountsApi> &
@@ -199,6 +206,7 @@ export function wenTransferGuardProgram() {
                         ),
                     updateGuard: input => addSelfPlanAndSendFunctions(client, getUpdateGuardInstructionAsync(input)),
                 },
+                pdas: { guard: findGuardPda, extraMetasAccount: findExtraMetasAccountPda },
                 identifyAccount: identifyWenTransferGuardAccount,
                 identifyInstruction: identifyWenTransferGuardInstruction,
                 parseInstruction: parseWenTransferGuardInstruction,
