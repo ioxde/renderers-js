@@ -8,7 +8,7 @@ import {
     addFragmentImports,
     Fragment,
     fragment,
-    isAsyncDefaultValue,
+    isDefaultValueSkippedOnSyncPath,
     mergeFragments,
     RenderScope,
     use,
@@ -27,7 +27,7 @@ export function getInstructionInputDefaultFragment(
         return fragment``;
     }
 
-    if (!useAsync && isAsyncDefaultValue(input.defaultValue, asyncResolvers)) {
+    if (isDefaultValueSkippedOnSyncPath(input.defaultValue, asyncResolvers, useAsync)) {
         return fragment``;
     }
 

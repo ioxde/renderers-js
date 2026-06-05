@@ -3,6 +3,7 @@ import {
     argumentValueNode,
     booleanTypeNode,
     booleanValueNode,
+    conditionalValueNode,
     constantDiscriminatorNode,
     constantPdaSeedNodeFromString,
     constantValueNode,
@@ -16,7 +17,9 @@ import {
     fixedSizeTypeNode,
     instructionAccountNode,
     instructionArgumentNode,
+    instructionByteDeltaNode,
     instructionNode,
+    instructionRemainingAccountsNode,
     numberTypeNode,
     numberValueNode,
     pdaNode,
@@ -24,6 +27,7 @@ import {
     pdaValueNode,
     programNode,
     publicKeyTypeNode,
+    publicKeyValueNode,
     resolverValueNode,
     stringTypeNode,
     stringValueNode,
@@ -168,6 +172,199 @@ test('it only renders the args variable on the async function if the extra argum
     // Then we expect only the async function to contain the args variable.
     await codeContains(asyncFunction, ['// Original args.', 'const args = { ...input }']);
     await codeDoesNotContain(syncFunction, ['// Original args.', 'const args = { ...input }']);
+});
+
+test('it renders seed-only extra arguments as optional in the sync input type but required in the async input type', async () => {
+    // Given an instruction with an extra argument that is only used
+    // as a PDA seed for an account default value.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('guard', [pdaSeedValueNode('mint', argumentValueNode('guardMint'))]),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'guard',
+                    }),
+                ],
+                extraArguments: [instructionArgumentNode({ name: 'guardMint', type: publicKeyTypeNode() })],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'guard', seeds: [variablePdaSeedNode('mint', publicKeyTypeNode())] })],
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // And split the async and sync sections of the file.
+    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to stay required in the async input type
+    // since the async builder reads it to derive the account.
+    await codeContains(asyncSection, /guardMint:\s*CreateInstructionExtraArgs\[['"]guardMint['"]\];/);
+    await codeDoesNotContain(asyncSection, /guardMint\?:/);
+
+    // And we expect it to be optional in the sync input type
+    // since the sync builder never reads it.
+    await codeContains(syncSection, /guardMint\?:\s*CreateInstructionExtraArgs\[['"]guardMint['"]\];/);
+});
+
+test('it keeps extra arguments referenced by byte deltas required in the sync input type', async () => {
+    // Given an instruction with an extra argument that is used both
+    // as a PDA seed for an account default value and by a byte delta.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('guard', [pdaSeedValueNode('space', argumentValueNode('space'))]),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'guard',
+                    }),
+                ],
+                byteDeltas: [instructionByteDeltaNode(argumentValueNode('space'))],
+                extraArguments: [instructionArgumentNode({ name: 'space', type: numberTypeNode('u64') })],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'guard', seeds: [variablePdaSeedNode('space', numberTypeNode('u64'))] })],
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // And split the async and sync sections of the file.
+    const [, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to stay required in the sync input type
+    // since the sync builder reads it unconditionally for the byte delta.
+    await codeContains(syncSection, /space:\s*CreateInstructionExtraArgs\[['"]space['"]\];/);
+    await codeDoesNotContain(syncSection, /space\?:/);
+});
+
+test('it keeps extra arguments referenced by remaining accounts required in the sync input type', async () => {
+    // Given an instruction with an extra argument that is used both
+    // as a PDA seed for an account default value and by remaining accounts.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('guard', [pdaSeedValueNode('mint', argumentValueNode('payer'))]),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'guard',
+                    }),
+                ],
+                extraArguments: [instructionArgumentNode({ name: 'payer', type: publicKeyTypeNode() })],
+                name: 'create',
+                remainingAccounts: [instructionRemainingAccountsNode(argumentValueNode('payer'))],
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'guard', seeds: [variablePdaSeedNode('mint', publicKeyTypeNode())] })],
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // And split the async and sync sections of the file.
+    const [, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to stay required in the sync input type
+    // since the sync builder reads it unconditionally for the remaining accounts.
+    await codeContains(syncSection, /payer:\s*CreateInstructionExtraArgs\[['"]payer['"]\];/);
+    await codeDoesNotContain(syncSection, /payer\?:/);
+});
+
+test('it renders extra arguments only used by async resolver dependencies as optional in the sync input type', async () => {
+    // Given an instruction with an extra argument that is only used
+    // as a dependency of an async resolver on an account default value.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: resolverValueNode('myAsyncResolver', { dependsOn: [argumentValueNode('bar')] }),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'foo',
+                    }),
+                ],
+                extraArguments: [instructionArgumentNode({ name: 'bar', type: numberTypeNode('u64') })],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
+
+    // And split the async and sync sections of the file.
+    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to stay required in the async input type
+    // since the async builder passes it to the resolver.
+    await codeContains(asyncSection, /bar:\s*CreateInstructionExtraArgs\[['"]bar['"]\];/);
+    await codeDoesNotContain(asyncSection, /bar\?:/);
+
+    // And we expect it to be optional in the sync input type
+    // since the sync builder skips the async resolver entirely.
+    await codeContains(syncSection, /bar\?:\s*CreateInstructionExtraArgs\[['"]bar['"]\];/);
+});
+
+test('it keeps extra arguments referenced by sync-rendered account defaults required', async () => {
+    // Given an instruction with an extra argument that is used inside
+    // a conditional account default value which renders synchronously.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: conditionalValueNode({
+                            condition: argumentValueNode('useDefaultMint'),
+                            ifTrue: publicKeyValueNode('3333'),
+                        }),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'mint',
+                    }),
+                ],
+                extraArguments: [instructionArgumentNode({ name: 'useDefaultMint', type: booleanTypeNode() })],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect the argument to stay required in the input type
+    // since the sync builder reads it to evaluate the condition.
+    await renderMapContains(renderMap, 'instructions/create.ts', [
+        /useDefaultMint:\s*CreateInstructionExtraArgs\[['"]useDefaultMint['"]\];/,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/create.ts', [/useDefaultMint\?:/]);
 });
 
 test('it renders instruction accounts with linked PDAs as default value', async () => {

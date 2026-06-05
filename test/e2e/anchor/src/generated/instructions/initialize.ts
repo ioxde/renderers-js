@@ -217,7 +217,7 @@ export type InitializeInput<
     transferHookAuthority: TransactionSigner<TAccountTransferHookAuthority>;
     systemProgram?: Address<TAccountSystemProgram>;
     payer: TransactionSigner<TAccountPayer>;
-    guardMint: InitializeInstructionExtraArgs['guardMint'];
+    guardMint?: InitializeInstructionExtraArgs['guardMint'];
 };
 
 export function getInitializeInstruction<

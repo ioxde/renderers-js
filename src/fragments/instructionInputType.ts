@@ -20,7 +20,7 @@ import {
     Fragment,
     fragment,
     getDocblockFragment,
-    isAsyncDefaultValue,
+    isDefaultValueSkippedOnSyncPath,
     mergeFragmentImports,
     mergeFragments,
     RenderScope,
@@ -84,7 +84,7 @@ function getAccountsFragment(
         const hasDefaultValue =
             !!resolvedAccount.defaultValue &&
             !isNode(resolvedAccount.defaultValue, ['identityValueNode', 'payerValueNode']) &&
-            (useAsync || !isAsyncDefaultValue(resolvedAccount.defaultValue, asyncResolvers));
+            !isDefaultValueSkippedOnSyncPath(resolvedAccount.defaultValue, asyncResolvers, useAsync);
         const docs = getDocblockFragment(account.docs ?? [], true);
         const optionalSign = hasDefaultValue || resolvedAccount.isOptional ? '?' : '';
         return fragment`${docs}${camelCase(account.name)}${optionalSign}: ${getAccountTypeFragment(resolvedAccount)};`;
@@ -141,19 +141,51 @@ function getDataArgumentsFragments(
 }
 
 function getExtraArgumentsFragment(
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'asyncResolvers' | 'nameApi'> & {
         instructionPath: NodePath<InstructionNode>;
         renamedArgs: Map<string, string>;
         resolvedInputs: ResolvedInstructionInput[];
+        useAsync: boolean;
     },
 ): Fragment | undefined {
-    const { instructionPath, nameApi } = scope;
+    const { asyncResolvers, instructionPath, nameApi, useAsync } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
+    const extraArguments = instructionNode.extraArguments ?? [];
+    if (extraArguments.length === 0) return;
+
     const instructionExtraName = nameApi.instructionExtraType(instructionNode.name);
     const extraArgsType = nameApi.dataArgsType(instructionExtraName);
 
-    const fragments = (instructionNode.extraArguments ?? []).flatMap(arg => {
-        const argFragment = getArgumentFragment(arg, extraArgsType, scope.resolvedInputs, scope.renamedArgs);
+    // Args referenced only by defaults the sync builder skips are dead on the sync path,
+    // so the sync input type marks them optional. Keep in sync with `instructionInputDefault.ts`.
+    const asyncOnlyDefaultRefs = new Set<string>();
+    // Args the sync builder still reads (remaining accounts, byte deltas, sync-rendered defaults) stay required.
+    const syncReadRefs = new Set<string>();
+    if (!useAsync) {
+        collectArgumentValueNames(instructionNode.remainingAccounts ?? [], syncReadRefs);
+        collectArgumentValueNames(instructionNode.byteDeltas ?? [], syncReadRefs);
+        for (const input of scope.resolvedInputs) {
+            if (!input.defaultValue) continue;
+            if (
+                isNode(input, 'instructionAccountNode') &&
+                isDefaultValueSkippedOnSyncPath(input.defaultValue, asyncResolvers, useAsync)
+            ) {
+                collectArgumentValueNames(input.defaultValue, asyncOnlyDefaultRefs);
+            } else {
+                collectArgumentValueNames(input.defaultValue, syncReadRefs);
+            }
+        }
+    }
+
+    const fragments = extraArguments.flatMap(arg => {
+        const unreadInSync = !useAsync && asyncOnlyDefaultRefs.has(arg.name) && !syncReadRefs.has(arg.name);
+        const argFragment = getArgumentFragment(
+            arg,
+            extraArgsType,
+            scope.resolvedInputs,
+            scope.renamedArgs,
+            unreadInSync,
+        );
         return argFragment ? [argFragment] : [];
     });
     if (fragments.length === 0) return;
@@ -161,18 +193,34 @@ function getExtraArgumentsFragment(
     return mergeFragments(fragments, c => c.join('\n'));
 }
 
+/** Collects every `argumentValueNode` name in a node tree. Walks structurally, so new node kinds are covered for free. */
+function collectArgumentValueNames(node: unknown, out: Set<string>): void {
+    if (Array.isArray(node)) {
+        node.forEach(child => collectArgumentValueNames(child, out));
+        return;
+    }
+    if (node && typeof node === 'object') {
+        const candidate = node as { kind?: unknown; name?: unknown };
+        if (candidate.kind === 'argumentValueNode' && typeof candidate.name === 'string') {
+            out.add(candidate.name);
+        }
+        Object.values(node).forEach(child => collectArgumentValueNames(child, out));
+    }
+}
+
 function getArgumentFragment(
     arg: InstructionArgumentNode,
     argsType: string,
     resolvedInputs: ResolvedInstructionInput[],
     renamedArgs: Map<string, string>,
+    forceOptional = false,
 ): Fragment | null {
     const resolvedArg = resolvedInputs.find(
         input => isNode(input, 'instructionArgumentNode') && input.name === arg.name,
     ) as ResolvedInstructionArgument | undefined;
     if (arg.defaultValue && arg.defaultValueStrategy === 'omitted') return null;
     const renamedName = renamedArgs.get(arg.name) ?? arg.name;
-    const optionalSign = arg.defaultValue || resolvedArg?.defaultValue ? '?' : '';
+    const optionalSign = forceOptional || arg.defaultValue || resolvedArg?.defaultValue ? '?' : '';
     return fragment`${camelCase(renamedName)}${optionalSign}: ${argsType}["${camelCase(arg.name)}"];`;
 }
 

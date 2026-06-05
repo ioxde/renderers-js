@@ -232,7 +232,7 @@ export type ExecuteInput<
     guard: Address<TAccountGuard>;
     instructionSysvarAccount?: Address<TAccountInstructionSysvarAccount>;
     amount: ExecuteInstructionDataArgs['amount'];
-    guardMint: ExecuteInstructionExtraArgs['guardMint'];
+    guardMint?: ExecuteInstructionExtraArgs['guardMint'];
 };
 
 export function getExecuteInstruction<

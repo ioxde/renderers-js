@@ -50,6 +50,18 @@ export function isAsyncDefaultValue(defaultValue: InstructionInputValueNode, asy
     }
 }
 
+/**
+ * Whether the sync builder skips this default entirely, i.e. it is async-only and never read on the sync path.
+ * Route any new sync/async rendering decision through this so builders and input types cannot disagree.
+ */
+export function isDefaultValueSkippedOnSyncPath(
+    defaultValue: InstructionInputValueNode | undefined,
+    asyncResolvers: string[],
+    useAsync: boolean,
+): boolean {
+    return !useAsync && !!defaultValue && isAsyncDefaultValue(defaultValue, asyncResolvers);
+}
+
 export function getInstructionDependencies(
     input: InstructionAccountNode | InstructionArgumentNode | InstructionNode,
     asyncResolvers: string[],
