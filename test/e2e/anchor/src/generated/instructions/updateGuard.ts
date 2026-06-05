@@ -7,6 +7,7 @@
  */
 
 import {
+    address,
     combineCodec,
     fixDecoderSize,
     fixEncoderSize,
@@ -205,10 +206,6 @@ export async function getUpdateGuardInstructionAsync<
             mint: getAddressFromResolvedInstructionAccount('mint', accounts.mint.value),
         });
     }
-    if (!accounts.tokenProgram.value) {
-        accounts.tokenProgram.value =
-            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
-    }
     if (!accounts.tokenAccount.value) {
         accounts.tokenAccount.value = await getProgramDerivedAddress({
             programAddress:
@@ -217,12 +214,14 @@ export async function getUpdateGuardInstructionAsync<
                 getAddressEncoder().encode(
                     getAddressFromResolvedInstructionAccount('guardAuthority', accounts.guardAuthority.value),
                 ),
-                getAddressEncoder().encode(
-                    getAddressFromResolvedInstructionAccount('tokenProgram', accounts.tokenProgram.value),
-                ),
+                getAddressEncoder().encode(address('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')),
                 getAddressEncoder().encode(getAddressFromResolvedInstructionAccount('mint', accounts.mint.value)),
             ],
         });
+    }
+    if (!accounts.tokenProgram.value) {
+        accounts.tokenProgram.value =
+            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
     }
     if (!accounts.systemProgram.value) {
         accounts.systemProgram.value =

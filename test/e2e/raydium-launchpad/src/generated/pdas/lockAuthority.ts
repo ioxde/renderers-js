@@ -12,7 +12,7 @@ export async function findLockAuthorityPda(
     config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
     const {
-        programAddress = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj' as Address<'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj'>,
+        programAddress = 'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE' as Address<'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE'>,
     } = config;
     return await getProgramDerivedAddress({
         programAddress,

@@ -5,32 +5,32 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/fragments': https://pkg.pr.new/ioxde/codama/@codama/fragments@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/node-types': https://pkg.pr.new/ioxde/codama/@codama/node-types@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/nodes-from-anchor': https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/renderers-core': https://pkg.pr.new/ioxde/codama/@codama/renderers-core@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/visitors': https://pkg.pr.new/ioxde/codama/@codama/visitors@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/visitors-core': https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1
-  '@codama/validators': https://pkg.pr.new/ioxde/codama/@codama/validators@963c0dbe9c2651348789fd8f583164d9b20619c1
+  '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/fragments': https://pkg.pr.new/ioxde/codama/@codama/fragments@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/node-types': https://pkg.pr.new/ioxde/codama/@codama/node-types@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/nodes-from-anchor': https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/renderers-core': https://pkg.pr.new/ioxde/codama/@codama/renderers-core@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/visitors': https://pkg.pr.new/ioxde/codama/@codama/visitors@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/visitors-core': https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27
+  '@codama/validators': https://pkg.pr.new/ioxde/codama/@codama/validators@c8c4954ff716d41c81c9aad5d306470b83715b27
 
 importers:
 
   .:
     dependencies:
       '@codama/errors':
-        specifier: https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
-        version: https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
+        specifier: https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
+        version: https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
       '@codama/nodes':
-        specifier: https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1
-        version: https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1
+        specifier: https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27
+        version: https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27
       '@codama/renderers-core':
-        specifier: https://pkg.pr.new/ioxde/codama/@codama/renderers-core@963c0dbe9c2651348789fd8f583164d9b20619c1
-        version: https://pkg.pr.new/ioxde/codama/@codama/renderers-core@963c0dbe9c2651348789fd8f583164d9b20619c1
+        specifier: https://pkg.pr.new/ioxde/codama/@codama/renderers-core@c8c4954ff716d41c81c9aad5d306470b83715b27
+        version: https://pkg.pr.new/ioxde/codama/@codama/renderers-core@c8c4954ff716d41c81c9aad5d306470b83715b27
       '@codama/visitors-core':
-        specifier: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1
-        version: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1
+        specifier: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27
+        version: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27
       '@solana/codecs-strings':
         specifier: ^6.0.0
         version: 6.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
@@ -48,8 +48,8 @@ importers:
         specifier: ^2.29.7
         version: 2.29.7(@types/node@25.0.10)
       '@codama/nodes-from-anchor':
-        specifier: https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@963c0dbe9c2651348789fd8f583164d9b20619c1
-        version: https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@963c0dbe9c2651348789fd8f583164d9b20619c1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
+        specifier: https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@c8c4954ff716d41c81c9aad5d306470b83715b27
+        version: https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@c8c4954ff716d41c81c9aad5d306470b83715b27(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
       '@solana/eslint-config-solana':
         specifier: ^5.0.0
         version: 5.0.0(@eslint/js@9.35.0)(@types/eslint__js@8.42.3)(eslint-plugin-jest@29.0.1(@typescript-eslint/eslint-plugin@8.43.0(@typescript-eslint/parser@8.43.0(eslint@9.35.0)(typescript@5.9.2))(eslint@9.35.0)(typescript@5.9.2))(eslint@9.35.0)(jest@30.1.3(@types/node@25.0.10))(typescript@5.9.2))(eslint-plugin-react-hooks@5.2.0(eslint@9.35.0))(eslint-plugin-simple-import-sort@12.1.1(eslint@9.35.0))(eslint-plugin-sort-keys-fix@1.1.2)(eslint-plugin-typescript-sort-keys@3.3.0(@typescript-eslint/parser@8.43.0(eslint@9.35.0)(typescript@5.9.2))(eslint@9.35.0)(typescript@5.9.2))(eslint@9.35.0)(globals@14.0.0)(jest@30.1.3(@types/node@25.0.10))(typescript-eslint@8.43.0(eslint@9.35.0)(typescript@5.9.2))(typescript@5.9.2)
@@ -322,37 +322,37 @@ packages:
   '@changesets/write@0.4.0':
     resolution: {integrity: sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q==}
 
-  '@codama/errors@https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/errors@https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 1.7.0
     hasBin: true
 
-  '@codama/fragments@https://pkg.pr.new/ioxde/codama/@codama/fragments@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/fragments@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/fragments@https://pkg.pr.new/ioxde/codama/@codama/fragments@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/fragments@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 0.1.0
 
-  '@codama/node-types@https://pkg.pr.new/ioxde/codama/@codama/node-types@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/node-types@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/node-types@https://pkg.pr.new/ioxde/codama/@codama/node-types@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/node-types@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 1.7.0
 
-  '@codama/nodes-from-anchor@https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/nodes-from-anchor@https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 1.5.0
 
-  '@codama/nodes@https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/nodes@https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 1.7.0
 
-  '@codama/renderers-core@https://pkg.pr.new/ioxde/codama/@codama/renderers-core@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/renderers-core@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/renderers-core@https://pkg.pr.new/ioxde/codama/@codama/renderers-core@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/renderers-core@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 1.3.8
 
-  '@codama/visitors-core@https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/visitors-core@https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 1.7.0
 
-  '@codama/visitors@https://pkg.pr.new/ioxde/codama/@codama/visitors@963c0dbe9c2651348789fd8f583164d9b20619c1':
-    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/visitors@963c0dbe9c2651348789fd8f583164d9b20619c1}
+  '@codama/visitors@https://pkg.pr.new/ioxde/codama/@codama/visitors@c8c4954ff716d41c81c9aad5d306470b83715b27':
+    resolution: {tarball: https://pkg.pr.new/ioxde/codama/@codama/visitors@c8c4954ff716d41c81c9aad5d306470b83715b27}
     version: 1.7.0
 
   '@emnapi/core@1.5.0':
@@ -3375,52 +3375,52 @@ snapshots:
       human-id: 4.1.1
       prettier: 2.8.8
 
-  '@codama/errors@https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1':
+  '@codama/errors@https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27':
     dependencies:
-      '@codama/node-types': https://pkg.pr.new/ioxde/codama/@codama/node-types@963c0dbe9c2651348789fd8f583164d9b20619c1
+      '@codama/node-types': https://pkg.pr.new/ioxde/codama/@codama/node-types@c8c4954ff716d41c81c9aad5d306470b83715b27
       commander: 14.0.3
       picocolors: 1.1.1
 
-  '@codama/fragments@https://pkg.pr.new/ioxde/codama/@codama/fragments@963c0dbe9c2651348789fd8f583164d9b20619c1':
+  '@codama/fragments@https://pkg.pr.new/ioxde/codama/@codama/fragments@c8c4954ff716d41c81c9aad5d306470b83715b27':
     dependencies:
-      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
+      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
 
-  '@codama/node-types@https://pkg.pr.new/ioxde/codama/@codama/node-types@963c0dbe9c2651348789fd8f583164d9b20619c1': {}
+  '@codama/node-types@https://pkg.pr.new/ioxde/codama/@codama/node-types@c8c4954ff716d41c81c9aad5d306470b83715b27': {}
 
-  '@codama/nodes-from-anchor@https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@963c0dbe9c2651348789fd8f583164d9b20619c1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
+  '@codama/nodes-from-anchor@https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@c8c4954ff716d41c81c9aad5d306470b83715b27(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)':
     dependencies:
-      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/visitors': https://pkg.pr.new/ioxde/codama/@codama/visitors@963c0dbe9c2651348789fd8f583164d9b20619c1
+      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/visitors': https://pkg.pr.new/ioxde/codama/@codama/visitors@c8c4954ff716d41c81c9aad5d306470b83715b27
       '@noble/hashes': 2.0.1
       '@solana/codecs': 5.4.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
       - typescript
 
-  '@codama/nodes@https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1':
+  '@codama/nodes@https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27':
     dependencies:
-      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/node-types': https://pkg.pr.new/ioxde/codama/@codama/node-types@963c0dbe9c2651348789fd8f583164d9b20619c1
+      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/node-types': https://pkg.pr.new/ioxde/codama/@codama/node-types@c8c4954ff716d41c81c9aad5d306470b83715b27
 
-  '@codama/renderers-core@https://pkg.pr.new/ioxde/codama/@codama/renderers-core@963c0dbe9c2651348789fd8f583164d9b20619c1':
+  '@codama/renderers-core@https://pkg.pr.new/ioxde/codama/@codama/renderers-core@c8c4954ff716d41c81c9aad5d306470b83715b27':
     dependencies:
-      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/fragments': https://pkg.pr.new/ioxde/codama/@codama/fragments@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/visitors-core': https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1
+      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/fragments': https://pkg.pr.new/ioxde/codama/@codama/fragments@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/visitors-core': https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27
 
-  '@codama/visitors-core@https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1':
+  '@codama/visitors-core@https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27':
     dependencies:
-      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1
+      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27
       json-stable-stringify: 1.3.0
 
-  '@codama/visitors@https://pkg.pr.new/ioxde/codama/@codama/visitors@963c0dbe9c2651348789fd8f583164d9b20619c1':
+  '@codama/visitors@https://pkg.pr.new/ioxde/codama/@codama/visitors@c8c4954ff716d41c81c9aad5d306470b83715b27':
     dependencies:
-      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@963c0dbe9c2651348789fd8f583164d9b20619c1
-      '@codama/visitors-core': https://pkg.pr.new/ioxde/codama/@codama/visitors-core@963c0dbe9c2651348789fd8f583164d9b20619c1
+      '@codama/errors': https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/nodes': https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27
+      '@codama/visitors-core': https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27
 
   '@emnapi/core@1.5.0':
     dependencies:

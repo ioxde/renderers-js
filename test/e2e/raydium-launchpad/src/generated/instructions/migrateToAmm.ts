@@ -457,10 +457,7 @@ export async function getMigrateToAmmInstructionAsync<
     }
     if (!accounts.ammPool.value) {
         accounts.ammPool.value = await findAmmPoolPda(
-            {
-                ammProgram: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value),
-                market: getAddressFromResolvedInstructionAccount('market', accounts.market.value),
-            },
+            { market: getAddressFromResolvedInstructionAccount('market', accounts.market.value) },
             { programAddress: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value) },
         );
     }
@@ -471,46 +468,31 @@ export async function getMigrateToAmmInstructionAsync<
     }
     if (!accounts.ammOpenOrders.value) {
         accounts.ammOpenOrders.value = await findAmmOpenOrdersPda(
-            {
-                ammProgram: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value),
-                market: getAddressFromResolvedInstructionAccount('market', accounts.market.value),
-            },
+            { market: getAddressFromResolvedInstructionAccount('market', accounts.market.value) },
             { programAddress: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value) },
         );
     }
     if (!accounts.ammLpMint.value) {
         accounts.ammLpMint.value = await findAmmLpMintPda(
-            {
-                ammProgram: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value),
-                market: getAddressFromResolvedInstructionAccount('market', accounts.market.value),
-            },
+            { market: getAddressFromResolvedInstructionAccount('market', accounts.market.value) },
             { programAddress: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value) },
         );
     }
     if (!accounts.ammBaseVault.value) {
         accounts.ammBaseVault.value = await findAmmBaseVaultPda(
-            {
-                ammProgram: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value),
-                market: getAddressFromResolvedInstructionAccount('market', accounts.market.value),
-            },
+            { market: getAddressFromResolvedInstructionAccount('market', accounts.market.value) },
             { programAddress: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value) },
         );
     }
     if (!accounts.ammQuoteVault.value) {
         accounts.ammQuoteVault.value = await findAmmQuoteVaultPda(
-            {
-                ammProgram: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value),
-                market: getAddressFromResolvedInstructionAccount('market', accounts.market.value),
-            },
+            { market: getAddressFromResolvedInstructionAccount('market', accounts.market.value) },
             { programAddress: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value) },
         );
     }
     if (!accounts.ammTargetOrders.value) {
         accounts.ammTargetOrders.value = await findAmmTargetOrdersPda(
-            {
-                ammProgram: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value),
-                market: getAddressFromResolvedInstructionAccount('market', accounts.market.value),
-            },
+            { market: getAddressFromResolvedInstructionAccount('market', accounts.market.value) },
             { programAddress: getAddressFromResolvedInstructionAccount('ammProgram', accounts.ammProgram.value) },
         );
     }

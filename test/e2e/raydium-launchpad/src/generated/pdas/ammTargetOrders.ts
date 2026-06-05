@@ -7,6 +7,7 @@
  */
 
 import {
+    address,
     getAddressEncoder,
     getBytesEncoder,
     getProgramDerivedAddress,
@@ -15,7 +16,6 @@ import {
 } from '@solana/kit';
 
 export type AmmTargetOrdersSeeds = {
-    ammProgram: Address;
     market: Address;
 };
 
@@ -24,12 +24,12 @@ export async function findAmmTargetOrdersPda(
     config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
     const {
-        programAddress = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj' as Address<'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj'>,
+        programAddress = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>,
     } = config;
     return await getProgramDerivedAddress({
         programAddress,
         seeds: [
-            getAddressEncoder().encode(seeds.ammProgram),
+            getAddressEncoder().encode(address('675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8')),
             getAddressEncoder().encode(seeds.market),
             getBytesEncoder().encode(
                 new Uint8Array([

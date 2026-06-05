@@ -12,7 +12,7 @@ export async function findAmmConfigPda(
     config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
     const {
-        programAddress = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj' as Address<'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj'>,
+        programAddress = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>,
     } = config;
     return await getProgramDerivedAddress({
         programAddress,

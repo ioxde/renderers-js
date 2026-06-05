@@ -9,6 +9,7 @@
 import {
     addDecoderSizePrefix,
     addEncoderSizePrefix,
+    address,
     combineCodec,
     fixDecoderSize,
     fixEncoderSize,
@@ -252,10 +253,6 @@ export async function getCreateGuardInstructionAsync<
             mint: getAddressFromResolvedInstructionAccount('mint', accounts.mint.value),
         });
     }
-    if (!accounts.tokenProgram.value) {
-        accounts.tokenProgram.value =
-            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
-    }
     if (!accounts.mintTokenAccount.value) {
         accounts.mintTokenAccount.value = await getProgramDerivedAddress({
             programAddress:
@@ -264,9 +261,7 @@ export async function getCreateGuardInstructionAsync<
                 getAddressEncoder().encode(
                     getAddressFromResolvedInstructionAccount('guardAuthority', accounts.guardAuthority.value),
                 ),
-                getAddressEncoder().encode(
-                    getAddressFromResolvedInstructionAccount('tokenProgram', accounts.tokenProgram.value),
-                ),
+                getAddressEncoder().encode(address('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')),
                 getAddressEncoder().encode(getAddressFromResolvedInstructionAccount('mint', accounts.mint.value)),
             ],
         });
@@ -274,6 +269,10 @@ export async function getCreateGuardInstructionAsync<
     if (!accounts.associatedTokenProgram.value) {
         accounts.associatedTokenProgram.value =
             'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>;
+    }
+    if (!accounts.tokenProgram.value) {
+        accounts.tokenProgram.value =
+            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
     }
     if (!accounts.systemProgram.value) {
         accounts.systemProgram.value =
@@ -386,13 +385,13 @@ export function getCreateGuardInstruction<
     const args = { ...input };
 
     // Resolve default values.
-    if (!accounts.tokenProgram.value) {
-        accounts.tokenProgram.value =
-            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
-    }
     if (!accounts.associatedTokenProgram.value) {
         accounts.associatedTokenProgram.value =
             'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>;
+    }
+    if (!accounts.tokenProgram.value) {
+        accounts.tokenProgram.value =
+            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
     }
     if (!accounts.systemProgram.value) {
         accounts.systemProgram.value =

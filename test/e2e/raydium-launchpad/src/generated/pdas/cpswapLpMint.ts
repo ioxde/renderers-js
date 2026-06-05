@@ -23,7 +23,7 @@ export async function findCpswapLpMintPda(
     config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
     const {
-        programAddress = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj' as Address<'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj'>,
+        programAddress = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
     } = config;
     return await getProgramDerivedAddress({
         programAddress,
