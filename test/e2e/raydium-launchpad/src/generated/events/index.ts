@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './anchorEventCpiDiscriminator.js';
 export * from './claimVestedEvent.js';
 export * from './createVestingEvent.js';
 export * from './poolCreateEvent.js';

@@ -36,28 +36,39 @@ export function getDiscriminatorConditionFragment(
         dataName: string;
         discriminators: DiscriminatorNode[];
         ifTrue: string;
+        /** Conditions ANDed in ahead of the discriminator checks (e.g. a shared event-framing prefix). */
+        leadingConditions?: Fragment[];
         prefix: string;
         struct: StructTypeNode;
     },
 ): Fragment {
     return pipe(
-        mergeFragments(
-            scope.discriminators.flatMap(discriminator => {
-                if (isNode(discriminator, 'sizeDiscriminatorNode')) {
-                    return [getSizeConditionFragment(discriminator, scope)];
-                }
-                if (isNode(discriminator, 'constantDiscriminatorNode')) {
-                    return [getByteConditionFragment(discriminator, scope)];
-                }
-                if (isNode(discriminator, 'fieldDiscriminatorNode')) {
-                    return [getFieldConditionFragment(discriminator, scope)];
-                }
-                return [];
-            }),
-            c => c.join(' && '),
-        ),
+        mergeFragments([...(scope.leadingConditions ?? []), ...getDiscriminatorConditions(scope)], c => c.join(' && ')),
         f => mapFragmentContent(f, c => `if (${c}) { ${scope.ifTrue} }`),
     );
+}
+
+function getDiscriminatorConditions(
+    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
+        constantSource: ConstantSource;
+        dataName: string;
+        discriminators: DiscriminatorNode[];
+        prefix: string;
+        struct: StructTypeNode;
+    },
+): Fragment[] {
+    return scope.discriminators.flatMap(discriminator => {
+        if (isNode(discriminator, 'sizeDiscriminatorNode')) {
+            return [getSizeConditionFragment(discriminator, scope)];
+        }
+        if (isNode(discriminator, 'constantDiscriminatorNode')) {
+            return [getByteConditionFragment(discriminator, scope)];
+        }
+        if (isNode(discriminator, 'fieldDiscriminatorNode')) {
+            return [getFieldConditionFragment(discriminator, scope)];
+        }
+        return [];
+    });
 }
 
 function getSizeConditionFragment(

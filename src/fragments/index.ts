@@ -7,6 +7,7 @@ export * from './discriminatorCondition';
 export * from './discriminatorConstants';
 export * from './errorPage';
 export * from './eventDecode';
+export * from './eventFraming';
 export * from './eventPage';
 export * from './indexPage';
 export * from './instructionAccountMeta';

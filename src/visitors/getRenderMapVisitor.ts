@@ -13,6 +13,7 @@ import {
 import { createRenderMap, mergeRenderMaps, RenderMap } from '@codama/renderers-core';
 import {
     extendVisitor,
+    findProgramNodeFromPath,
     getByteSizeVisitor,
     getResolvedInstructionInputsVisitor,
     LinkableDictionary,
@@ -28,10 +29,13 @@ import {
 import {
     getAccountPageFragment,
     getErrorPageFragment,
+    getEventFramingFileName,
+    getEventFramingPageFragment,
     getEventPageFragment,
     getIndexPageFragment,
     getInstructionPageFragment,
     getPdaPageFragment,
+    getProgramEventFraming,
     getProgramPageFragment,
     getRootIndexPageFragment,
     getTypePageFragment,
@@ -131,12 +135,14 @@ export function getRenderMapVisitor(
                 visitEvent(node) {
                     const innerType = resolveNestedTypeNode(node.data);
                     const syntheticType = definedTypeNode({ docs: node.docs, name: node.name, type: innerType });
+                    const programNode = findProgramNodeFromPath(stack.getPath('eventNode'));
                     return createRenderMap(
                         `events/${camelCase(node.name)}.ts`,
                         asPage(
                             getEventPageFragment({
                                 ...renderScope,
                                 eventNode: node,
+                                programEventFraming: programNode ? getProgramEventFraming(programNode) : undefined,
                                 size: visit(syntheticType, byteSizeVisitor),
                             }),
                             { generatedEvents: '.' },
@@ -172,8 +178,19 @@ export function getRenderMapVisitor(
                     ];
                     const scope = { ...renderScope, programNode: node };
 
+                    // Hoist the shared event-framing constant (e.g. Anchor's CPI event tag) to its own page.
+                    const programEventFraming = getProgramEventFraming(node);
+                    const eventFramingPage = programEventFraming
+                        ? {
+                              [`events/${getEventFramingFileName(programEventFraming.framing)}.ts`]: asPage(
+                                  getEventFramingPageFragment({ ...renderScope, programEventFraming }),
+                              ),
+                          }
+                        : {};
+
                     return mergeRenderMaps([
                         createRenderMap({
+                            ...eventFramingPage,
                             [`programs/${camelCase(node.name)}.ts`]: asPage(getProgramPageFragment(scope)),
                             [`errors/${camelCase(node.name)}.ts`]:
                                 node.errors.length > 0 ? asPage(getErrorPageFragment(scope)) : undefined,
@@ -201,6 +218,14 @@ export function getRenderMapVisitor(
                     const definedTypesToExport = getAllDefinedTypes(node).filter(isNotInternal);
                     // program.events may be undefined when no events exist.
                     const eventsToExport = getAllEvents(node).filter(Boolean).filter(isNotInternal);
+                    // Framing-constant pages must also be re-exported from the events barrel.
+                    const eventFramingFileNames = new Set(
+                        getAllPrograms(node)
+                            .map(getProgramEventFraming)
+                            .filter(framing => framing !== undefined)
+                            .map(framing => getEventFramingFileName(framing.framing)),
+                    );
+                    const eventsIndexItems = [...eventsToExport, ...[...eventFramingFileNames].map(name => ({ name }))];
 
                     const scope = {
                         ...renderScope,
@@ -216,7 +241,7 @@ export function getRenderMapVisitor(
                         createRenderMap({
                             ['accounts/index.ts']: asPage(getIndexPageFragment(accountsToExport)),
                             ['errors/index.ts']: asPage(getIndexPageFragment(programsWithErrorsToExport)),
-                            ['events/index.ts']: asPage(getIndexPageFragment(eventsToExport)),
+                            ['events/index.ts']: asPage(getIndexPageFragment(eventsIndexItems)),
                             ['index.ts']: asPage(getRootIndexPageFragment(scope)),
                             ['instructions/index.ts']: asPage(getIndexPageFragment(instructionsToExport)),
                             ['pdas/index.ts']: asPage(getIndexPageFragment(pdasToExport)),

@@ -24,19 +24,14 @@ import {
     type MintParams,
     type VestingParams,
 } from '../types/index.js';
+import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.js';
 
-export const POOL_CREATE_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([228, 69, 165, 46, 81, 203, 154, 29]);
-
-export function getPoolCreateEventDiscriminatorBytes(): ReadonlyUint8Array {
-    return fixEncoderSize(getBytesEncoder(), 8).encode(POOL_CREATE_EVENT_DISCRIMINATOR);
-}
-
-export const POOL_CREATE_EVENT_DISCRIMINATOR2: ReadonlyUint8Array = new Uint8Array([
+export const POOL_CREATE_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
     151, 215, 226, 9, 118, 161, 115, 174,
 ]);
 
-export function getPoolCreateEventDiscriminator2Bytes(): ReadonlyUint8Array {
-    return fixEncoderSize(getBytesEncoder(), 8).encode(POOL_CREATE_EVENT_DISCRIMINATOR2);
+export function getPoolCreateEventDiscriminatorBytes(): ReadonlyUint8Array {
+    return fixEncoderSize(getBytesEncoder(), 8).encode(POOL_CREATE_EVENT_DISCRIMINATOR);
 }
 
 export type PoolCreateEvent = {
@@ -60,11 +55,14 @@ export function getPoolCreateEventDecoder(): Decoder<PoolCreateEvent> {
 }
 
 export function decodePoolCreateEvent(data: ReadonlyUint8Array): PoolCreateEvent {
-    if (!containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 0)) {
+    if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
         throw new Error('Invalid event discriminator for poolCreateEvent');
     }
-    if (!containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR2, 8)) {
+    if (!containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 8)) {
         throw new Error('Invalid event discriminator for poolCreateEvent');
     }
-    return getPoolCreateEventDecoder().decode(data, 16);
+    return getPoolCreateEventDecoder().decode(
+        data,
+        ANCHOR_EVENT_CPI_DISCRIMINATOR.length + POOL_CREATE_EVENT_DISCRIMINATOR.length,
+    );
 }

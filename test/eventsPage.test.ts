@@ -2,6 +2,7 @@ import {
     bytesTypeNode,
     bytesValueNode,
     camelCase,
+    CamelCaseString,
     constantDiscriminatorNode,
     constantValueNode,
     eventNode,
@@ -426,4 +427,111 @@ test('it renders decode function with multiple hidden prefixes using summed offs
         'export function decodeMultiPrefixEvent',
         /getMultiPrefixEventDecoder\(\)\.decode\(\s*data,\s*12\s*\)/s,
     ]);
+});
+
+// Shared fixtures for the CPI-framed event tests below.
+const cpiFraming = { kind: 'anchorEventCpi', sharedConstantName: 'eventCpiPrefix' as CamelCaseString };
+const framingPrefix = constantValueNode(
+    fixedSizeTypeNode(bytesTypeNode(), 8),
+    bytesValueNode('base16', 'aabbccdd11223344'),
+);
+const tradeDisc = constantValueNode(
+    fixedSizeTypeNode(bytesTypeNode(), 8),
+    bytesValueNode('base16', '1122334455667788'),
+);
+const settleDisc = constantValueNode(
+    fixedSizeTypeNode(bytesTypeNode(), 8),
+    bytesValueNode('base16', '99aabbccddeeff00'),
+);
+
+function framedEvent(name: string, eventDisc: ReturnType<typeof constantValueNode>) {
+    return eventNode({
+        data: hiddenPrefixTypeNode(
+            structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+            [framingPrefix, eventDisc],
+        ),
+        discriminators: [constantDiscriminatorNode(framingPrefix, 0), constantDiscriminatorNode(eventDisc, 8)],
+        framing: cpiFraming,
+        name,
+    });
+}
+
+test('it hoists the shared framing constant to a dedicated events page', async () => {
+    const node = rootNode(
+        programNode({
+            events: [framedEvent('tradeEvent', tradeDisc), framedEvent('settleEvent', settleDisc)],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/eventCpiPrefix.ts', [
+        'export const EVENT_CPI_PREFIX',
+        /new Uint8Array\(\[\s*170,\s*187,\s*204,\s*221,\s*17,\s*34,\s*51,\s*68,?\s*\]\)/,
+        'export function getEventCpiPrefixBytes()',
+    ]);
+    await renderMapContains(renderMap, 'events/index.ts', ["export * from './eventCpiPrefix.js'"]);
+});
+
+test('it renders per-event discriminator constants with IDL bytes, not framing bytes', async () => {
+    const node = programNode({
+        events: [framedEvent('tradeEvent', tradeDisc)],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/tradeEvent.ts', [
+        'export const TRADE_EVENT_DISCRIMINATOR',
+        /new Uint8Array\(\[\s*17,\s*34,\s*51,\s*68,\s*85,\s*102,\s*119,\s*136,?\s*\]\)/,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/tradeEvent.ts', [
+        'TRADE_EVENT_DISCRIMINATOR2',
+        /170,\s*187,\s*204,\s*221/,
+        'export const EVENT_CPI_PREFIX',
+    ]);
+});
+
+test('it generates decode that validates both the framing prefix and the event discriminator', async () => {
+    const node = programNode({
+        events: [framedEvent('tradeEvent', tradeDisc)],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/tradeEvent.ts', [
+        'export function decodeTradeEvent',
+        'containsBytes(data, EVENT_CPI_PREFIX, 0)',
+        'containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)',
+        /decode\(\s*data,\s*EVENT_CPI_PREFIX\.length \+ TRADE_EVENT_DISCRIMINATOR\.length,?\s*\)/s,
+    ]);
+    await renderMapContainsImports(renderMap, 'events/tradeEvent.ts', {
+        './eventCpiPrefix.js': ['EVENT_CPI_PREFIX'],
+    });
+});
+
+test('it references the hoisted framing constant in program identify and parse helpers', async () => {
+    const node = programNode({
+        events: [framedEvent('tradeEvent', tradeDisc), framedEvent('settleEvent', settleDisc)],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'programs/myProgram.ts', [
+        'export function identifyMyProgramEvent',
+        'containsBytes(data, EVENT_CPI_PREFIX, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)',
+        'containsBytes(data, EVENT_CPI_PREFIX, 0) && containsBytes(data, SETTLE_EVENT_DISCRIMINATOR, 8)',
+        'EVENT_CPI_PREFIX.length + TRADE_EVENT_DISCRIMINATOR.length',
+        'EVENT_CPI_PREFIX.length + SETTLE_EVENT_DISCRIMINATOR.length',
+    ]);
+    await renderMapContainsImports(renderMap, 'programs/myProgram.ts', {
+        '../events/index.js': ['EVENT_CPI_PREFIX'],
+    });
 });

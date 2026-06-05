@@ -50,18 +50,15 @@ import {
     VESTING_RECORD_DISCRIMINATOR,
 } from '../accounts/index.js';
 import {
+    ANCHOR_EVENT_CPI_DISCRIMINATOR,
     CLAIM_VESTED_EVENT_DISCRIMINATOR,
-    CLAIM_VESTED_EVENT_DISCRIMINATOR2,
     CREATE_VESTING_EVENT_DISCRIMINATOR,
-    CREATE_VESTING_EVENT_DISCRIMINATOR2,
     getClaimVestedEventDecoder,
     getCreateVestingEventDecoder,
     getPoolCreateEventDecoder,
     getTradeEventDecoder,
     POOL_CREATE_EVENT_DISCRIMINATOR,
-    POOL_CREATE_EVENT_DISCRIMINATOR2,
     TRADE_EVENT_DISCRIMINATOR,
-    TRADE_EVENT_DISCRIMINATOR2,
     type ClaimVestedEvent,
     type CreateVestingEvent,
     type PoolCreateEvent,
@@ -218,24 +215,24 @@ export function identifyRaydiumLaunchpadEvent(
 ): RaydiumLaunchpadEvent {
     const data = 'data' in event ? event.data : event;
     if (
-        containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 0) &&
-        containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR2, 8)
+        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
+        containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)
     ) {
         return RaydiumLaunchpadEvent.ClaimVestedEvent;
     }
     if (
-        containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 0) &&
-        containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR2, 8)
+        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
+        containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)
     ) {
         return RaydiumLaunchpadEvent.CreateVestingEvent;
     }
     if (
-        containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 0) &&
-        containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR2, 8)
+        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
+        containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 8)
     ) {
         return RaydiumLaunchpadEvent.PoolCreateEvent;
     }
-    if (containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR2, 8)) {
+    if (containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)) {
         return RaydiumLaunchpadEvent.TradeEvent;
     }
     // TODO: Use SolanaError once event-specific error codes are added to @solana/errors.
@@ -257,23 +254,38 @@ export function parseRaydiumLaunchpadEvent(
         case RaydiumLaunchpadEvent.ClaimVestedEvent: {
             return {
                 eventType: RaydiumLaunchpadEvent.ClaimVestedEvent,
-                ...getClaimVestedEventDecoder().decode(data, 16),
+                ...getClaimVestedEventDecoder().decode(
+                    data,
+                    ANCHOR_EVENT_CPI_DISCRIMINATOR.length + CLAIM_VESTED_EVENT_DISCRIMINATOR.length,
+                ),
             };
         }
         case RaydiumLaunchpadEvent.CreateVestingEvent: {
             return {
                 eventType: RaydiumLaunchpadEvent.CreateVestingEvent,
-                ...getCreateVestingEventDecoder().decode(data, 16),
+                ...getCreateVestingEventDecoder().decode(
+                    data,
+                    ANCHOR_EVENT_CPI_DISCRIMINATOR.length + CREATE_VESTING_EVENT_DISCRIMINATOR.length,
+                ),
             };
         }
         case RaydiumLaunchpadEvent.PoolCreateEvent: {
             return {
                 eventType: RaydiumLaunchpadEvent.PoolCreateEvent,
-                ...getPoolCreateEventDecoder().decode(data, 16),
+                ...getPoolCreateEventDecoder().decode(
+                    data,
+                    ANCHOR_EVENT_CPI_DISCRIMINATOR.length + POOL_CREATE_EVENT_DISCRIMINATOR.length,
+                ),
             };
         }
         case RaydiumLaunchpadEvent.TradeEvent: {
-            return { eventType: RaydiumLaunchpadEvent.TradeEvent, ...getTradeEventDecoder().decode(data, 16) };
+            return {
+                eventType: RaydiumLaunchpadEvent.TradeEvent,
+                ...getTradeEventDecoder().decode(
+                    data,
+                    ANCHOR_EVENT_CPI_DISCRIMINATOR.length + TRADE_EVENT_DISCRIMINATOR.length,
+                ),
+            };
         }
         // TODO: Use SolanaError once event-specific error codes are added to @solana/errors.
         default:

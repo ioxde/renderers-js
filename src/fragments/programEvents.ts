@@ -10,6 +10,7 @@ import {
 
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConditionFragment } from './discriminatorCondition';
+import { getProgramEventFraming, isEventCpiFramed, ResolvedProgramEventFraming } from './eventFraming';
 
 export function getProgramEventsFragment(
     scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
@@ -18,15 +19,23 @@ export function getProgramEventsFragment(
 ): Fragment | undefined {
     const events = (scope.programNode.events ?? []).filter(event => (event.discriminators ?? []).length > 0);
     if (events.length === 0) return;
+    const programEventFraming = getProgramEventFraming(scope.programNode);
     return mergeFragments(
         [
             getProgramEventsEnumFragment({ ...scope, events }),
-            getProgramEventsIdentifierFunctionFragment({ ...scope, events }),
+            getProgramEventsIdentifierFunctionFragment({ ...scope, events, programEventFraming }),
             getProgramEventsParsedUnionTypeFragment({ ...scope, events }),
-            getProgramEventsParseFunctionFragment({ ...scope, events }),
+            getProgramEventsParseFunctionFragment({ ...scope, events, programEventFraming }),
         ],
         c => c.join('\n\n'),
     );
+}
+
+function getEventFramingConstantFragment(
+    programEventFraming: ResolvedProgramEventFraming,
+    nameApi: RenderScope['nameApi'],
+): Fragment {
+    return use(nameApi.constant(camelCase(programEventFraming.framing.sharedConstantName)), 'generatedEvents');
 }
 
 function getProgramEventsEnumFragment(
@@ -44,10 +53,11 @@ function getProgramEventsEnumFragment(
 function getProgramEventsIdentifierFunctionFragment(
     scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
         events: EventNode[];
+        programEventFraming: ResolvedProgramEventFraming | undefined;
         programNode: ProgramNode;
     },
 ): Fragment {
-    const { programNode, nameApi, events } = scope;
+    const { programNode, nameApi, events, programEventFraming } = scope;
 
     const programEventsEnum = nameApi.programEventsEnum(programNode.name);
     const programEventsIdentifierFunction = nameApi.programEventsIdentifierFunction(programNode.name);
@@ -57,12 +67,21 @@ function getProgramEventsIdentifierFunctionFragment(
             const variant = nameApi.programEventsEnumVariant(event.name);
             const resolved = resolveNestedTypeNode(event.data);
             const struct: StructTypeNode = isNode(resolved, 'structTypeNode') ? resolved : structTypeNode([]);
+            const isCpiFramed = isEventCpiFramed(event, programEventFraming);
+            const allDiscriminators = event.discriminators ?? [];
+            // Check the shared framing constant first, then the per-event discriminators.
+            const leadingConditions = isCpiFramed
+                ? [
+                      fragment`${use('containsBytes', 'solanaCodecsCore')}(data, ${getEventFramingConstantFragment(programEventFraming!, nameApi)}, 0)`,
+                  ]
+                : [];
             return getDiscriminatorConditionFragment({
                 ...scope,
                 constantSource: 'generatedEvents',
                 dataName: 'data',
-                discriminators: event.discriminators ?? [],
+                discriminators: isCpiFramed ? allDiscriminators.slice(1) : allDiscriminators,
                 ifTrue: `return ${programEventsEnum}.${variant};`,
+                leadingConditions,
                 prefix: event.name,
                 struct,
             });
@@ -104,10 +123,11 @@ function getProgramEventsParsedUnionTypeFragment(
 function getProgramEventsParseFunctionFragment(
     scope: Pick<RenderScope, 'nameApi'> & {
         events: EventNode[];
+        programEventFraming: ResolvedProgramEventFraming | undefined;
         programNode: ProgramNode;
     },
 ): Fragment {
-    const { programNode, nameApi, events } = scope;
+    const { programNode, nameApi, events, programEventFraming } = scope;
 
     const programEventsEnum = nameApi.programEventsEnum(programNode.name);
     const programEventsIdentifierFunction = nameApi.programEventsIdentifierFunction(programNode.name);
@@ -118,7 +138,7 @@ function getProgramEventsParseFunctionFragment(
         events.map((event): Fragment => {
             const enumVariant = nameApi.programEventsEnumVariant(event.name);
             const decoderFn = use(nameApi.decoderFunction(event.name), 'generatedEvents');
-            const skipExpr = getHiddenPrefixSkipExpr(event, nameApi);
+            const skipExpr = getHiddenPrefixSkipExpr(event, nameApi, programEventFraming);
 
             if (skipExpr) {
                 return fragment`case ${programEventsEnum}.${enumVariant}: { return { eventType: ${programEventsEnum}.${enumVariant}, ...${decoderFn}().decode(data, ${skipExpr}) }; }`;
@@ -141,10 +161,32 @@ function getProgramEventsParseFunctionFragment(
 }`;
 }
 
-function getHiddenPrefixSkipExpr(event: EventNode, nameApi: RenderScope['nameApi']): Fragment | null {
-    const hasConstantDiscriminator = (event.discriminators ?? []).some(d => isNode(d, 'constantDiscriminatorNode'));
-    if (!hasConstantDiscriminator || !isNode(event.data, 'hiddenPrefixTypeNode')) {
+function getHiddenPrefixSkipExpr(
+    event: EventNode,
+    nameApi: RenderScope['nameApi'],
+    programEventFraming: ResolvedProgramEventFraming | undefined,
+): Fragment | null {
+    const isCpiFramed = isEventCpiFramed(event, programEventFraming);
+    const allDiscriminators = event.discriminators ?? [];
+    const discriminators = isCpiFramed ? allDiscriminators.slice(1) : allDiscriminators;
+    const hasConstantDiscriminator = discriminators.some(d => isNode(d, 'constantDiscriminatorNode'));
+    if ((!hasConstantDiscriminator && !isCpiFramed) || !isNode(event.data, 'hiddenPrefixTypeNode')) {
         return null;
+    }
+    if (isCpiFramed) {
+        // Skip past the shared framing constant and every per-event constant discriminator.
+        const framingConstant = getEventFramingConstantFragment(programEventFraming!, nameApi);
+        const constantParts = discriminators
+            .filter(d => isNode(d, 'constantDiscriminatorNode'))
+            .map((_, index) => {
+                const suffix = index <= 0 ? '' : `_${index + 1}`;
+                const constant = use(
+                    nameApi.constant(camelCase(`${event.name}_discriminator${suffix}`)),
+                    'generatedEvents',
+                );
+                return fragment`${constant}.length`;
+            });
+        return mergeFragments([fragment`${framingConstant}.length`, ...constantParts], c => c.join(' + '));
     }
     const prefixes = event.data.prefix;
     if (prefixes.length === 1) {

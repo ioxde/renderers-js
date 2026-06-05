@@ -23,17 +23,12 @@ import {
     type PoolStatus,
     type TradeDirection,
 } from '../types/index.js';
+import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.js';
 
-export const TRADE_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([228, 69, 165, 46, 81, 203, 154, 29]);
+export const TRADE_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([189, 219, 127, 211, 78, 230, 97, 238]);
 
 export function getTradeEventDiscriminatorBytes(): ReadonlyUint8Array {
     return fixEncoderSize(getBytesEncoder(), 8).encode(TRADE_EVENT_DISCRIMINATOR);
-}
-
-export const TRADE_EVENT_DISCRIMINATOR2: ReadonlyUint8Array = new Uint8Array([189, 219, 127, 211, 78, 230, 97, 238]);
-
-export function getTradeEventDiscriminator2Bytes(): ReadonlyUint8Array {
-    return fixEncoderSize(getBytesEncoder(), 8).encode(TRADE_EVENT_DISCRIMINATOR2);
 }
 
 export type TradeEvent = {
@@ -75,11 +70,14 @@ export function getTradeEventDecoder(): FixedSizeDecoder<TradeEvent> {
 }
 
 export function decodeTradeEvent(data: ReadonlyUint8Array): TradeEvent {
-    if (!containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 0)) {
+    if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
         throw new Error('Invalid event discriminator for tradeEvent');
     }
-    if (!containsBytes(data, TRADE_EVENT_DISCRIMINATOR2, 8)) {
+    if (!containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)) {
         throw new Error('Invalid event discriminator for tradeEvent');
     }
-    return getTradeEventDecoder().decode(data, 16);
+    return getTradeEventDecoder().decode(
+        data,
+        ANCHOR_EVENT_CPI_DISCRIMINATOR.length + TRADE_EVENT_DISCRIMINATOR.length,
+    );
 }

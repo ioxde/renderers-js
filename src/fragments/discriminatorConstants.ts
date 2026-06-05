@@ -1,6 +1,7 @@
 import {
     camelCase,
     ConstantDiscriminatorNode,
+    ConstantValueNode,
     DiscriminatorNode,
     FieldDiscriminatorNode,
     InstructionArgumentNode,
@@ -69,14 +70,22 @@ export function getConstantDiscriminatorConstantFragment(
         prefix: string;
     },
 ): Fragment | null {
-    const { discriminatorNodes, typeManifestVisitor, prefix } = scope;
+    const name = getDiscriminatorConstantName(scope.prefix, discriminatorNode, scope.discriminatorNodes);
+    return getConstantValueConstantFragment(name, discriminatorNode.constant, scope);
+}
 
-    const name = getDiscriminatorConstantName(prefix, discriminatorNode, discriminatorNodes);
-    const typeManifest = visit(discriminatorNode.constant.type, typeManifestVisitor);
+/** Renders an exported constant (and its `get*Bytes` helper) for an arbitrary `ConstantValueNode`. */
+export function getConstantValueConstantFragment(
+    name: string,
+    constant: ConstantValueNode,
+    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'>,
+): Fragment {
+    const { typeManifestVisitor } = scope;
+    const typeManifest = visit(constant.type, typeManifestVisitor);
     const encoder = typeManifest.encoder;
     const { value, valueType } = resolveDiscriminatorValue(
-        visit(discriminatorNode.constant.value, typeManifestVisitor).value,
-        isNode(discriminatorNode.constant.value, 'numberValueNode'),
+        visit(constant.value, typeManifestVisitor).value,
+        isNode(constant.value, 'numberValueNode'),
         typeManifest.strictType,
     );
     return getConstantFragment({ ...scope, encoder, name, value, valueType });

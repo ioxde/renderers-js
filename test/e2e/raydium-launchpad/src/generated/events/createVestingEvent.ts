@@ -17,21 +17,14 @@ import {
     type FixedSizeDecoder,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.js';
 
 export const CREATE_VESTING_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
-    228, 69, 165, 46, 81, 203, 154, 29,
+    150, 152, 11, 179, 52, 210, 191, 125,
 ]);
 
 export function getCreateVestingEventDiscriminatorBytes(): ReadonlyUint8Array {
     return fixEncoderSize(getBytesEncoder(), 8).encode(CREATE_VESTING_EVENT_DISCRIMINATOR);
-}
-
-export const CREATE_VESTING_EVENT_DISCRIMINATOR2: ReadonlyUint8Array = new Uint8Array([
-    150, 152, 11, 179, 52, 210, 191, 125,
-]);
-
-export function getCreateVestingEventDiscriminator2Bytes(): ReadonlyUint8Array {
-    return fixEncoderSize(getBytesEncoder(), 8).encode(CREATE_VESTING_EVENT_DISCRIMINATOR2);
 }
 
 export type CreateVestingEvent = { poolState: Address; beneficiary: Address; shareAmount: bigint };
@@ -45,11 +38,14 @@ export function getCreateVestingEventDecoder(): FixedSizeDecoder<CreateVestingEv
 }
 
 export function decodeCreateVestingEvent(data: ReadonlyUint8Array): CreateVestingEvent {
-    if (!containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 0)) {
+    if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
         throw new Error('Invalid event discriminator for createVestingEvent');
     }
-    if (!containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR2, 8)) {
+    if (!containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)) {
         throw new Error('Invalid event discriminator for createVestingEvent');
     }
-    return getCreateVestingEventDecoder().decode(data, 16);
+    return getCreateVestingEventDecoder().decode(
+        data,
+        ANCHOR_EVENT_CPI_DISCRIMINATOR.length + CREATE_VESTING_EVENT_DISCRIMINATOR.length,
+    );
 }
