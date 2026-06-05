@@ -15,6 +15,7 @@ import {
     enumValueNode,
     fieldDiscriminatorNode,
     fixedSizeTypeNode,
+    identityValueNode,
     instructionAccountNode,
     instructionArgumentNode,
     instructionByteDeltaNode,
@@ -22,6 +23,7 @@ import {
     instructionRemainingAccountsNode,
     numberTypeNode,
     numberValueNode,
+    payerValueNode,
     pdaNode,
     pdaSeedValueNode,
     pdaValueNode,
@@ -365,6 +367,240 @@ test('it keeps extra arguments referenced by sync-rendered account defaults requ
         /useDefaultMint:\s*CreateInstructionExtraArgs\[['"]useDefaultMint['"]\];/,
     ]);
     await renderMapDoesNotContain(renderMap, 'instructions/create.ts', [/useDefaultMint\?:/]);
+});
+
+test('it renders extra arguments only read by skipped conditional defaults as optional in the sync input type', async () => {
+    // Given an instruction with an extra argument only used as the condition of
+    // an account default whose ifTrue branch is an async-only PDA derivation.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: conditionalValueNode({
+                            condition: argumentValueNode('useDefaultMint'),
+                            ifTrue: pdaValueNode('mint'),
+                        }),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'mint',
+                    }),
+                ],
+                extraArguments: [instructionArgumentNode({ name: 'useDefaultMint', type: booleanTypeNode() })],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'mint', seeds: [] })],
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // And split the async and sync sections of the file.
+    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to stay required in the async input type
+    // since the async builder reads it to evaluate the condition.
+    await codeContains(asyncSection, /useDefaultMint:\s*CreateInstructionExtraArgs\[['"]useDefaultMint['"]\];/);
+    await codeDoesNotContain(asyncSection, /useDefaultMint\?:/);
+
+    // And optional in the sync input type since the whole conditional is
+    // skipped on the sync path and nothing else reads the argument.
+    await codeContains(syncSection, /useDefaultMint\?:\s*CreateInstructionExtraArgs\[['"]useDefaultMint['"]\];/);
+});
+
+test('it keeps data arguments with async-only defaults required in the sync input type', async () => {
+    // Given an instruction with a data argument whose default value
+    // can only be resolved asynchronously.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: resolverValueNode('myAsyncResolver'),
+                        name: 'amount',
+                        type: numberTypeNode('u64'),
+                    }),
+                ],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it with the resolver registered as async.
+    const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
+
+    // And split the async and sync sections of the file.
+    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to be optional in the async input type
+    // since the async builder applies the resolver default.
+    await codeContains(asyncSection, /amount\?:\s*CreateInstructionDataArgs\[['"]amount['"]\];/);
+
+    // And required in the sync input type since the sync builder skips the
+    // default and would otherwise encode undefined at runtime.
+    await codeContains(syncSection, /amount:\s*CreateInstructionDataArgs\[['"]amount['"]\];/);
+    await codeDoesNotContain(syncSection, /amount\?:/);
+});
+
+test('it renders extra arguments only read by async-only argument defaults as optional in the sync input type', async () => {
+    // Given an instruction where extra argument "a" is only consumed by
+    // the async-only resolver default of extra argument "b".
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                extraArguments: [
+                    instructionArgumentNode({ name: 'a', type: numberTypeNode('u64') }),
+                    instructionArgumentNode({
+                        defaultValue: resolverValueNode('myAsyncResolver', { dependsOn: [argumentValueNode('a')] }),
+                        name: 'b',
+                        type: numberTypeNode('u64'),
+                    }),
+                ],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it with the resolver registered as async.
+    const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
+
+    // And split the async and sync sections of the file.
+    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect "a" to stay required in the async input type
+    // since the async builder passes it to the resolver.
+    await codeContains(asyncSection, /a:\s*CreateInstructionExtraArgs\[['"]a['"]\];/);
+    await codeDoesNotContain(asyncSection, /a\?:/);
+
+    // And we expect "a" to be optional in the sync input type since the sync
+    // builder skips the async-only default and never reads it.
+    await codeContains(syncSection, /a\?:\s*CreateInstructionExtraArgs\[['"]a['"]\];/);
+});
+
+test('it renders unread extra arguments with async-only defaults as optional in the sync input type', async () => {
+    // Given an instruction with an extra argument that has an async-only
+    // resolver default and no other consumers.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                extraArguments: [
+                    instructionArgumentNode({
+                        defaultValue: resolverValueNode('myAsyncResolver'),
+                        name: 'foo',
+                        type: numberTypeNode('u64'),
+                    }),
+                ],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it with the resolver registered as async.
+    const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
+
+    // And split the async and sync sections of the file.
+    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to be optional in the async input type
+    // since the async builder applies the resolver default.
+    await codeContains(asyncSection, /foo\?:\s*CreateInstructionExtraArgs\[['"]foo['"]\];/);
+
+    // And optional in the sync input type since the sync builder
+    // skips the default and nothing else reads the argument.
+    await codeContains(syncSection, /foo\?:\s*CreateInstructionExtraArgs\[['"]foo['"]\];/);
+});
+
+test('it keeps extra arguments with async-only defaults required in the sync input type when the sync builder reads them', async () => {
+    // Given an instruction with an extra argument that has an async-only
+    // resolver default but is also read by a byte delta.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                byteDeltas: [instructionByteDeltaNode(argumentValueNode('space'))],
+                extraArguments: [
+                    instructionArgumentNode({
+                        defaultValue: resolverValueNode('myAsyncResolver'),
+                        name: 'space',
+                        type: numberTypeNode('u64'),
+                    }),
+                ],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it with the resolver registered as async.
+    const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
+
+    // And split the async and sync sections of the file.
+    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // Then we expect the argument to be optional in the async input type
+    // since the async builder applies the resolver default.
+    await codeContains(asyncSection, /space\?:\s*CreateInstructionExtraArgs\[['"]space['"]\];/);
+
+    // And required in the sync input type since the sync builder skips the
+    // default but still reads the argument for the byte delta.
+    await codeContains(syncSection, /space:\s*CreateInstructionExtraArgs\[['"]space['"]\];/);
+    await codeDoesNotContain(syncSection, /space\?:/);
+});
+
+test('it keeps data arguments with identity or payer defaults required in the input type', async () => {
+    // Given an instruction with data arguments defaulting to the identity
+    // and payer values, which no builder ever resolves.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: identityValueNode(),
+                        name: 'authority',
+                        type: publicKeyTypeNode(),
+                    }),
+                    instructionArgumentNode({
+                        defaultValue: payerValueNode(),
+                        name: 'funder',
+                        type: publicKeyTypeNode(),
+                    }),
+                ],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect both arguments to be required in the input type since the
+    // builders never apply these defaults and the encoder cannot fill them.
+    await renderMapContains(renderMap, 'instructions/create.ts', [
+        /authority:\s*CreateInstructionDataArgs\[['"]authority['"]\];/,
+        /funder:\s*CreateInstructionDataArgs\[['"]funder['"]\];/,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/create.ts', [/authority\?:/, /funder\?:/]);
 });
 
 test('it renders instruction accounts with linked PDAs as default value', async () => {

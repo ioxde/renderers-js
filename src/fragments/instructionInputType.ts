@@ -12,7 +12,6 @@ import {
     NodePath,
     pipe,
     ResolvedInstructionAccount,
-    ResolvedInstructionArgument,
     ResolvedInstructionInput,
 } from '@codama/visitors-core';
 
@@ -20,6 +19,7 @@ import {
     Fragment,
     fragment,
     getDocblockFragment,
+    isDefaultValueAppliedByBuilder,
     isDefaultValueSkippedOnSyncPath,
     mergeFragmentImports,
     mergeFragments,
@@ -81,10 +81,7 @@ function getAccountsFragment(
         const resolvedAccount = resolvedInputs.find(
             input => input.kind === 'instructionAccountNode' && input.name === account.name,
         ) as ResolvedInstructionAccount;
-        const hasDefaultValue =
-            !!resolvedAccount.defaultValue &&
-            !isNode(resolvedAccount.defaultValue, ['identityValueNode', 'payerValueNode']) &&
-            !isDefaultValueSkippedOnSyncPath(resolvedAccount.defaultValue, asyncResolvers, useAsync);
+        const hasDefaultValue = isDefaultValueAppliedByBuilder(resolvedAccount.defaultValue, asyncResolvers, useAsync);
         const docs = getDocblockFragment(account.docs ?? [], true);
         const optionalSign = hasDefaultValue || resolvedAccount.isOptional ? '?' : '';
         return fragment`${docs}${camelCase(account.name)}${optionalSign}: ${getAccountTypeFragment(resolvedAccount)};`;
@@ -107,11 +104,11 @@ function getAccountTypeFragment(account: Pick<ResolvedInstructionAccount, 'isPda
 }
 
 function getDataArgumentsFragments(
-    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'asyncResolvers' | 'customInstructionData' | 'nameApi'> & {
         dataArgsManifest: TypeManifest;
         instructionPath: NodePath<InstructionNode>;
         renamedArgs: Map<string, string>;
-        resolvedInputs: ResolvedInstructionInput[];
+        useAsync: boolean;
     },
 ): [Fragment | undefined, Fragment] {
     const { instructionPath, nameApi } = scope;
@@ -133,7 +130,7 @@ function getDataArgumentsFragments(
     const dataArgsType = nameApi.dataArgsType(instructionDataName);
 
     const fragments = instructionNode.arguments.flatMap(arg => {
-        const argFragment = getArgumentFragment(arg, dataArgsType, scope.resolvedInputs, scope.renamedArgs);
+        const argFragment = getArgumentFragment(arg, dataArgsType, scope);
         return argFragment ? [argFragment] : [];
     });
 
@@ -166,10 +163,7 @@ function getExtraArgumentsFragment(
         collectArgumentValueNames(instructionNode.byteDeltas ?? [], syncReadRefs);
         for (const input of scope.resolvedInputs) {
             if (!input.defaultValue) continue;
-            if (
-                isNode(input, 'instructionAccountNode') &&
-                isDefaultValueSkippedOnSyncPath(input.defaultValue, asyncResolvers, useAsync)
-            ) {
+            if (isDefaultValueSkippedOnSyncPath(input.defaultValue, asyncResolvers, useAsync)) {
                 collectArgumentValueNames(input.defaultValue, asyncOnlyDefaultRefs);
             } else {
                 collectArgumentValueNames(input.defaultValue, syncReadRefs);
@@ -178,14 +172,13 @@ function getExtraArgumentsFragment(
     }
 
     const fragments = extraArguments.flatMap(arg => {
-        const unreadInSync = !useAsync && asyncOnlyDefaultRefs.has(arg.name) && !syncReadRefs.has(arg.name);
-        const argFragment = getArgumentFragment(
-            arg,
-            extraArgsType,
-            scope.resolvedInputs,
-            scope.renamedArgs,
-            unreadInSync,
-        );
+        // Dead on the sync path: the arg only feeds sync-skipped defaults, its own or another input's.
+        // Add any new sync-path reader to syncReadRefs above, or live args will render optional.
+        const hasAsyncOnlyRole =
+            asyncOnlyDefaultRefs.has(arg.name) ||
+            isDefaultValueSkippedOnSyncPath(arg.defaultValue, asyncResolvers, useAsync);
+        const unreadInSync = !useAsync && hasAsyncOnlyRole && !syncReadRefs.has(arg.name);
+        const argFragment = getArgumentFragment(arg, extraArgsType, scope, unreadInSync);
         return argFragment ? [argFragment] : [];
     });
     if (fragments.length === 0) return;
@@ -211,16 +204,19 @@ function collectArgumentValueNames(node: unknown, out: Set<string>): void {
 function getArgumentFragment(
     arg: InstructionArgumentNode,
     argsType: string,
-    resolvedInputs: ResolvedInstructionInput[],
-    renamedArgs: Map<string, string>,
+    scope: Pick<RenderScope, 'asyncResolvers'> & {
+        renamedArgs: Map<string, string>;
+        useAsync: boolean;
+    },
     forceOptional = false,
 ): Fragment | null {
-    const resolvedArg = resolvedInputs.find(
-        input => isNode(input, 'instructionArgumentNode') && input.name === arg.name,
-    ) as ResolvedInstructionArgument | undefined;
+    const { asyncResolvers, renamedArgs, useAsync } = scope;
     if (arg.defaultValue && arg.defaultValueStrategy === 'omitted') return null;
     const renamedName = renamedArgs.get(arg.name) ?? arg.name;
-    const optionalSign = forceOptional || arg.defaultValue || resolvedArg?.defaultValue ? '?' : '';
+    // Optional only if the builder will apply the default; sharing the builder's
+    // predicate keeps optionality correct as new default value kinds are added.
+    const hasAppliedDefault = isDefaultValueAppliedByBuilder(arg.defaultValue, asyncResolvers, useAsync);
+    const optionalSign = forceOptional || hasAppliedDefault ? '?' : '';
     return fragment`${camelCase(renamedName)}${optionalSign}: ${argsType}["${camelCase(arg.name)}"];`;
 }
 

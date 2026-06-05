@@ -8,7 +8,7 @@ import {
     addFragmentImports,
     Fragment,
     fragment,
-    isDefaultValueSkippedOnSyncPath,
+    isDefaultValueAppliedByBuilder,
     mergeFragments,
     RenderScope,
     use,
@@ -27,7 +27,7 @@ export function getInstructionInputDefaultFragment(
         return fragment``;
     }
 
-    if (isDefaultValueSkippedOnSyncPath(input.defaultValue, asyncResolvers, useAsync)) {
+    if (!isDefaultValueAppliedByBuilder(input.defaultValue, asyncResolvers, useAsync)) {
         return fragment``;
     }
 
@@ -182,10 +182,6 @@ export function getInstructionInputDefaultFragment(
                 return fragment``;
             }
             return defaultFragment(fragment`programAddress`, false);
-
-        case 'identityValueNode':
-        case 'payerValueNode':
-            return fragment``;
 
         case 'accountBumpValueNode':
             return defaultFragment(

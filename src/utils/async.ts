@@ -4,11 +4,13 @@ import {
     ArgumentValueNode,
     argumentValueNode,
     CamelCaseString,
+    IdentityValueNode,
     InstructionAccountNode,
     InstructionArgumentNode,
     InstructionInputValueNode,
     InstructionNode,
     isNode,
+    PayerValueNode,
 } from '@codama/nodes';
 import { deduplicateInstructionDependencies, ResolvedInstructionInput } from '@codama/visitors-core';
 
@@ -60,6 +62,20 @@ export function isDefaultValueSkippedOnSyncPath(
     useAsync: boolean,
 ): boolean {
     return !useAsync && !!defaultValue && isAsyncDefaultValue(defaultValue, asyncResolvers);
+}
+
+/**
+ * Whether the rendered builder applies this default: false for identity/payer values, which no builder resolves, and for async-only defaults on the sync path.
+ * Default rendering and input optionality both gate on this — route new consumers through it so types never promise a default the builder skips.
+ */
+export function isDefaultValueAppliedByBuilder(
+    defaultValue: InstructionInputValueNode | undefined,
+    asyncResolvers: string[],
+    useAsync: boolean,
+): defaultValue is Exclude<InstructionInputValueNode, IdentityValueNode | PayerValueNode> {
+    if (!defaultValue) return false;
+    if (isNode(defaultValue, ['identityValueNode', 'payerValueNode'])) return false;
+    return !isDefaultValueSkippedOnSyncPath(defaultValue, asyncResolvers, useAsync);
 }
 
 export function getInstructionDependencies(

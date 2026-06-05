@@ -62,7 +62,7 @@ export function getInstruction9InstructionDataCodec(): FixedSizeCodec<
 
 export type Instruction9Input<TAccountAuthority extends string = string> = {
     authority: Address<TAccountAuthority>;
-    authorityArg?: Instruction9InstructionDataArgs['authority'];
+    authorityArg: Instruction9InstructionDataArgs['authority'];
 };
 
 export function getInstruction9Instruction<
