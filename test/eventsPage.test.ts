@@ -17,7 +17,7 @@ import {
     structTypeNode,
 } from '@codama/nodes';
 import { visit } from '@codama/visitors-core';
-import { test } from 'vitest';
+import { expect, test } from 'vitest';
 
 import { getRenderMapVisitor } from '../src';
 import { renderMapContains, renderMapContainsImports, renderMapDoesNotContain } from './_setup';
@@ -534,4 +534,68 @@ test('it references the hoisted framing constant in program identify and parse h
     await renderMapContainsImports(renderMap, 'programs/myProgram.ts', {
         '../events/index.js': ['EVENT_CPI_PREFIX'],
     });
+});
+
+test('it falls back to unframed rendering when discriminators do not start with the framing constant', async () => {
+    // The event declares a framing but its discriminators omit the framing discriminator.
+    const event = eventNode({
+        data: hiddenPrefixTypeNode(
+            structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+            [framingPrefix, tradeDisc],
+        ),
+        discriminators: [constantDiscriminatorNode(tradeDisc, 8)],
+        framing: cpiFraming,
+        name: 'tradeEvent',
+    });
+    const node = programNode({ events: [event], name: 'myProgram', publicKey: '1111' });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    expect(renderMap.has('events/eventCpiPrefix.ts')).toBe(false);
+    await renderMapContains(renderMap, 'events/tradeEvent.ts', [
+        'export const TRADE_EVENT_DISCRIMINATOR',
+        /new Uint8Array\(\[\s*17,\s*34,\s*51,\s*68,\s*85,\s*102,\s*119,\s*136,?\s*\]\)/,
+        'containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)',
+        /getTradeEventDecoder\(\)\.decode\(\s*data,\s*16\s*\)/s,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/tradeEvent.ts', ['EVENT_CPI_PREFIX']);
+});
+
+test('it falls back to unframed rendering when an event framing diverges from the hoisted constant', async () => {
+    // Same shared constant name as `framingPrefix` but different bytes.
+    const divergingPrefix = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'ffffffffffffffff'),
+    );
+    const divergingEvent = eventNode({
+        data: hiddenPrefixTypeNode(
+            structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+            [divergingPrefix, settleDisc],
+        ),
+        discriminators: [constantDiscriminatorNode(divergingPrefix, 0), constantDiscriminatorNode(settleDisc, 8)],
+        framing: cpiFraming,
+        name: 'settleEvent',
+    });
+    const node = programNode({
+        events: [framedEvent('tradeEvent', tradeDisc), divergingEvent],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // The first event's framing is hoisted and still used.
+    await renderMapContains(renderMap, 'events/eventCpiPrefix.ts', [
+        /new Uint8Array\(\[\s*170,\s*187,\s*204,\s*221,\s*17,\s*34,\s*51,\s*68,?\s*\]\)/,
+    ]);
+    await renderMapContains(renderMap, 'events/tradeEvent.ts', ['containsBytes(data, EVENT_CPI_PREFIX, 0)']);
+    // The diverging event keeps its own discriminator constants and validation.
+    await renderMapContains(renderMap, 'events/settleEvent.ts', [
+        'export const SETTLE_EVENT_DISCRIMINATOR',
+        'export const SETTLE_EVENT_DISCRIMINATOR2',
+        'containsBytes(data, SETTLE_EVENT_DISCRIMINATOR, 0)',
+        'containsBytes(data, SETTLE_EVENT_DISCRIMINATOR2, 8)',
+        /getSettleEventDecoder\(\)\.decode\(\s*data,\s*16\s*\)/s,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/settleEvent.ts', ['EVENT_CPI_PREFIX']);
 });

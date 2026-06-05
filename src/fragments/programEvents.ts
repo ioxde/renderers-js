@@ -10,7 +10,13 @@ import {
 
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConditionFragment } from './discriminatorCondition';
-import { getProgramEventFraming, isEventCpiFramed, ResolvedProgramEventFraming } from './eventFraming';
+import {
+    getCpiFramedSkipExprFragment,
+    getEventCpiFraming,
+    getEventFramingConstantFragment,
+    getProgramEventFraming,
+    ResolvedProgramEventFraming,
+} from './eventFraming';
 
 export function getProgramEventsFragment(
     scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
@@ -29,13 +35,6 @@ export function getProgramEventsFragment(
         ],
         c => c.join('\n\n'),
     );
-}
-
-function getEventFramingConstantFragment(
-    programEventFraming: ResolvedProgramEventFraming,
-    nameApi: RenderScope['nameApi'],
-): Fragment {
-    return use(nameApi.constant(camelCase(programEventFraming.framing.sharedConstantName)), 'generatedEvents');
 }
 
 function getProgramEventsEnumFragment(
@@ -67,19 +66,19 @@ function getProgramEventsIdentifierFunctionFragment(
             const variant = nameApi.programEventsEnumVariant(event.name);
             const resolved = resolveNestedTypeNode(event.data);
             const struct: StructTypeNode = isNode(resolved, 'structTypeNode') ? resolved : structTypeNode([]);
-            const isCpiFramed = isEventCpiFramed(event, programEventFraming);
+            const cpiFraming = getEventCpiFraming(event, programEventFraming);
             const allDiscriminators = event.discriminators ?? [];
             // Check the shared framing constant first, then the per-event discriminators.
-            const leadingConditions = isCpiFramed
+            const leadingConditions = cpiFraming
                 ? [
-                      fragment`${use('containsBytes', 'solanaCodecsCore')}(data, ${getEventFramingConstantFragment(programEventFraming!, nameApi)}, 0)`,
+                      fragment`${use('containsBytes', 'solanaCodecsCore')}(data, ${getEventFramingConstantFragment(cpiFraming.framing, nameApi, 'generatedEvents')}, 0)`,
                   ]
                 : [];
             return getDiscriminatorConditionFragment({
                 ...scope,
                 constantSource: 'generatedEvents',
                 dataName: 'data',
-                discriminators: isCpiFramed ? allDiscriminators.slice(1) : allDiscriminators,
+                discriminators: cpiFraming ? allDiscriminators.slice(1) : allDiscriminators,
                 ifTrue: `return ${programEventsEnum}.${variant};`,
                 leadingConditions,
                 prefix: event.name,
@@ -166,27 +165,21 @@ function getHiddenPrefixSkipExpr(
     nameApi: RenderScope['nameApi'],
     programEventFraming: ResolvedProgramEventFraming | undefined,
 ): Fragment | null {
-    const isCpiFramed = isEventCpiFramed(event, programEventFraming);
+    const cpiFraming = getEventCpiFraming(event, programEventFraming);
     const allDiscriminators = event.discriminators ?? [];
-    const discriminators = isCpiFramed ? allDiscriminators.slice(1) : allDiscriminators;
+    const discriminators = cpiFraming ? allDiscriminators.slice(1) : allDiscriminators;
     const hasConstantDiscriminator = discriminators.some(d => isNode(d, 'constantDiscriminatorNode'));
-    if ((!hasConstantDiscriminator && !isCpiFramed) || !isNode(event.data, 'hiddenPrefixTypeNode')) {
+    if ((!hasConstantDiscriminator && !cpiFraming) || !isNode(event.data, 'hiddenPrefixTypeNode')) {
         return null;
     }
-    if (isCpiFramed) {
-        // Skip past the shared framing constant and every per-event constant discriminator.
-        const framingConstant = getEventFramingConstantFragment(programEventFraming!, nameApi);
-        const constantParts = discriminators
-            .filter(d => isNode(d, 'constantDiscriminatorNode'))
-            .map((_, index) => {
-                const suffix = index <= 0 ? '' : `_${index + 1}`;
-                const constant = use(
-                    nameApi.constant(camelCase(`${event.name}_discriminator${suffix}`)),
-                    'generatedEvents',
-                );
-                return fragment`${constant}.length`;
-            });
-        return mergeFragments([fragment`${framingConstant}.length`, ...constantParts], c => c.join(' + '));
+    if (cpiFraming) {
+        return getCpiFramedSkipExprFragment({
+            constantSource: 'generatedEvents',
+            discriminators,
+            eventName: event.name,
+            nameApi,
+            programEventFraming: cpiFraming,
+        });
     }
     const prefixes = event.data.prefix;
     if (prefixes.length === 1) {

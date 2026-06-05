@@ -2,9 +2,9 @@ import { camelCase, definedTypeNode, EventNode, isNode, isNodeFilter, resolveNes
 import { pipe, visit } from '@codama/visitors-core';
 
 import { Fragment, fragment, getDocblockFragment, mergeFragments, removeFragmentImports, RenderScope } from '../utils';
-import { getDiscriminatorConstantsFragment } from './discriminatorConstants';
+import { getDiscriminatorConstantName, getDiscriminatorConstantsFragment } from './discriminatorConstants';
 import { getEventDecodeFragment } from './eventDecode';
-import { isEventCpiFramed, ResolvedProgramEventFraming } from './eventFraming';
+import { getEventCpiFraming, ResolvedProgramEventFraming } from './eventFraming';
 import { getTypeDecoderFragment } from './typeDecoder';
 
 export function getEventPageFragment(
@@ -19,19 +19,19 @@ export function getEventPageFragment(
     const syntheticType = definedTypeNode({ docs: node.docs, name: node.name, type: innerType });
     const typeManifest = visit(syntheticType, scope.typeManifestVisitor);
 
-    const isCpiFramed = isEventCpiFramed(node, scope.programEventFraming);
+    const cpiFraming = getEventCpiFraming(node, scope.programEventFraming);
     const allDiscriminators = node.discriminators ?? [];
     // Drop the hoisted framing discriminator so generated constants match the IDL `events[].discriminator` bytes.
-    const discriminatorNodes = isCpiFramed ? allDiscriminators.slice(1) : allDiscriminators;
+    const discriminatorNodes = cpiFraming ? allDiscriminators.slice(1) : allDiscriminators;
     const fields = isNode(innerType, 'structTypeNode') ? innerType.fields : [];
     const hasConstantDiscriminator = discriminatorNodes.some(d => isNode(d, 'constantDiscriminatorNode'));
-    const shouldGenerateDecode = (hasConstantDiscriminator || isCpiFramed) && isNode(node.data, 'hiddenPrefixTypeNode');
+    const shouldGenerateDecode =
+        (hasConstantDiscriminator || cpiFraming !== undefined) && isNode(node.data, 'hiddenPrefixTypeNode');
 
     const constantDiscriminatorImports = discriminatorNodes
         .filter(isNodeFilter('constantDiscriminatorNode'))
-        .flatMap((_, index) => {
-            const suffix = index <= 0 ? '' : `_${index + 1}`;
-            const name = camelCase(`${node.name}_discriminator${suffix}`);
+        .flatMap(d => {
+            const name = getDiscriminatorConstantName(node.name, d, discriminatorNodes);
             return [scope.nameApi.constant(name), scope.nameApi.constantFunction(name)];
         });
     const fieldDiscriminatorImports = discriminatorNodes.filter(isNodeFilter('fieldDiscriminatorNode')).flatMap(d => {
