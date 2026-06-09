@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './dummy.instructions.js';
 export * from './instruction1.js';
 export * from './instruction10.js';
 export * from './instruction2.js';

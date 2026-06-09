@@ -24,7 +24,7 @@ import {
     type MintParams,
     type VestingParams,
 } from '../types/index.js';
-import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.js';
+import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.framing.js';
 
 export const POOL_CREATE_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
     151, 215, 226, 9, 118, 161, 115, 174,

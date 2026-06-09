@@ -12,16 +12,24 @@ import { getResolvedInstructionInputsVisitor, visit } from '@codama/visitors-cor
 import { Fragment, fragment, hasAsyncFunction, mergeFragments, RenderScope, use } from '../utils';
 import { getRenamedArgsMap } from './instructionPage';
 
-export function getProgramPluginFragment(
+/** Whether the plugin page renders for this program. */
+export function hasProgramPluginPage(programNode: ProgramNode): boolean {
+    return (
+        programNode.accounts.length > 0 ||
+        (programNode.events ?? []).length > 0 ||
+        programNode.instructions.length > 0 ||
+        programNode.pdas.length > 0
+    );
+}
+
+/**
+ * Renders a program's plugin page: the plugin type, its requirement types, and the
+ * plugin factory function wiring the generated helpers onto a client.
+ */
+export function getProgramPluginPageFragment(
     scope: Pick<RenderScope, 'asyncResolvers' | 'nameApi' | 'renderParentInstructions'> & { programNode: ProgramNode },
 ): Fragment | undefined {
-    if (
-        scope.programNode.accounts.length === 0 &&
-        (scope.programNode.events ?? []).length === 0 &&
-        scope.programNode.instructions.length === 0 &&
-        scope.programNode.pdas.length === 0
-    )
-        return;
+    if (!hasProgramPluginPage(scope.programNode)) return;
 
     const resolvedInstructionInputVisitor = getResolvedInstructionInputsVisitor();
     const asyncInstructions: CamelCaseString[] = scope.programNode.instructions
@@ -51,7 +59,7 @@ function hasAccountIdentifier(programNode: ProgramNode): boolean {
 }
 
 function hasInstructionIdentifier(programNode: ProgramNode, renderParentInstructions: boolean | undefined): boolean {
-    // Mirrors getProgramInstructionsFragment so the plugin tracks whichever
+    // Mirrors getProgramInstructionsPageFragment so the plugin tracks whichever
     // instructions actually flow into identify*/parse* generation.
     const allInstructions = getAllInstructionsWithSubs(programNode, {
         leavesOnly: !renderParentInstructions,
@@ -68,9 +76,19 @@ function getProgramPluginTypeFragment(
     const programPluginAccountsType = nameApi.programPluginAccountsType(programNode.name);
     const programPluginInstructionsType = nameApi.programPluginInstructionsType(programNode.name);
     const programPluginPdasType = nameApi.programPluginPdasType(programNode.name);
-    const accountsIdentifierFunction = nameApi.programAccountsIdentifierFunction(programNode.name);
-    const instructionsIdentifierFunction = nameApi.programInstructionsIdentifierFunction(programNode.name);
-    const instructionsParseFunction = nameApi.programInstructionsParseFunction(programNode.name);
+    // The identify/parse helpers live on the aggregate accounts/instructions pages.
+    const accountsIdentifierFunction = use(
+        'type ' + nameApi.programAccountsIdentifierFunction(programNode.name),
+        'generatedAccounts',
+    );
+    const instructionsIdentifierFunction = use(
+        'type ' + nameApi.programInstructionsIdentifierFunction(programNode.name),
+        'generatedInstructions',
+    );
+    const instructionsParseFunction = use(
+        'type ' + nameApi.programInstructionsParseFunction(programNode.name),
+        'generatedInstructions',
+    );
 
     const programPluginEventsType = nameApi.programPluginEventsType(programNode.name);
     const events = programNode.events ?? [];
@@ -247,9 +265,19 @@ function getProgramPluginFunctionFragment(
     const programPluginKey = nameApi.programPluginKey(programNode.name);
     const extendClient = use('extendClient', 'solanaPluginCore');
 
-    const accountsIdentifierFunction = nameApi.programAccountsIdentifierFunction(programNode.name);
-    const instructionsIdentifierFunction = nameApi.programInstructionsIdentifierFunction(programNode.name);
-    const instructionsParseFunction = nameApi.programInstructionsParseFunction(programNode.name);
+    // Imported as values here: the plugin object calls these helpers at runtime.
+    const accountsIdentifierFunction = use(
+        nameApi.programAccountsIdentifierFunction(programNode.name),
+        'generatedAccounts',
+    );
+    const instructionsIdentifierFunction = use(
+        nameApi.programInstructionsIdentifierFunction(programNode.name),
+        'generatedInstructions',
+    );
+    const instructionsParseFunction = use(
+        nameApi.programInstructionsParseFunction(programNode.name),
+        'generatedInstructions',
+    );
 
     const fields = mergeFragments(
         [

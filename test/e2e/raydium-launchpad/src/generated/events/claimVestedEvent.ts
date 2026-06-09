@@ -17,7 +17,7 @@ import {
     type FixedSizeDecoder,
     type ReadonlyUint8Array,
 } from '@solana/kit';
-import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.js';
+import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.framing.js';
 
 export const CLAIM_VESTED_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
     21, 194, 114, 87, 120, 211, 226, 32,

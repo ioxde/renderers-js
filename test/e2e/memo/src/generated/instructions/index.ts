@@ -7,3 +7,4 @@
  */
 
 export * from './addMemo.js';
+export * from './memo.instructions.js';

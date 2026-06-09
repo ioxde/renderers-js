@@ -9,3 +9,4 @@
 export * from './mint.js';
 export * from './multisig.js';
 export * from './token.js';
+export * from './token.accounts.js';

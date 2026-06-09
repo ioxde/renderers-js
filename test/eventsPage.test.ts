@@ -5,7 +5,9 @@ import {
     CamelCaseString,
     constantDiscriminatorNode,
     constantValueNode,
+    constantValueNodeFromBytes,
     eventNode,
+    fieldDiscriminatorNode,
     fixedSizeTypeNode,
     hiddenPrefixTypeNode,
     numberTypeNode,
@@ -13,6 +15,7 @@ import {
     programNode,
     publicKeyTypeNode,
     rootNode,
+    sizeDiscriminatorNode,
     structFieldTypeNode,
     structTypeNode,
 } from '@codama/nodes';
@@ -467,12 +470,12 @@ test('it hoists the shared framing constant to a dedicated events page', async (
 
     const renderMap = visit(node, getRenderMapVisitor());
 
-    await renderMapContains(renderMap, 'events/eventCpiPrefix.ts', [
+    await renderMapContains(renderMap, 'events/eventCpiPrefix.framing.ts', [
         'export const EVENT_CPI_PREFIX',
         /new Uint8Array\(\[\s*170,\s*187,\s*204,\s*221,\s*17,\s*34,\s*51,\s*68,?\s*\]\)/,
         'export function getEventCpiPrefixBytes()',
     ]);
-    await renderMapContains(renderMap, 'events/index.ts', ["export * from './eventCpiPrefix.js'"]);
+    await renderMapContains(renderMap, 'events/index.ts', ["export * from './eventCpiPrefix.framing.js'"]);
 });
 
 test('it renders per-event discriminator constants with IDL bytes, not framing bytes', async () => {
@@ -511,11 +514,11 @@ test('it generates decode that validates both the framing prefix and the event d
         /decode\(\s*data,\s*EVENT_CPI_PREFIX\.length \+ TRADE_EVENT_DISCRIMINATOR\.length,?\s*\)/s,
     ]);
     await renderMapContainsImports(renderMap, 'events/tradeEvent.ts', {
-        './eventCpiPrefix.js': ['EVENT_CPI_PREFIX'],
+        './eventCpiPrefix.framing.js': ['EVENT_CPI_PREFIX'],
     });
 });
 
-test('it references the hoisted framing constant in program identify and parse helpers', async () => {
+test('it references the hoisted framing constant in the aggregate identify and parse helpers', async () => {
     const node = programNode({
         events: [framedEvent('tradeEvent', tradeDisc), framedEvent('settleEvent', settleDisc)],
         name: 'myProgram',
@@ -524,15 +527,17 @@ test('it references the hoisted framing constant in program identify and parse h
 
     const renderMap = visit(node, getRenderMapVisitor());
 
-    await renderMapContains(renderMap, 'programs/myProgram.ts', [
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
         'export function identifyMyProgramEvent',
         'containsBytes(data, EVENT_CPI_PREFIX, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)',
         'containsBytes(data, EVENT_CPI_PREFIX, 0) && containsBytes(data, SETTLE_EVENT_DISCRIMINATOR, 8)',
         'EVENT_CPI_PREFIX.length + TRADE_EVENT_DISCRIMINATOR.length',
         'EVENT_CPI_PREFIX.length + SETTLE_EVENT_DISCRIMINATOR.length',
     ]);
-    await renderMapContainsImports(renderMap, 'programs/myProgram.ts', {
-        '../events/index.js': ['EVENT_CPI_PREFIX'],
+    await renderMapContainsImports(renderMap, 'events/myProgram.events.ts', {
+        './eventCpiPrefix.framing.js': ['EVENT_CPI_PREFIX'],
+        './settleEvent.js': ['getSettleEventDecoder', 'SETTLE_EVENT_DISCRIMINATOR'],
+        './tradeEvent.js': ['getTradeEventDecoder', 'TRADE_EVENT_DISCRIMINATOR'],
     });
 });
 
@@ -551,7 +556,7 @@ test('it falls back to unframed rendering when discriminators do not start with 
 
     const renderMap = visit(node, getRenderMapVisitor());
 
-    expect(renderMap.has('events/eventCpiPrefix.ts')).toBe(false);
+    expect(renderMap.has('events/eventCpiPrefix.framing.ts')).toBe(false);
     await renderMapContains(renderMap, 'events/tradeEvent.ts', [
         'export const TRADE_EVENT_DISCRIMINATOR',
         /new Uint8Array\(\[\s*17,\s*34,\s*51,\s*68,\s*85,\s*102,\s*119,\s*136,?\s*\]\)/,
@@ -585,7 +590,7 @@ test('it falls back to unframed rendering when an event framing diverges from th
     const renderMap = visit(node, getRenderMapVisitor());
 
     // The first event's framing is hoisted and still used.
-    await renderMapContains(renderMap, 'events/eventCpiPrefix.ts', [
+    await renderMapContains(renderMap, 'events/eventCpiPrefix.framing.ts', [
         /new Uint8Array\(\[\s*170,\s*187,\s*204,\s*221,\s*17,\s*34,\s*51,\s*68,?\s*\]\)/,
     ]);
     await renderMapContains(renderMap, 'events/tradeEvent.ts', ['containsBytes(data, EVENT_CPI_PREFIX, 0)']);
@@ -598,4 +603,274 @@ test('it falls back to unframed rendering when an event framing diverges from th
         /getSettleEventDecoder\(\)\.decode\(\s*data,\s*16\s*\)/s,
     ]);
     await renderMapDoesNotContain(renderMap, 'events/settleEvent.ts', ['EVENT_CPI_PREFIX']);
+});
+
+test('it renders a string-literal union of all available events for a program', async () => {
+    const node = programNode({
+        events: [
+            eventNode({
+                data: structTypeNode([
+                    structFieldTypeNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'eventType',
+                        type: numberTypeNode('u8'),
+                    }),
+                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
+                ]),
+                discriminators: [fieldDiscriminatorNode('eventType')],
+                name: 'guardCreatedEvent',
+            }),
+            eventNode({
+                data: structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
+                discriminators: [sizeDiscriminatorNode(1)],
+                name: 'guardUpdatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        "export type MyProgramEventType = 'guardCreatedEvent' | 'guardUpdatedEvent';",
+    ]);
+});
+
+test('it does not render an aggregate events page when no events have discriminators', () => {
+    const node = programNode({
+        events: [
+            eventNode({
+                data: structTypeNode([structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() })]),
+                name: 'guardCreatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    expect(renderMap.has('events/myProgram.events.ts')).toBe(false);
+});
+
+test('it does not render an aggregate events page when there are no events', () => {
+    const node = programNode({
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    expect(renderMap.has('events/myProgram.events.ts')).toBe(false);
+});
+
+test('it renders a function that identifies events in a program', async () => {
+    const node = programNode({
+        events: [
+            eventNode({
+                data: structTypeNode([
+                    structFieldTypeNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'eventType',
+                        type: numberTypeNode('u8'),
+                    }),
+                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
+                ]),
+                discriminators: [fieldDiscriminatorNode('eventType')],
+                name: 'guardCreatedEvent',
+            }),
+            eventNode({
+                data: structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
+                discriminators: [
+                    sizeDiscriminatorNode(40),
+                    constantDiscriminatorNode(constantValueNodeFromBytes('base16', 'aabb'), 0),
+                ],
+                name: 'guardUpdatedEvent',
+            }),
+            eventNode({
+                data: structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
+                discriminators: [],
+                name: 'simpleEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        'export function identifyMyProgramEvent',
+        'event: { data: ReadonlyUint8Array } | ReadonlyUint8Array',
+        'MyProgramEventType | null',
+        "return 'guardCreatedEvent';",
+        "return 'guardUpdatedEvent';",
+        'return null;',
+    ]);
+
+    await renderMapDoesNotContain(renderMap, 'events/myProgram.events.ts', ["'simpleEvent'", 'throw new Error']);
+});
+
+test('it renders a parsed union type of all available events for a program', async () => {
+    const node = programNode({
+        events: [
+            eventNode({
+                data: structTypeNode([
+                    structFieldTypeNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'eventType',
+                        type: numberTypeNode('u8'),
+                    }),
+                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
+                ]),
+                discriminators: [fieldDiscriminatorNode('eventType')],
+                name: 'guardCreatedEvent',
+            }),
+            eventNode({
+                data: structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
+                discriminators: [sizeDiscriminatorNode(1)],
+                name: 'guardUpdatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        'export type ParsedMyProgramEvent =',
+        "| { eventType: 'guardCreatedEvent'; data: GuardCreatedEvent }",
+        "| { eventType: 'guardUpdatedEvent'; data: GuardUpdatedEvent }",
+    ]);
+    await renderMapContainsImports(renderMap, 'events/myProgram.events.ts', {
+        './guardCreatedEvent.js': ['GuardCreatedEvent'],
+        './guardUpdatedEvent.js': ['GuardUpdatedEvent'],
+    });
+});
+
+test('it renders a function that parses events in a program', async () => {
+    const discriminator1 = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const discriminator2 = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', '1122334455667788'),
+    );
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() })]),
+                    [discriminator1],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator1)],
+                name: 'guardCreatedEvent',
+            }),
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
+                    [discriminator2],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator2)],
+                name: 'guardUpdatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        'export function parseMyProgramEvent',
+        'event: { data: ReadonlyUint8Array } | ReadonlyUint8Array',
+        'ParsedMyProgramEvent | null',
+        'const eventType = identifyMyProgramEvent(event);',
+        'if (eventType === null) return null;',
+        'switch (eventType)',
+        "case 'guardCreatedEvent'",
+        /data:\s*getGuardCreatedEventDecoder\(\)\.decode\(\s*data,\s*GUARD_CREATED_EVENT_DISCRIMINATOR\.length,?\s*\)/s,
+        "case 'guardUpdatedEvent'",
+        /data:\s*getGuardUpdatedEventDecoder\(\)\.decode\(\s*data,\s*GUARD_UPDATED_EVENT_DISCRIMINATOR\.length,?\s*\)/s,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/myProgram.events.ts', ['default:', 'throw new Error']);
+
+    await renderMapContainsImports(renderMap, 'events/myProgram.events.ts', {
+        './guardCreatedEvent.js': ['GUARD_CREATED_EVENT_DISCRIMINATOR', 'getGuardCreatedEventDecoder'],
+        './guardUpdatedEvent.js': ['GUARD_UPDATED_EVENT_DISCRIMINATOR', 'getGuardUpdatedEventDecoder'],
+    });
+});
+
+test('it renders parse function using decoder for events without decode function', async () => {
+    const node = programNode({
+        events: [
+            eventNode({
+                data: structTypeNode([
+                    structFieldTypeNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'eventType',
+                        type: numberTypeNode('u8'),
+                    }),
+                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
+                ]),
+                discriminators: [fieldDiscriminatorNode('eventType')],
+                name: 'guardCreatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        'parseMyProgramEvent',
+        /data:\s*getGuardCreatedEventDecoder\(\)\.decode\(data\)/s,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/myProgram.events.ts', ['decodeGuardCreatedEvent']);
+});
+
+test('it exports the aggregate events page from the events and root indexes', async () => {
+    const node = rootNode(
+        programNode({
+            events: [framedEvent('tradeEvent', tradeDisc)],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/index.ts', ["export * from './myProgram.events.js'"]);
+    await renderMapContains(renderMap, 'index.ts', ["export * from './events/index.js'"]);
+});
+
+test('it renders the aggregate events page alongside an event named like the program aggregate', async () => {
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
+                    discriminators: [
+                        constantDiscriminatorNode(constantValueNodeFromBytes('base16', 'aabbccdd11223344'), 0),
+                    ],
+                    name: 'myProgramEvents',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // The dotted aggregate file name cannot collide with the camelCase event page; both coexist.
+    await renderMapContains(renderMap, 'events/myProgramEvents.ts', ['MY_PROGRAM_EVENTS_DISCRIMINATOR']);
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', ['identifyMyProgramEvent', 'parseMyProgramEvent']);
+    const eventsIndex = renderMap.get('events/index.ts');
+    expect(eventsIndex?.content.match(/'\.\/myProgramEvents\.js'/g)).toHaveLength(1);
+    expect(eventsIndex?.content.match(/'\.\/myProgram\.events\.js'/g)).toHaveLength(1);
 });

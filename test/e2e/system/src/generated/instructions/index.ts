@@ -15,6 +15,7 @@ export * from './authorizeNonceAccount.js';
 export * from './createAccount.js';
 export * from './createAccountWithSeed.js';
 export * from './initializeNonceAccount.js';
+export * from './system.instructions.js';
 export * from './transferSol.js';
 export * from './transferSolWithSeed.js';
 export * from './upgradeNonceAccount.js';

@@ -9,4 +9,5 @@
 export * from './globalConfig.js';
 export * from './platformConfig.js';
 export * from './poolState.js';
+export * from './raydiumLaunchpad.accounts.js';
 export * from './vestingRecord.js';

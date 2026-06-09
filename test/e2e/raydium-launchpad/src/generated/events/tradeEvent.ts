@@ -23,7 +23,7 @@ import {
     type PoolStatus,
     type TradeDirection,
 } from '../types/index.js';
-import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.js';
+import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.framing.js';
 
 export const TRADE_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([189, 219, 127, 211, 78, 230, 97, 238]);
 

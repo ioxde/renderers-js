@@ -9,6 +9,7 @@
 export * from './amountToUiAmount.js';
 export * from './approve.js';
 export * from './approveChecked.js';
+export * from './associatedToken.instructions.js';
 export * from './burn.js';
 export * from './burnChecked.js';
 export * from './closeAccount.js';
@@ -31,7 +32,9 @@ export * from './recoverNestedAssociatedToken.js';
 export * from './revoke.js';
 export * from './setAuthority.js';
 export * from './syncNative.js';
+export * from './system.instructions.js';
 export * from './thawAccount.js';
+export * from './token.instructions.js';
 export * from './transfer.js';
 export * from './transferChecked.js';
 export * from './uiAmountToAmount.js';

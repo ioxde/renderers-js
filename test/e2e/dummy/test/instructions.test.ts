@@ -1,6 +1,5 @@
 import test from 'ava';
 import {
-  DummyInstruction,
   DUMMY_PROGRAM_ADDRESS,
   dummyProgram,
   getInstruction1Instruction,
@@ -25,8 +24,8 @@ test('identifyDummyInstruction recognizes a real instruction built by the genera
   const ix10 = getInstruction10Instruction();
 
   // Then identifying the encoded data round-trips back to the right variant.
-  t.is(identifyDummyInstruction(ix3), DummyInstruction.Instruction3);
-  t.is(identifyDummyInstruction(ix10), DummyInstruction.Instruction10);
+  t.is(identifyDummyInstruction(ix3), 'instruction3');
+  t.is(identifyDummyInstruction(ix10), 'instruction10');
 });
 
 test('parseDummyInstruction returns the matching parsed variant', (t) => {
@@ -36,9 +35,10 @@ test('parseDummyInstruction returns the matching parsed variant', (t) => {
   // When we parse it.
   const parsed = parseDummyInstruction(ix3);
 
-  // Then we get the parsed variant tagged with the right enum value.
-  t.is(parsed.instructionType, DummyInstruction.Instruction3);
-  t.is(parsed.programAddress, DUMMY_PROGRAM_ADDRESS);
+  // Then we get the parsed variant tagged with the right kind, not null.
+  t.assert(parsed !== null);
+  t.is(parsed?.instructionType, 'instruction3');
+  t.is(parsed?.programAddress, DUMMY_PROGRAM_ADDRESS);
 });
 
 test('the dummy program plugin re-exposes identifyInstruction and parseInstruction', (t) => {

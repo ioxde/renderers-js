@@ -10,3 +10,4 @@ export * from './createGuard.js';
 export * from './execute.js';
 export * from './initialize.js';
 export * from './updateGuard.js';
+export * from './wenTransferGuard.instructions.js';

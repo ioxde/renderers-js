@@ -11,6 +11,7 @@ export * from './collectProtocolFee.js';
 export * from './createAmmConfig.js';
 export * from './deposit.js';
 export * from './initialize.js';
+export * from './raydiumCpSwap.instructions.js';
 export * from './swapBaseInput.js';
 export * from './swapBaseOutput.js';
 export * from './updateAmmConfig.js';

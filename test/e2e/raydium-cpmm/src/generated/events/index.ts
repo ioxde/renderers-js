@@ -7,4 +7,5 @@
  */
 
 export * from './lpChangeEvent.js';
+export * from './raydiumCpSwap.events.js';
 export * from './swapEvent.js';

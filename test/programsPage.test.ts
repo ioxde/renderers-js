@@ -20,7 +20,7 @@ import {
     structTypeNode,
 } from '@codama/nodes';
 import { visit } from '@codama/visitors-core';
-import { expect, test } from 'vitest';
+import { test } from 'vitest';
 
 import { getRenderMapVisitor } from '../src';
 import { renderMapContains, renderMapContainsImports, renderMapDoesNotContain } from './_setup';
@@ -46,7 +46,7 @@ test('it renders the program address constant', async () => {
     });
 });
 
-test('it renders an enum of all available accounts for a program', async () => {
+test('it renders a string-literal union of all available accounts for a program', async () => {
     // Given the following program.
     const node = programNode({
         accounts: [accountNode({ name: 'mint' }), accountNode({ name: 'token' })],
@@ -57,8 +57,11 @@ test('it renders an enum of all available accounts for a program', async () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then we expect the following program account enum.
-    await renderMapContains(renderMap, 'programs/splToken.ts', ['export enum SplTokenAccount { Mint, Token }']);
+    // Then we expect the account-type union on the aggregate accounts page.
+    await renderMapContains(renderMap, 'accounts/splToken.accounts.ts', [
+        "export type SplTokenAccountType = 'mint' | 'token';",
+    ]);
+    await renderMapDoesNotContain(renderMap, 'programs/splToken.ts', ['SplTokenAccountType']);
 });
 
 test('it renders an function that identifies accounts in a program', async () => {
@@ -97,24 +100,20 @@ test('it renders an function that identifies accounts in a program', async () =>
 
     // Then we expect the following identifier function to be rendered.
     // Notice it does not include the `mint` account because it has no discriminators.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
-        `export function identifySplTokenAccount( account: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenAccount { ` +
+    await renderMapContains(renderMap, 'accounts/splToken.accounts.ts', [
+        `export function identifySplTokenAccount( account: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenAccountType | null { ` +
             `const data = 'data' in account ? account.data : account; ` +
-            `if ( containsBytes(data, getU8Encoder().encode(METADATA_KEY), 0) ) { return SplTokenAccount.Metadata; } ` +
-            `if ( data.length === 72 && containsBytes(data, TOKEN_DISCRIMINATOR, 4) ) { return SplTokenAccount.Token; } ` +
-            `throw new SolanaError( SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT, { accountData: data, programName: 'splToken' } ); ` +
+            `if ( containsBytes(data, getU8Encoder().encode(METADATA_KEY), 0) ) { return 'metadata'; } ` +
+            `if ( data.length === 72 && containsBytes(data, TOKEN_DISCRIMINATOR, 4) ) { return 'token'; } ` +
+            `return null; ` +
             `}`,
     ]);
 
-    // And we expect the following imports.
-    await renderMapContainsImports(renderMap, 'programs/splToken.ts', {
-        '../accounts/index.js': ['METADATA_KEY', 'TOKEN_DISCRIMINATOR'],
-        '@solana/kit': [
-            'containsBytes',
-            'ReadonlyUint8Array',
-            'SolanaError',
-            'SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT',
-        ],
+    // And we expect the per-account constants to be imported from their sibling pages.
+    await renderMapContainsImports(renderMap, 'accounts/splToken.accounts.ts', {
+        './metadata.js': ['METADATA_KEY'],
+        './token.js': ['TOKEN_DISCRIMINATOR'],
+        '@solana/kit': ['containsBytes', 'ReadonlyUint8Array'],
     });
 });
 
@@ -138,19 +137,19 @@ test('it reuses suffixed constants when a node has multiple constant discriminat
     const renderMap = visit(node, getRenderMapVisitor());
 
     // Then the identify condition references both constants, the second suffixed,
-    // matching the names emitted in the accounts module.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    // matching the names emitted in the account's page.
+    await renderMapContains(renderMap, 'accounts/splToken.accounts.ts', [
         `if ( containsBytes(data, TOKEN_DISCRIMINATOR, 0) && containsBytes(data, TOKEN_DISCRIMINATOR2, 8) ) ` +
-            `{ return SplTokenAccount.Token; }`,
+            `{ return 'token'; }`,
     ]);
 
-    // And both constants are imported from the accounts module.
-    await renderMapContainsImports(renderMap, 'programs/splToken.ts', {
-        '../accounts/index.js': ['TOKEN_DISCRIMINATOR', 'TOKEN_DISCRIMINATOR2'],
+    // And both constants are imported from the account's sibling page.
+    await renderMapContainsImports(renderMap, 'accounts/splToken.accounts.ts', {
+        './token.js': ['TOKEN_DISCRIMINATOR', 'TOKEN_DISCRIMINATOR2'],
     });
 });
 
-test('it renders an enum of all available instructions for a program', async () => {
+test('it renders a string-literal union of all available instructions for a program', async () => {
     // Given the following program.
     const node = programNode({
         instructions: [
@@ -165,10 +164,11 @@ test('it renders an enum of all available instructions for a program', async () 
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then we expect the following program instruction enum.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
-        'export enum SplTokenInstruction { MintTokens, TransferTokens, UpdateAuthority }',
+    // Then we expect the instruction-type union on the aggregate instructions page.
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
+        "export type SplTokenInstructionType = | 'mintTokens' | 'transferTokens' | 'updateAuthority';",
     ]);
+    await renderMapDoesNotContain(renderMap, 'programs/splToken.ts', ['SplTokenInstructionType']);
 });
 
 test('it renders an function that identifies instructions in a program', async () => {
@@ -207,18 +207,19 @@ test('it renders an function that identifies instructions in a program', async (
 
     // Then we expect the following identifier function to be rendered.
     // Notice it does not include the `updateAuthority` instruction because it has no discriminators.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
-        `export function identifySplTokenInstruction ( instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenInstruction { ` +
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
+        `export function identifySplTokenInstruction ( instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenInstructionType | null { ` +
             `const data = 'data' in instruction ? instruction.data : instruction; ` +
-            `if ( containsBytes(data, getU8Encoder().encode(MINT_TOKENS_DISCRIMINATOR), 0) ) { return SplTokenInstruction.MintTokens; } ` +
-            `if ( data.length === 72 && containsBytes(data, TRANSFER_TOKENS_DISCRIMINATOR, 4) ) { return SplTokenInstruction.TransferTokens; } ` +
-            `throw new SolanaError( SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, { instructionData: data, programName: 'splToken' } ); ` +
+            `if ( containsBytes(data, getU8Encoder().encode(MINT_TOKENS_DISCRIMINATOR), 0) ) { return 'mintTokens'; } ` +
+            `if ( data.length === 72 && containsBytes(data, TRANSFER_TOKENS_DISCRIMINATOR, 4) ) { return 'transferTokens'; } ` +
+            `return null; ` +
             `}`,
     ]);
 
-    // And we expect the following imports.
-    await renderMapContainsImports(renderMap, 'programs/splToken.ts', {
-        '../instructions/index.js': ['MINT_TOKENS_DISCRIMINATOR', 'TRANSFER_TOKENS_DISCRIMINATOR'],
+    // And we expect the per-instruction constants to be imported from their sibling pages.
+    await renderMapContainsImports(renderMap, 'instructions/splToken.instructions.ts', {
+        './mintTokens.js': ['MINT_TOKENS_DISCRIMINATOR'],
+        './transferTokens.js': ['TRANSFER_TOKENS_DISCRIMINATOR'],
         '@solana/kit': ['containsBytes', 'ReadonlyUint8Array'],
     });
 });
@@ -274,12 +275,12 @@ test('it checks the discriminator of sub-instructions before their parents.', as
     const renderMap = visit(node, getRenderMapVisitor({ renderParentInstructions: true }));
 
     // Then we expect the sub-instruction condition to be rendered before the parent instruction condition.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
         `if ( containsBytes( data, getU8Encoder().encode(MINT_TOKENS_V1_PARENT_DISCRIMINATOR), 0 ) && ` +
             `containsBytes( data, getU32Encoder().encode(MINT_TOKENS_V1_SUB_DISCRIMINATOR), 1 ) ) ` +
-            `{ return SplTokenInstruction.MintTokensV1; } ` +
+            `{ return 'mintTokensV1'; } ` +
             `if ( containsBytes( data, getU8Encoder().encode(MINT_TOKENS_PARENT_DISCRIMINATOR), 0 ) ) ` +
-            `{ return SplTokenInstruction.MintTokens; }`,
+            `{ return 'mintTokens'; }`,
     ]);
 });
 
@@ -299,12 +300,17 @@ test('it renders a parsed union type of all available instructions for a program
     const renderMap = visit(node, getRenderMapVisitor());
 
     // Then we expect the following program parsed instruction union type.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
         "export type ParsedSplTokenInstruction < TProgram extends string = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' >",
-        '| ({ instructionType: SplTokenInstruction.MintTokens; } & ParsedMintTokensInstruction<TProgram>)',
-        '| ({ instructionType: SplTokenInstruction.TransferTokens; } & ParsedTransferTokensInstruction<TProgram>)',
-        '| ({ instructionType: SplTokenInstruction.UpdateAuthority; } & ParsedUpdateAuthorityInstruction<TProgram>)',
+        "| ({ instructionType: 'mintTokens' } & ParsedMintTokensInstruction<TProgram>)",
+        "| ({ instructionType: 'transferTokens'; } & ParsedTransferTokensInstruction<TProgram>)",
+        "| ({ instructionType: 'updateAuthority'; } & ParsedUpdateAuthorityInstruction<TProgram>)",
     ]);
+    await renderMapContainsImports(renderMap, 'instructions/splToken.instructions.ts', {
+        './mintTokens.js': ['ParsedMintTokensInstruction'],
+        './transferTokens.js': ['ParsedTransferTokensInstruction'],
+        './updateAuthority.js': ['ParsedUpdateAuthorityInstruction'],
+    });
 });
 
 test('it renders a function that parses instructions in a program', async () => {
@@ -342,22 +348,24 @@ test('it renders a function that parses instructions in a program', async () => 
     const renderMap = visit(node, getRenderMapVisitor());
 
     // Then we expect the following parse function to be rendered.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
         'export function parseSplTokenInstruction',
         'TProgram extends string',
         'instruction: Instruction',
         'InstructionWithData',
-        'ParsedSplTokenInstruction',
+        'ParsedSplTokenInstruction<TProgram> | null',
         'const instructionType = identifySplTokenInstruction(instruction)',
+        'if (instructionType === null) return null;',
         'switch (instructionType)',
-        'case SplTokenInstruction.MintTokens',
+        "case 'mintTokens'",
         'parseMintTokensInstruction(instruction)',
-        'case SplTokenInstruction.TransferTokens',
+        "case 'transferTokens'",
         'parseTransferTokensInstruction(instruction)',
     ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/splToken.instructions.ts', ['default:', 'throw new']);
 
     // And we expect the following imports.
-    await renderMapContainsImports(renderMap, 'programs/splToken.ts', {
+    await renderMapContainsImports(renderMap, 'instructions/splToken.instructions.ts', {
         '@solana/kit': ['Instruction', 'InstructionWithData', 'ReadonlyUint8Array'],
     });
 });
@@ -399,14 +407,14 @@ test('the program plugin re-exposes identifyAccount, identifyInstruction and par
     const renderMap = visit(node, getRenderMapVisitor());
 
     // Then the plugin type wires the helpers as `typeof` references...
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    await renderMapContains(renderMap, 'plugins/splToken.ts', [
         'identifyAccount: typeof identifySplTokenAccount;',
         'identifyInstruction: typeof identifySplTokenInstruction;',
         'parseInstruction: typeof parseSplTokenInstruction;',
     ]);
 
     // ...and the plugin function exposes them on the extended client.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    await renderMapContains(renderMap, 'plugins/splToken.ts', [
         'identifyAccount: identifySplTokenAccount',
         'identifyInstruction: identifySplTokenInstruction',
         'parseInstruction: parseSplTokenInstruction',
@@ -416,7 +424,7 @@ test('the program plugin re-exposes identifyAccount, identifyInstruction and par
 test('the program plugin exposes identifyInstruction/parseInstruction when only a sub-instruction has a discriminator', async () => {
     // Given a program whose top-level instruction has no discriminator,
     // but whose sub-instruction does. The leaves-only walk in
-    // getProgramInstructionsFragment still emits identify*/parse*.
+    // getProgramInstructionsPageFragment still emits identify*/parse*.
     const node = programNode({
         instructions: [
             instructionNode({
@@ -453,7 +461,7 @@ test('the program plugin exposes identifyInstruction/parseInstruction when only 
 
     // Then the plugin must expose the helpers even though the top-level
     // instruction itself has no discriminator.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    await renderMapContains(renderMap, 'plugins/splToken.ts', [
         'identifyInstruction: typeof identifySplTokenInstruction;',
         'parseInstruction: typeof parseSplTokenInstruction;',
         'identifyInstruction: identifySplTokenInstruction',
@@ -474,7 +482,7 @@ test('the program plugin omits identify/parse keys when no node carries a discri
     const renderMap = visit(node, getRenderMapVisitor());
 
     // Then the program file does not reference any of the new plugin keys.
-    await renderMapDoesNotContain(renderMap, 'programs/splToken.ts', [
+    await renderMapDoesNotContain(renderMap, 'plugins/splToken.ts', [
         'identifyAccount',
         'identifyInstruction',
         'parseInstruction',
@@ -521,7 +529,7 @@ test('the program plugin honors renderParentInstructions when deciding whether t
     const renderMap = visit(node, getRenderMapVisitor({ renderParentInstructions: true }));
 
     // Then the plugin exposes identifyInstruction/parseInstruction.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
+    await renderMapContains(renderMap, 'plugins/splToken.ts', [
         'identifyInstruction: typeof identifySplTokenInstruction;',
         'parseInstruction: typeof parseSplTokenInstruction;',
         'identifyInstruction: identifySplTokenInstruction',
@@ -543,259 +551,30 @@ test('it does not render parse function when no instructions have discriminators
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then we expect the parse function NOT to be rendered.
-    await renderMapContains(renderMap, 'programs/splToken.ts', [
-        'export enum SplTokenInstruction { MintTokens, TransferTokens }',
+    // Then we expect the instruction-type union to be rendered without identify/parse helpers.
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
+        "export type SplTokenInstructionType = 'mintTokens' | 'transferTokens';",
     ]);
-
-    // And we do NOT expect the parse function.
-    const programFile = renderMap.get('programs/splToken.ts');
-    expect(programFile).not.toContain('parseSplTokenInstruction');
-});
-
-test('it renders an enum of all available events for a program', async () => {
-    const node = programNode({
-        events: [
-            eventNode({
-                data: structTypeNode([
-                    structFieldTypeNode({
-                        defaultValue: numberValueNode(1),
-                        name: 'eventType',
-                        type: numberTypeNode('u8'),
-                    }),
-                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
-                ]),
-                discriminators: [fieldDiscriminatorNode('eventType')],
-                name: 'guardCreatedEvent',
-            }),
-            eventNode({
-                data: structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
-                discriminators: [sizeDiscriminatorNode(1)],
-                name: 'guardUpdatedEvent',
-            }),
-        ],
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapContains(renderMap, 'programs/myProgram.ts', [
-        'export enum MyProgramEvent { GuardCreatedEvent, GuardUpdatedEvent }',
+    await renderMapDoesNotContain(renderMap, 'instructions/splToken.instructions.ts', [
+        'identifySplTokenInstruction',
+        'parseSplTokenInstruction',
     ]);
 });
 
-test('it does not render program events when no events have discriminators', async () => {
-    const node = programNode({
-        events: [
-            eventNode({
-                data: structTypeNode([structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() })]),
-                name: 'guardCreatedEvent',
-            }),
-        ],
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapDoesNotContain(renderMap, 'programs/myProgram.ts', ['MyProgramEvent']);
-});
-
-test('it renders a function that identifies events in a program', async () => {
-    const node = programNode({
-        events: [
-            eventNode({
-                data: structTypeNode([
-                    structFieldTypeNode({
-                        defaultValue: numberValueNode(1),
-                        name: 'eventType',
-                        type: numberTypeNode('u8'),
-                    }),
-                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
-                ]),
-                discriminators: [fieldDiscriminatorNode('eventType')],
-                name: 'guardCreatedEvent',
-            }),
-            eventNode({
-                data: structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
-                discriminators: [
-                    sizeDiscriminatorNode(40),
-                    constantDiscriminatorNode(constantValueNodeFromBytes('base16', 'aabb'), 0),
-                ],
-                name: 'guardUpdatedEvent',
-            }),
-            eventNode({
-                data: structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
-                discriminators: [],
-                name: 'simpleEvent',
-            }),
-        ],
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapContains(renderMap, 'programs/myProgram.ts', [
-        'export function identifyMyProgramEvent',
-        'event: { data: ReadonlyUint8Array } | ReadonlyUint8Array',
-        'MyProgramEvent',
-        'return MyProgramEvent.GuardCreatedEvent',
-        'return MyProgramEvent.GuardUpdatedEvent',
-    ]);
-
-    await renderMapDoesNotContain(renderMap, 'programs/myProgram.ts', ['return MyProgramEvent.SimpleEvent']);
-});
-
-test('it does not render event enum when there are no events', async () => {
-    const node = programNode({
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapDoesNotContain(renderMap, 'programs/myProgram.ts', ['MyProgramEvent']);
-});
-
-test('it does not render event identifier function when no events have discriminators', async () => {
-    const node = programNode({
-        events: [
-            eventNode({
-                data: structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
-                name: 'simpleEvent',
-            }),
-        ],
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapDoesNotContain(renderMap, 'programs/myProgram.ts', ['MyProgramEvent', 'identifyMyProgramEvent']);
-});
-
-test('it renders a parsed union type of all available events for a program', async () => {
-    const node = programNode({
-        events: [
-            eventNode({
-                data: structTypeNode([
-                    structFieldTypeNode({
-                        defaultValue: numberValueNode(1),
-                        name: 'eventType',
-                        type: numberTypeNode('u8'),
-                    }),
-                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
-                ]),
-                discriminators: [fieldDiscriminatorNode('eventType')],
-                name: 'guardCreatedEvent',
-            }),
-            eventNode({
-                data: structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
-                discriminators: [sizeDiscriminatorNode(1)],
-                name: 'guardUpdatedEvent',
-            }),
-        ],
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapContains(renderMap, 'programs/myProgram.ts', [
-        'export type ParsedMyProgramEvent =',
-        '| ({ eventType: MyProgramEvent.GuardCreatedEvent } & GuardCreatedEvent)',
-        '| ({ eventType: MyProgramEvent.GuardUpdatedEvent } & GuardUpdatedEvent)',
-    ]);
-});
-
-test('it renders a function that parses events in a program', async () => {
-    const discriminator1 = constantValueNode(
+test('it renders event helpers in the events folder instead of the program page', async () => {
+    const discriminator = constantValueNode(
         fixedSizeTypeNode(bytesTypeNode(), 8),
         bytesValueNode('base16', 'aabbccdd11223344'),
-    );
-    const discriminator2 = constantValueNode(
-        fixedSizeTypeNode(bytesTypeNode(), 8),
-        bytesValueNode('base16', '1122334455667788'),
     );
     const node = programNode({
         events: [
             eventNode({
                 data: hiddenPrefixTypeNode(
                     structTypeNode([structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() })]),
-                    [discriminator1],
+                    [discriminator],
                 ),
-                discriminators: [constantDiscriminatorNode(discriminator1)],
+                discriminators: [constantDiscriminatorNode(discriminator)],
                 name: 'guardCreatedEvent',
-            }),
-            eventNode({
-                data: hiddenPrefixTypeNode(
-                    structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
-                    [discriminator2],
-                ),
-                discriminators: [constantDiscriminatorNode(discriminator2)],
-                name: 'guardUpdatedEvent',
-            }),
-        ],
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapContains(renderMap, 'programs/myProgram.ts', [
-        'export function parseMyProgramEvent',
-        'event: { data: ReadonlyUint8Array } | ReadonlyUint8Array',
-        'ParsedMyProgramEvent',
-        'const eventType = identifyMyProgramEvent(event)',
-        'switch (eventType)',
-        'case MyProgramEvent.GuardCreatedEvent',
-        /getGuardCreatedEventDecoder\(\)\.decode\(\s*data,\s*GUARD_CREATED_EVENT_DISCRIMINATOR\.length\s*\)/s,
-        'case MyProgramEvent.GuardUpdatedEvent',
-        /getGuardUpdatedEventDecoder\(\)\.decode\(\s*data,\s*GUARD_UPDATED_EVENT_DISCRIMINATOR\.length\s*\)/s,
-    ]);
-
-    await renderMapContainsImports(renderMap, 'programs/myProgram.ts', {
-        '../events/index.js': ['GUARD_CREATED_EVENT_DISCRIMINATOR', 'GUARD_UPDATED_EVENT_DISCRIMINATOR'],
-    });
-});
-
-test('it renders parse function using decoder for events without decode function', async () => {
-    const node = programNode({
-        events: [
-            eventNode({
-                data: structTypeNode([
-                    structFieldTypeNode({
-                        defaultValue: numberValueNode(1),
-                        name: 'eventType',
-                        type: numberTypeNode('u8'),
-                    }),
-                    structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() }),
-                ]),
-                discriminators: [fieldDiscriminatorNode('eventType')],
-                name: 'guardCreatedEvent',
-            }),
-        ],
-        name: 'myProgram',
-        publicKey: '1111',
-    });
-
-    const renderMap = visit(node, getRenderMapVisitor());
-
-    await renderMapContains(renderMap, 'programs/myProgram.ts', [
-        'parseMyProgramEvent',
-        'getGuardCreatedEventDecoder().decode(data)',
-    ]);
-    await renderMapDoesNotContain(renderMap, 'programs/myProgram.ts', ['decodeGuardCreatedEvent']);
-});
-
-test('it does not render event parse function when no events have discriminators', async () => {
-    const node = programNode({
-        events: [
-            eventNode({
-                data: structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
-                name: 'simpleEvent',
             }),
         ],
         name: 'myProgram',
@@ -805,8 +584,10 @@ test('it does not render event parse function when no events have discriminators
     const renderMap = visit(node, getRenderMapVisitor());
 
     await renderMapDoesNotContain(renderMap, 'programs/myProgram.ts', [
-        'MyProgramEvent',
+        'MyProgramEventType',
+        'identifyMyProgramEvent',
         'ParsedMyProgramEvent',
         'parseMyProgramEvent',
     ]);
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', ['identifyMyProgramEvent', 'parseMyProgramEvent']);
 });

@@ -7,3 +7,4 @@
  */
 
 export * from './guardV1.js';
+export * from './wenTransferGuard.accounts.js';

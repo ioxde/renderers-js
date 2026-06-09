@@ -35,10 +35,21 @@ import {
     getIndexPageFragment,
     getInstructionPageFragment,
     getPdaPageFragment,
+    getProgramAccountsFileName,
+    getProgramAccountsPageFragment,
     getProgramEventFraming,
+    getProgramEventsFileName,
+    getProgramEventsPageFragment,
+    getProgramInstructionsFileName,
+    getProgramInstructionsPageFragment,
     getProgramPageFragment,
+    getProgramPluginPageFragment,
     getRootIndexPageFragment,
     getTypePageFragment,
+    hasProgramAccountsPage,
+    hasProgramEventsPage,
+    hasProgramInstructionsPage,
+    hasProgramPluginPage,
 } from '../fragments';
 import {
     DEFAULT_KIT_IMPORT_STRATEGY,
@@ -191,6 +202,18 @@ export function getRenderMapVisitor(
                     return mergeRenderMaps([
                         createRenderMap({
                             ...eventFramingPage,
+                            // Aggregate identify*/parse* helpers render inside their domain folder
+                            // so they can import the per-node pages as siblings.
+                            [`accounts/${getProgramAccountsFileName(node)}.ts`]: asPage(
+                                getProgramAccountsPageFragment(scope),
+                            ),
+                            [`events/${getProgramEventsFileName(node)}.ts`]: asPage(
+                                getProgramEventsPageFragment(scope),
+                            ),
+                            [`instructions/${getProgramInstructionsFileName(node)}.ts`]: asPage(
+                                getProgramInstructionsPageFragment(scope),
+                            ),
+                            [`plugins/${camelCase(node.name)}.ts`]: asPage(getProgramPluginPageFragment(scope)),
                             [`programs/${camelCase(node.name)}.ts`]: asPage(getProgramPageFragment(scope)),
                             [`errors/${camelCase(node.name)}.ts`]:
                                 node.errors.length > 0 ? asPage(getErrorPageFragment(scope)) : undefined,
@@ -225,7 +248,26 @@ export function getRenderMapVisitor(
                             .filter(framing => framing !== undefined)
                             .map(framing => getEventFramingFileName(framing.framing)),
                     );
-                    const eventsIndexItems = [...eventsToExport, ...[...eventFramingFileNames].map(name => ({ name }))];
+                    // Re-export the aggregate identify*/parse* pages from their domain barrels.
+                    const accountsIndexItems = [
+                        ...accountsToExport,
+                        ...programsToExport
+                            .filter(hasProgramAccountsPage)
+                            .map(program => ({ name: getProgramAccountsFileName(program) })),
+                    ];
+                    const instructionsIndexItems = [
+                        ...instructionsToExport,
+                        ...programsToExport
+                            .filter(hasProgramInstructionsPage)
+                            .map(program => ({ name: getProgramInstructionsFileName(program) })),
+                    ];
+                    const eventsIndexItems = [
+                        ...eventsToExport,
+                        ...[...eventFramingFileNames].map(name => ({ name })),
+                        ...programsToExport
+                            .filter(hasProgramEventsPage)
+                            .map(program => ({ name: getProgramEventsFileName(program) })),
+                    ];
 
                     const scope = {
                         ...renderScope,
@@ -239,12 +281,15 @@ export function getRenderMapVisitor(
 
                     return mergeRenderMaps([
                         createRenderMap({
-                            ['accounts/index.ts']: asPage(getIndexPageFragment(accountsToExport)),
+                            ['accounts/index.ts']: asPage(getIndexPageFragment(accountsIndexItems)),
                             ['errors/index.ts']: asPage(getIndexPageFragment(programsWithErrorsToExport)),
                             ['events/index.ts']: asPage(getIndexPageFragment(eventsIndexItems)),
                             ['index.ts']: asPage(getRootIndexPageFragment(scope)),
-                            ['instructions/index.ts']: asPage(getIndexPageFragment(instructionsToExport)),
+                            ['instructions/index.ts']: asPage(getIndexPageFragment(instructionsIndexItems)),
                             ['pdas/index.ts']: asPage(getIndexPageFragment(pdasToExport)),
+                            ['plugins/index.ts']: asPage(
+                                getIndexPageFragment(programsToExport.filter(hasProgramPluginPage)),
+                            ),
                             ['programs/index.ts']: asPage(getIndexPageFragment(programsToExport)),
                             ['types/index.ts']: asPage(getIndexPageFragment(definedTypesToExport)),
                         }),

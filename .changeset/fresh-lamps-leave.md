@@ -1,0 +1,9 @@
+---
+'@codama/renderers-js': minor
+---
+
+Move all aggregate program helpers into their domain modules and make them null-returning. The `identify*Account` helper now lives in `accounts/<programName>.accounts.ts`, the `identify*Instruction`/`parse*Instruction` helpers and `Parsed*Instruction` union in `instructions/<programName>.instructions.ts`, and the `identify*Event`/`parse*Event` helpers in `events/<programName>.events.ts` — each re-exported from its domain barrel. The dotted file names cannot collide with per-node pages, which are always pure-camelCase. The program plugin moves to its own `plugins/<programName>.ts` module, leaving program pages with only the address constant; this makes the generated import graph fully acyclic (plugins → instructions → programs).
+
+The numeric `<ProgramName>Account`, `<ProgramName>Instruction`, and event enums are replaced by string-literal unions (`<ProgramName>AccountType`, `<ProgramName>InstructionType`, `<ProgramName>EventType`) of camelCased node names. All identify helpers return `null` when the data matches no known node instead of throwing, and `parse*Instruction`/`parse*Event` return `null` when identification fails; decode/parse errors still propagate when discriminators match but the body is malformed. The parsed event union nests the decoded payload under a `data` property instead of spreading it. All generated aggregate helpers now carry JSDoc describing the null/throw contract.
+
+The `programAccountsEnum`, `programAccountsEnumVariant`, `programInstructionsEnum`, `programInstructionsEnumVariant`, `programEventsEnum`, and `programEventsEnumVariant` name-transformer keys are replaced by `programAccountsTypeUnion`, `programAccountsTypeVariant`, `programInstructionsTypeUnion`, `programInstructionsTypeVariant`, `programEventsTypeUnion`, and `programEventsTypeVariant`.

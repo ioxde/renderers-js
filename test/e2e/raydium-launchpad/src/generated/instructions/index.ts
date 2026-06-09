@@ -18,6 +18,7 @@ export * from './createVestingAccount.js';
 export * from './initialize.js';
 export * from './migrateToAmm.js';
 export * from './migrateToCpswap.js';
+export * from './raydiumLaunchpad.instructions.js';
 export * from './sellExactIn.js';
 export * from './sellExactOut.js';
 export * from './updateConfig.js';

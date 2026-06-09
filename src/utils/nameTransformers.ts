@@ -44,25 +44,25 @@ export type NameTransformerKey =
     | 'isDiscriminatedUnionFunction'
     | 'pdaFindFunction'
     | 'pdaSeedsType'
-    | 'programAccountsEnum'
-    | 'programAccountsEnumVariant'
     | 'programAccountsIdentifierFunction'
+    | 'programAccountsTypeUnion'
+    | 'programAccountsTypeVariant'
     | 'programAddressConstant'
     | 'programErrorConstant'
     | 'programErrorConstantPrefix'
     | 'programErrorMessagesMap'
     | 'programErrorUnion'
-    | 'programEventsEnum'
-    | 'programEventsEnumVariant'
     | 'programEventsIdentifierFunction'
     | 'programEventsParsedUnionType'
     | 'programEventsParseFunction'
+    | 'programEventsTypeUnion'
+    | 'programEventsTypeVariant'
     | 'programGetErrorMessageFunction'
-    | 'programInstructionsEnum'
-    | 'programInstructionsEnumVariant'
     | 'programInstructionsIdentifierFunction'
     | 'programInstructionsParsedUnionType'
     | 'programInstructionsParseFunction'
+    | 'programInstructionsTypeUnion'
+    | 'programInstructionsTypeVariant'
     | 'programIsErrorFunction'
     | 'programPluginAccountKey'
     | 'programPluginAccountsType'
@@ -129,25 +129,25 @@ export const DEFAULT_NAME_TRANSFORMERS: NameTransformers = {
     isDiscriminatedUnionFunction: name => `is${pascalCase(name)}`,
     pdaFindFunction: name => `find${pascalCase(name)}Pda`,
     pdaSeedsType: name => `${pascalCase(name)}Seeds`,
-    programAccountsEnum: name => `${pascalCase(name)}Account`,
-    programAccountsEnumVariant: name => `${pascalCase(name)}`,
     programAccountsIdentifierFunction: name => `identify${pascalCase(name)}Account`,
+    programAccountsTypeUnion: name => `${pascalCase(name)}AccountType`,
+    programAccountsTypeVariant: name => `${camelCase(name)}`,
     programAddressConstant: name => `${snakeCase(name).toUpperCase()}_PROGRAM_ADDRESS`,
     programErrorConstant: name => snakeCase(name).toUpperCase(),
     programErrorConstantPrefix: name => `${snakeCase(name).toUpperCase()}_ERROR__`,
     programErrorMessagesMap: name => `${camelCase(name)}ErrorMessages`,
     programErrorUnion: name => `${pascalCase(name)}Error`,
-    programEventsEnum: name => `${pascalCase(name)}Event`,
-    programEventsEnumVariant: name => `${pascalCase(name)}`,
     programEventsIdentifierFunction: name => `identify${pascalCase(name)}Event`,
     programEventsParseFunction: name => `parse${pascalCase(name)}Event`,
     programEventsParsedUnionType: name => `Parsed${pascalCase(name)}Event`,
+    programEventsTypeUnion: name => `${pascalCase(name)}EventType`,
+    programEventsTypeVariant: name => `${camelCase(name)}`,
     programGetErrorMessageFunction: name => `get${pascalCase(name)}ErrorMessage`,
-    programInstructionsEnum: name => `${pascalCase(name)}Instruction`,
-    programInstructionsEnumVariant: name => `${pascalCase(name)}`,
     programInstructionsIdentifierFunction: name => `identify${pascalCase(name)}Instruction`,
     programInstructionsParseFunction: name => `parse${pascalCase(name)}Instruction`,
     programInstructionsParsedUnionType: name => `Parsed${pascalCase(name)}Instruction`,
+    programInstructionsTypeUnion: name => `${pascalCase(name)}InstructionType`,
+    programInstructionsTypeVariant: name => `${camelCase(name)}`,
     programIsErrorFunction: name => `is${pascalCase(name)}Error`,
     programPluginAccountKey: name => `${camelCase(name)}`,
     programPluginAccountsType: name => `${pascalCase(name)}PluginAccounts`,

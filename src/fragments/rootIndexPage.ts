@@ -1,6 +1,7 @@
 import { AccountNode, DefinedTypeNode, EventNode, InstructionNode, PdaNode, ProgramNode } from '@codama/nodes';
 
 import { Fragment, fragment, getExportAllFragment, mergeFragments } from '../utils';
+import { hasProgramPluginPage } from './programPlugin';
 
 export function getRootIndexPageFragment(scope: {
     accountsToExport: AccountNode[];
@@ -30,6 +31,7 @@ export function getRootIndexPageFragment(scope: {
             scope.eventsToExport.length > 0 ? getExportAllFragment('./events/index') : undefined,
             scope.instructionsToExport.length > 0 ? getExportAllFragment('./instructions/index') : undefined,
             scope.pdasToExport.length > 0 ? getExportAllFragment('./pdas/index') : undefined,
+            scope.programsToExport.some(hasProgramPluginPage) ? getExportAllFragment('./plugins/index') : undefined,
             scope.programsToExport.length > 0 ? getExportAllFragment('./programs/index') : undefined,
             scope.definedTypesToExport.length > 0 ? getExportAllFragment('./types/index') : undefined,
         ],

@@ -7,4 +7,5 @@
  */
 
 export * from './instructions/index.js';
+export * from './plugins/index.js';
 export * from './programs/index.js';

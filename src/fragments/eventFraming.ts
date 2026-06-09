@@ -89,9 +89,12 @@ export function getEventCpiFraming(
     return programEventFraming;
 }
 
-/** File name (without extension) of the page hosting the shared framing constant. */
-export function getEventFramingFileName(framing: EventFraming): string {
-    return camelCase(framing.sharedConstantName);
+/**
+ * File name (without extension) of the page hosting the shared framing constant.
+ * Dotted names cannot collide with event pages, which are plain camelCase.
+ */
+export function getEventFramingFileName(framing: EventFraming): `${string}.framing` {
+    return `${camelCase(framing.sharedConstantName)}.framing`;
 }
 
 /** References the hoisted framing constant, importing it from the given module. */
@@ -110,7 +113,7 @@ export function getEventFramingConstantFragment(
 export function getCpiFramedSkipExprFragment(
     scope: Pick<RenderScope, 'nameApi'> & {
         /** Module hosting the per-event constants; omit when they live on the same page. */
-        constantSource?: 'generatedEvents';
+        constantSource?: `./${string}`;
         /** Event discriminators with the hoisted framing discriminator already dropped. */
         discriminators: DiscriminatorNode[];
         eventName: CamelCaseString;
@@ -118,10 +121,11 @@ export function getCpiFramedSkipExprFragment(
     },
 ): Fragment {
     const { constantSource, discriminators, eventName, nameApi, programEventFraming } = scope;
+    // Callers always render under the events folder, so the framing constant is a sibling page.
     const framingConstant = getEventFramingConstantFragment(
         programEventFraming.framing,
         nameApi,
-        constantSource ?? `./${getEventFramingFileName(programEventFraming.framing)}`,
+        `./${getEventFramingFileName(programEventFraming.framing)}`,
     );
     const constantParts = discriminators.filter(isNodeFilter('constantDiscriminatorNode')).map(disc => {
         const name = nameApi.constant(getDiscriminatorConstantName(eventName, disc, discriminators));

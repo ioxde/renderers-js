@@ -1,12 +1,18 @@
-import { camelCase } from '@codama/nodes';
+import { CamelCaseString } from '@codama/nodes';
 
 import { Fragment, getExportAllFragment, mergeFragments } from '../utils';
 
-export function getIndexPageFragment(items: { name: string }[]): Fragment | undefined {
+/**
+ * A barrel export path segment: a camelCase node name or a dotted aggregate/framing
+ * file name. Plain `string` is excluded so un-normalized names fail to compile.
+ */
+export type IndexPageItemName = CamelCaseString | `${string}.${string}`;
+
+export function getIndexPageFragment(items: { name: IndexPageItemName }[]): Fragment | undefined {
     if (items.length === 0) return;
 
     const names = items
-        .map(item => camelCase(item.name))
+        .map(item => item.name)
         .sort((a, b) => a.localeCompare(b))
         .map(name => getExportAllFragment(`./${name}`));
 

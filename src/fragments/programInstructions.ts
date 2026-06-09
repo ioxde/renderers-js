@@ -1,4 +1,5 @@
 import {
+    camelCase,
     getAllInstructionsWithSubs,
     InstructionNode,
     ProgramNode,
@@ -8,12 +9,31 @@ import {
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConditionFragment } from './discriminatorCondition';
 
-export function getProgramInstructionsFragment(
+/** File name (without extension) of the aggregate instructions page hosting the identify/parse helpers. */
+export function getProgramInstructionsFileName(programNode: ProgramNode): `${string}.instructions` {
+    return `${camelCase(programNode.name)}.instructions`;
+}
+
+/** Whether the aggregate instructions page renders for this program. */
+export function hasProgramInstructionsPage(programNode: ProgramNode): boolean {
+    return programNode.instructions.length > 0;
+}
+
+/** Import path of an instruction's page, relative to the instructions folder. */
+function getInstructionModule(instruction: InstructionNode): `./${string}` {
+    return `./${camelCase(instruction.name)}`;
+}
+
+/**
+ * Renders a program's aggregate instructions page: the type union, the parsed union, and
+ * the `identify*`/`parse*` helpers. Both helpers return `null` when no instruction matches.
+ */
+export function getProgramInstructionsPageFragment(
     scope: Pick<RenderScope, 'nameApi' | 'renderParentInstructions' | 'typeManifestVisitor'> & {
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
-    if (scope.programNode.instructions.length === 0) return;
+    if (!hasProgramInstructionsPage(scope.programNode)) return;
 
     const allInstructions = getAllInstructionsWithSubs(scope.programNode, {
         leavesOnly: !scope.renderParentInstructions,
@@ -22,7 +42,7 @@ export function getProgramInstructionsFragment(
     const scopeWithInstructions = { ...scope, allInstructions };
     return mergeFragments(
         [
-            getProgramInstructionsEnumFragment(scopeWithInstructions),
+            getProgramInstructionsTypeUnionFragment(scopeWithInstructions),
             getProgramInstructionsIdentifierFunctionFragment(scopeWithInstructions),
             getProgramInstructionsParsedUnionTypeFragment(scopeWithInstructions),
             getProgramInstructionsParseFunctionFragment(scopeWithInstructions),
@@ -31,18 +51,19 @@ export function getProgramInstructionsFragment(
     );
 }
 
-function getProgramInstructionsEnumFragment(
+function getProgramInstructionsTypeUnionFragment(
     scope: Pick<RenderScope, 'nameApi'> & {
         allInstructions: InstructionNode[];
         programNode: ProgramNode;
     },
 ): Fragment {
     const { programNode, allInstructions, nameApi } = scope;
-    const programInstructionsEnum = nameApi.programInstructionsEnum(programNode.name);
-    const programInstructionsEnumVariants = allInstructions.map(instruction =>
-        nameApi.programInstructionsEnumVariant(instruction.name),
+    const programInstructionsTypeUnion = nameApi.programInstructionsTypeUnion(programNode.name);
+    const programInstructionsTypeVariants = allInstructions.map(
+        instruction => `'${nameApi.programInstructionsTypeVariant(instruction.name)}'`,
     );
-    return fragment`export enum ${programInstructionsEnum} { ${programInstructionsEnumVariants.join(', ')} }`;
+    return fragment`/** Instruction kinds of the ${programNode.name} program. */
+export type ${programInstructionsTypeUnion} = ${programInstructionsTypeVariants.join(' | ')};`;
 }
 
 function getProgramInstructionsIdentifierFunctionFragment(
@@ -55,20 +76,19 @@ function getProgramInstructionsIdentifierFunctionFragment(
     const instructionsWithDiscriminators = allInstructions.filter(
         instruction => (instruction.discriminators ?? []).length > 0,
     );
-    const hasInstructionDiscriminators = instructionsWithDiscriminators.length > 0;
-    if (!hasInstructionDiscriminators) return;
+    if (instructionsWithDiscriminators.length === 0) return;
 
-    const programInstructionsEnum = nameApi.programInstructionsEnum(programNode.name);
+    const programInstructionsTypeUnion = nameApi.programInstructionsTypeUnion(programNode.name);
     const programInstructionsIdentifierFunction = nameApi.programInstructionsIdentifierFunction(programNode.name);
     const discriminatorsFragment = mergeFragments(
         instructionsWithDiscriminators.map((instruction): Fragment => {
-            const variant = nameApi.programInstructionsEnumVariant(instruction.name);
+            const variant = nameApi.programInstructionsTypeVariant(instruction.name);
             return getDiscriminatorConditionFragment({
                 ...scope,
-                constantSource: 'generatedInstructions',
+                constantSource: getInstructionModule(instruction),
                 dataName: 'data',
                 discriminators: instruction.discriminators ?? [],
-                ifTrue: `return ${programInstructionsEnum}.${variant};`,
+                ifTrue: `return '${variant}';`,
                 prefix: instruction.name,
                 struct: structTypeNodeFromInstructionArgumentNodes(instruction.arguments),
             });
@@ -77,13 +97,15 @@ function getProgramInstructionsIdentifierFunctionFragment(
     );
 
     const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
-    const solanaError = use('SolanaError', 'solanaErrors');
-    const solanaErrorCode = use('SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION', 'solanaErrors');
 
-    return fragment`export function ${programInstructionsIdentifierFunction}(instruction: { data: ${readonlyUint8Array} } | ${readonlyUint8Array}): ${programInstructionsEnum} {
+    return fragment`/**
+ * Identifies ${programNode.name} instruction data by its discriminators.
+ * Returns \`null\` when the data matches no known instruction.
+ */
+export function ${programInstructionsIdentifierFunction}(instruction: { data: ${readonlyUint8Array} } | ${readonlyUint8Array}): ${programInstructionsTypeUnion} | null {
     const data = 'data' in instruction ? instruction.data : instruction;
     ${discriminatorsFragment}
-    throw new ${solanaError}(${solanaErrorCode}, { instructionData: data, programName: "${programNode.name}" });
+    return null;
 }`;
 }
 
@@ -97,21 +119,21 @@ function getProgramInstructionsParsedUnionTypeFragment(
 
     const programAddress = programNode.publicKey;
     const programInstructionsType = nameApi.programInstructionsParsedUnionType(programNode.name);
-    const programInstructionsEnum = nameApi.programInstructionsEnum(programNode.name);
 
     const typeVariants = allInstructions.map((instruction): Fragment => {
-        const instructionEnumVariant = nameApi.programInstructionsEnumVariant(instruction.name);
+        const variant = nameApi.programInstructionsTypeVariant(instruction.name);
         const parsedInstructionType = use(
             `type ${nameApi.instructionParsedType(instruction.name)}`,
-            'generatedInstructions',
+            getInstructionModule(instruction),
         );
 
-        return fragment`| { instructionType: ${programInstructionsEnum}.${instructionEnumVariant} } & ${parsedInstructionType}<TProgram>`;
+        return fragment`| ({ instructionType: '${variant}' } & ${parsedInstructionType}<TProgram>)`;
     });
 
     return mergeFragments(
         [
-            fragment`export type ${programInstructionsType}<TProgram extends string = '${programAddress}'> =`,
+            fragment`/** Parsed ${programNode.name} instruction: the instruction kind tag plus its parsed accounts and data. */
+export type ${programInstructionsType}<TProgram extends string = '${programAddress}'> =`,
             ...typeVariants,
         ],
         c => c.join('\n'),
@@ -132,38 +154,42 @@ function getProgramInstructionsParseFunctionFragment(
     );
     if (instructionsWithDiscriminators.length === 0) return;
 
-    const programInstructionsEnum = nameApi.programInstructionsEnum(programNode.name);
     const programInstructionsIdentifierFunction = nameApi.programInstructionsIdentifierFunction(programNode.name);
     const programInstructionsParsedUnionType = nameApi.programInstructionsParsedUnionType(programNode.name);
     const parseFunction = nameApi.programInstructionsParseFunction(programNode.name);
 
     const switchCases = mergeFragments(
         allInstructions.map((instruction): Fragment => {
-            const enumVariant = nameApi.programInstructionsEnumVariant(instruction.name);
-            const parseFunction = use(nameApi.instructionParseFunction(instruction.name), 'generatedInstructions');
+            const variant = nameApi.programInstructionsTypeVariant(instruction.name);
+            const parseFunction = use(
+                nameApi.instructionParseFunction(instruction.name),
+                getInstructionModule(instruction),
+            );
             const assertIsInstructionWithAccounts = use('assertIsInstructionWithAccounts', 'solanaInstructions');
             // Only need accounts assertion since data is guaranteed by the input type
             const hasAccounts = instruction.accounts.length > 0;
             const assertionsCode = hasAccounts
                 ? fragment`${assertIsInstructionWithAccounts}(instruction);\n`
                 : fragment``;
-            return fragment`case ${programInstructionsEnum}.${enumVariant}: { ${assertionsCode}return { instructionType: ${programInstructionsEnum}.${enumVariant}, ...${parseFunction}(instruction) }; }`;
+            return fragment`case '${variant}': { ${assertionsCode}return { instructionType: '${variant}', ...${parseFunction}(instruction) }; }`;
         }),
         c => c.join('\n'),
     );
 
-    const solanaError = use('SolanaError', 'solanaErrors');
-    const solanaErrorCode = use('SOLANA_ERROR__PROGRAM_CLIENTS__UNRECOGNIZED_INSTRUCTION_TYPE', 'solanaErrors');
-
-    return fragment`
-        export function ${parseFunction}<TProgram extends string>(
-            instruction: ${use('type Instruction', 'solanaInstructions')}<TProgram> 
-                & ${use('type InstructionWithData', 'solanaInstructions')}<${use('type ReadonlyUint8Array', 'solanaCodecsCore')}>
-        ): ${programInstructionsParsedUnionType}<TProgram> {
-            const instructionType = ${programInstructionsIdentifierFunction}(instruction);
-            switch (instructionType) {
-                ${switchCases}
-                default: throw new ${solanaError}(${solanaErrorCode}, { instructionType: instructionType as string, programName: "${programNode.name}" });
-            }
-        }`;
+    // No default case: the switch is exhaustive over the identified instruction type.
+    // Parse errors propagate: a matched discriminator with malformed data should throw, not return null.
+    return fragment`/**
+ * Parses a ${programNode.name} instruction into its kind tag plus parsed accounts and data.
+ * Returns \`null\` when no known instruction matches; throws if a matched instruction fails to parse.
+ */
+export function ${parseFunction}<TProgram extends string>(
+    instruction: ${use('type Instruction', 'solanaInstructions')}<TProgram>
+        & ${use('type InstructionWithData', 'solanaInstructions')}<${use('type ReadonlyUint8Array', 'solanaCodecsCore')}>
+): ${programInstructionsParsedUnionType}<TProgram> | null {
+    const instructionType = ${programInstructionsIdentifierFunction}(instruction);
+    if (instructionType === null) return null;
+    switch (instructionType) {
+        ${switchCases}
+    }
+}`;
 }

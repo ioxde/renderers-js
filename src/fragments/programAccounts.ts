@@ -1,31 +1,51 @@
-import { ProgramNode, resolveNestedTypeNode } from '@codama/nodes';
+import { AccountNode, camelCase, ProgramNode, resolveNestedTypeNode } from '@codama/nodes';
 
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConditionFragment } from './discriminatorCondition';
 
-export function getProgramAccountsFragment(
+/** File name (without extension) of the aggregate accounts page hosting the `identify*` helper. */
+export function getProgramAccountsFileName(programNode: ProgramNode): `${string}.accounts` {
+    return `${camelCase(programNode.name)}.accounts`;
+}
+
+/** Whether the aggregate accounts page renders for this program. */
+export function hasProgramAccountsPage(programNode: ProgramNode): boolean {
+    return programNode.accounts.length > 0;
+}
+
+/** Import path of an account's page, relative to the accounts folder. */
+function getAccountModule(account: AccountNode): `./${string}` {
+    return `./${camelCase(account.name)}`;
+}
+
+/**
+ * Renders a program's aggregate accounts page: the account-type union plus the
+ * `identify*` helper. The helper returns `null` when no known account matches.
+ */
+export function getProgramAccountsPageFragment(
     scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
-    if (scope.programNode.accounts.length === 0) return;
+    if (!hasProgramAccountsPage(scope.programNode)) return;
     return mergeFragments(
-        [getProgramAccountsEnumFragment(scope), getProgramAccountsIdentifierFunctionFragment(scope)],
+        [getProgramAccountsTypeUnionFragment(scope), getProgramAccountsIdentifierFunctionFragment(scope)],
         c => c.join('\n\n'),
     );
 }
 
-function getProgramAccountsEnumFragment(
+function getProgramAccountsTypeUnionFragment(
     scope: Pick<RenderScope, 'nameApi'> & {
         programNode: ProgramNode;
     },
 ): Fragment {
     const { programNode, nameApi } = scope;
-    const programAccountsEnum = nameApi.programAccountsEnum(programNode.name);
-    const programAccountsEnumVariants = programNode.accounts.map(account =>
-        nameApi.programAccountsEnumVariant(account.name),
+    const programAccountsTypeUnion = nameApi.programAccountsTypeUnion(programNode.name);
+    const programAccountsTypeVariants = programNode.accounts.map(
+        account => `'${nameApi.programAccountsTypeVariant(account.name)}'`,
     );
-    return fragment`export enum ${programAccountsEnum} { ${programAccountsEnumVariants.join(', ')} }`;
+    return fragment`/** Account kinds of the ${programNode.name} program. */
+export type ${programAccountsTypeUnion} = ${programAccountsTypeVariants.join(' | ')};`;
 }
 
 function getProgramAccountsIdentifierFunctionFragment(
@@ -37,21 +57,20 @@ function getProgramAccountsIdentifierFunctionFragment(
     const accountsWithDiscriminators = programNode.accounts.filter(
         account => (account.discriminators ?? []).length > 0,
     );
-    const hasAccountDiscriminators = accountsWithDiscriminators.length > 0;
-    if (!hasAccountDiscriminators) return;
+    if (accountsWithDiscriminators.length === 0) return;
 
-    const programAccountsEnum = nameApi.programAccountsEnum(programNode.name);
+    const programAccountsTypeUnion = nameApi.programAccountsTypeUnion(programNode.name);
     const programAccountsIdentifierFunction = nameApi.programAccountsIdentifierFunction(programNode.name);
 
     const discriminatorsFragment = mergeFragments(
         accountsWithDiscriminators.map((account): Fragment => {
-            const variant = nameApi.programAccountsEnumVariant(account.name);
+            const variant = nameApi.programAccountsTypeVariant(account.name);
             return getDiscriminatorConditionFragment({
                 ...scope,
-                constantSource: 'generatedAccounts',
+                constantSource: getAccountModule(account),
                 dataName: 'data',
                 discriminators: account.discriminators ?? [],
-                ifTrue: `return ${programAccountsEnum}.${variant};`,
+                ifTrue: `return '${variant}';`,
                 prefix: account.name,
                 struct: resolveNestedTypeNode(account.data),
             });
@@ -60,12 +79,14 @@ function getProgramAccountsIdentifierFunctionFragment(
     );
 
     const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
-    const solanaError = use('SolanaError', 'solanaErrors');
-    const solanaErrorCode = use('SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT', 'solanaErrors');
 
-    return fragment`export function ${programAccountsIdentifierFunction}(account: { data: ${readonlyUint8Array} } | ${readonlyUint8Array}): ${programAccountsEnum} {
+    return fragment`/**
+ * Identifies ${programNode.name} account data by its discriminators.
+ * Returns \`null\` when the data matches no known account.
+ */
+export function ${programAccountsIdentifierFunction}(account: { data: ${readonlyUint8Array} } | ${readonlyUint8Array}): ${programAccountsTypeUnion} | null {
     const data = 'data' in account ? account.data : account;
     ${discriminatorsFragment}
-    throw new ${solanaError}(${solanaErrorCode}, { accountData: data, programName: "${programNode.name}" });
+    return null;
 }`;
 }
