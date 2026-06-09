@@ -52,6 +52,16 @@ export function getProgramEventsPageFragment(
     },
 ): Fragment | undefined {
     if (!hasProgramEventsPage(scope.programNode)) return;
+
+    const discriminatorKey = scope.nameApi.programEventsParsedDiscriminatorKey(scope.programNode.name);
+    const dataKey = scope.nameApi.programEventsParsedDataKey(scope.programNode.name);
+    if (discriminatorKey === dataKey) {
+        throw new Error(
+            `The programEventsParsedDiscriminatorKey and programEventsParsedDataKey name transformers ` +
+                `both returned '${dataKey}'; they must be distinct.`,
+        );
+    }
+
     const events = getParsableEvents(scope.programNode);
     const programEventFraming = getProgramEventFraming(scope.programNode);
     return mergeFragments(
@@ -138,11 +148,13 @@ function getProgramEventsParsedUnionTypeFragment(
 ): Fragment {
     const { programNode, nameApi, events } = scope;
     const programEventsParsedUnionType = nameApi.programEventsParsedUnionType(programNode.name);
+    const discriminatorKey = nameApi.programEventsParsedDiscriminatorKey(programNode.name);
+    const dataKey = nameApi.programEventsParsedDataKey(programNode.name);
 
     const typeVariants = events.map((event): Fragment => {
         const variant = nameApi.programEventsTypeVariant(event.name);
         const eventDataType = use(`type ${nameApi.dataType(event.name)}`, getEventModule(event));
-        return fragment`| { eventType: '${variant}'; data: ${eventDataType} }`;
+        return fragment`| { ${discriminatorKey}: '${variant}'; ${dataKey}: ${eventDataType} }`;
     });
 
     return mergeFragments(
@@ -167,6 +179,8 @@ function getProgramEventsParseFunctionFragment(
     const programEventsIdentifierFunction = nameApi.programEventsIdentifierFunction(programNode.name);
     const programEventsParsedUnionType = nameApi.programEventsParsedUnionType(programNode.name);
     const parseFunction = nameApi.programEventsParseFunction(programNode.name);
+    const discriminatorKey = nameApi.programEventsParsedDiscriminatorKey(programNode.name);
+    const dataKey = nameApi.programEventsParsedDataKey(programNode.name);
 
     const switchCases = mergeFragments(
         events.map((event): Fragment => {
@@ -175,9 +189,9 @@ function getProgramEventsParseFunctionFragment(
             const skipExpr = getHiddenPrefixSkipExpr(event, nameApi, programEventFraming);
 
             if (skipExpr) {
-                return fragment`case '${variant}': { return { eventType: '${variant}', data: ${decoderFn}().decode(data, ${skipExpr}) }; }`;
+                return fragment`case '${variant}': { return { ${discriminatorKey}: '${variant}', ${dataKey}: ${decoderFn}().decode(data, ${skipExpr}) }; }`;
             }
-            return fragment`case '${variant}': { return { eventType: '${variant}', data: ${decoderFn}().decode(data) }; }`;
+            return fragment`case '${variant}': { return { ${discriminatorKey}: '${variant}', ${dataKey}: ${decoderFn}().decode(data) }; }`;
         }),
         c => c.join('\n'),
     );

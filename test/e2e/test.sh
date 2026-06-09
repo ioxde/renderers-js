@@ -55,7 +55,7 @@ const eslint = new ESLint({
     }],
 });
 
-const results = await eslint.lintFiles('test/e2e/$1/src/generated/**/*.ts');
+const results = await eslint.lintFiles('test/e2e/$1/src/generated*/**/*.ts');
 const formatter = await eslint.loadFormatter('stylish');
 const text = await formatter.format(results);
 if (text) console.log(text);

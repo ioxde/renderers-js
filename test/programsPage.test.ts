@@ -20,7 +20,7 @@ import {
     structTypeNode,
 } from '@codama/nodes';
 import { visit } from '@codama/visitors-core';
-import { test } from 'vitest';
+import { expect, test } from 'vitest';
 
 import { getRenderMapVisitor } from '../src';
 import { renderMapContains, renderMapContainsImports, renderMapDoesNotContain } from './_setup';
@@ -590,4 +590,85 @@ test('it renders event helpers in the events folder instead of the program page'
         'parseMyProgramEvent',
     ]);
     await renderMapContains(renderMap, 'events/myProgram.events.ts', ['identifyMyProgramEvent', 'parseMyProgramEvent']);
+});
+
+test('it renders a custom parsed instruction discriminator key via nameTransformers', async () => {
+    // Given a program with two instructions with field discriminators.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'discriminator',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                discriminators: [fieldDiscriminatorNode('discriminator')],
+                name: 'mintTokens',
+            }),
+            instructionNode({
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: numberValueNode(2),
+                        name: 'discriminator',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                discriminators: [fieldDiscriminatorNode('discriminator')],
+                name: 'transferTokens',
+            }),
+        ],
+        name: 'splToken',
+        publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    });
+
+    // When we render it with an overridden parsed-instruction discriminator key.
+    const renderMap = visit(
+        node,
+        getRenderMapVisitor({
+            nameTransformers: { programInstructionsParsedDiscriminatorKey: () => 'kind' },
+        }),
+    );
+
+    // Then the custom key applies to the union and switch cases, not the local `instructionType` variable.
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
+        "| ({ kind: 'mintTokens' } & ParsedMintTokensInstruction<TProgram>)",
+        "| ({ kind: 'transferTokens' } & ParsedTransferTokensInstruction<TProgram>)",
+        'const instructionType = identifySplTokenInstruction(instruction)',
+        /return\s*{\s*kind:\s*'mintTokens',\s*\.\.\.parseMintTokensInstruction\(instruction\)/s,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/splToken.instructions.ts', ['instructionType:']);
+});
+
+test('it throws when the parsed instruction discriminator key collides with a parsed instruction field', () => {
+    // Given a program with one instruction.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'discriminator',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                discriminators: [fieldDiscriminatorNode('discriminator')],
+                name: 'mintTokens',
+            }),
+        ],
+        name: 'splToken',
+        publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    });
+
+    // When the key collides with a parsed instruction field, the spread would
+    // clobber the tag at runtime, so generation throws instead.
+    expect(() =>
+        visit(
+            node,
+            getRenderMapVisitor({
+                nameTransformers: { programInstructionsParsedDiscriminatorKey: () => 'data' },
+            }),
+        ),
+    ).toThrow(/programInstructionsParsedDiscriminatorKey.*'data'/);
 });

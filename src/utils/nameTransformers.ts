@@ -53,12 +53,15 @@ export type NameTransformerKey =
     | 'programErrorMessagesMap'
     | 'programErrorUnion'
     | 'programEventsIdentifierFunction'
+    | 'programEventsParsedDataKey'
+    | 'programEventsParsedDiscriminatorKey'
     | 'programEventsParsedUnionType'
     | 'programEventsParseFunction'
     | 'programEventsTypeUnion'
     | 'programEventsTypeVariant'
     | 'programGetErrorMessageFunction'
     | 'programInstructionsIdentifierFunction'
+    | 'programInstructionsParsedDiscriminatorKey'
     | 'programInstructionsParsedUnionType'
     | 'programInstructionsParseFunction'
     | 'programInstructionsTypeUnion'
@@ -139,12 +142,15 @@ export const DEFAULT_NAME_TRANSFORMERS: NameTransformers = {
     programErrorUnion: name => `${pascalCase(name)}Error`,
     programEventsIdentifierFunction: name => `identify${pascalCase(name)}Event`,
     programEventsParseFunction: name => `parse${pascalCase(name)}Event`,
+    programEventsParsedDataKey: () => 'data',
+    programEventsParsedDiscriminatorKey: () => 'eventType',
     programEventsParsedUnionType: name => `Parsed${pascalCase(name)}Event`,
     programEventsTypeUnion: name => `${pascalCase(name)}EventType`,
     programEventsTypeVariant: name => `${camelCase(name)}`,
     programGetErrorMessageFunction: name => `get${pascalCase(name)}ErrorMessage`,
     programInstructionsIdentifierFunction: name => `identify${pascalCase(name)}Instruction`,
     programInstructionsParseFunction: name => `parse${pascalCase(name)}Instruction`,
+    programInstructionsParsedDiscriminatorKey: () => 'instructionType',
     programInstructionsParsedUnionType: name => `Parsed${pascalCase(name)}Instruction`,
     programInstructionsTypeUnion: name => `${pascalCase(name)}InstructionType`,
     programInstructionsTypeVariant: name => `${camelCase(name)}`,

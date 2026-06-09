@@ -17,6 +17,24 @@ async function main() {
     await generateProject(project);
 }
 
+// Overrides for the second raydium-launchpad render, so the e2e suite
+// covers nameTransformers end-to-end.
+const RENAMED_NAME_TRANSFORMERS = {
+    programAccountsIdentifierFunction: () => 'identifyAccount',
+    programAccountsTypeUnion: () => 'AccountType',
+    programEventsIdentifierFunction: () => 'identifyEvent',
+    programEventsParsedDataKey: () => 'payload',
+    programEventsParsedDiscriminatorKey: () => 'kind',
+    programEventsParsedUnionType: () => 'ParsedEvent',
+    programEventsParseFunction: () => 'parseEvent',
+    programEventsTypeUnion: () => 'EventType',
+    programInstructionsIdentifierFunction: () => 'identifyInstruction',
+    programInstructionsParsedDiscriminatorKey: () => 'kind',
+    programInstructionsParsedUnionType: () => 'ParsedInstruction',
+    programInstructionsParseFunction: () => 'parseInstruction',
+    programInstructionsTypeUnion: () => 'InstructionType',
+};
+
 async function generateProject(project) {
     const packageFolder = path.join(__dirname, project);
     const idl = readJson(path.join(packageFolder, 'idl.json'));
@@ -24,6 +42,15 @@ async function generateProject(project) {
     const visitor = renderVisitor(packageFolder, { kitImportStrategy: 'rootOnly' });
 
     await visit(node, visitor);
+
+    if (project === 'raydium-launchpad') {
+        const renamedVisitor = renderVisitor(packageFolder, {
+            generatedFolder: 'src/generated-renamed',
+            kitImportStrategy: 'rootOnly',
+            nameTransformers: RENAMED_NAME_TRANSFORMERS,
+        });
+        await visit(node, renamedVisitor);
+    }
 }
 
 main().catch(err => {

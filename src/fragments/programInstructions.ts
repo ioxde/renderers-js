@@ -35,6 +35,14 @@ export function getProgramInstructionsPageFragment(
 ): Fragment | undefined {
     if (!hasProgramInstructionsPage(scope.programNode)) return;
 
+    const discriminatorKey = scope.nameApi.programInstructionsParsedDiscriminatorKey(scope.programNode.name);
+    if (['accounts', 'data', 'programAddress'].includes(discriminatorKey)) {
+        throw new Error(
+            `The programInstructionsParsedDiscriminatorKey name transformer returned '${discriminatorKey}', ` +
+                `which collides with a field of the parsed instruction type.`,
+        );
+    }
+
     const allInstructions = getAllInstructionsWithSubs(scope.programNode, {
         leavesOnly: !scope.renderParentInstructions,
         subInstructionsFirst: true,
@@ -119,6 +127,7 @@ function getProgramInstructionsParsedUnionTypeFragment(
 
     const programAddress = programNode.publicKey;
     const programInstructionsType = nameApi.programInstructionsParsedUnionType(programNode.name);
+    const discriminatorKey = nameApi.programInstructionsParsedDiscriminatorKey(programNode.name);
 
     const typeVariants = allInstructions.map((instruction): Fragment => {
         const variant = nameApi.programInstructionsTypeVariant(instruction.name);
@@ -127,7 +136,7 @@ function getProgramInstructionsParsedUnionTypeFragment(
             getInstructionModule(instruction),
         );
 
-        return fragment`| ({ instructionType: '${variant}' } & ${parsedInstructionType}<TProgram>)`;
+        return fragment`| ({ ${discriminatorKey}: '${variant}' } & ${parsedInstructionType}<TProgram>)`;
     });
 
     return mergeFragments(
@@ -157,6 +166,7 @@ function getProgramInstructionsParseFunctionFragment(
     const programInstructionsIdentifierFunction = nameApi.programInstructionsIdentifierFunction(programNode.name);
     const programInstructionsParsedUnionType = nameApi.programInstructionsParsedUnionType(programNode.name);
     const parseFunction = nameApi.programInstructionsParseFunction(programNode.name);
+    const discriminatorKey = nameApi.programInstructionsParsedDiscriminatorKey(programNode.name);
 
     const switchCases = mergeFragments(
         allInstructions.map((instruction): Fragment => {
@@ -171,7 +181,7 @@ function getProgramInstructionsParseFunctionFragment(
             const assertionsCode = hasAccounts
                 ? fragment`${assertIsInstructionWithAccounts}(instruction);\n`
                 : fragment``;
-            return fragment`case '${variant}': { ${assertionsCode}return { instructionType: '${variant}', ...${parseFunction}(instruction) }; }`;
+            return fragment`case '${variant}': { ${assertionsCode}return { ${discriminatorKey}: '${variant}', ...${parseFunction}(instruction) }; }`;
         }),
         c => c.join('\n'),
     );

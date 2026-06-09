@@ -874,3 +874,97 @@ test('it renders the aggregate events page alongside an event named like the pro
     expect(eventsIndex?.content.match(/'\.\/myProgramEvents\.js'/g)).toHaveLength(1);
     expect(eventsIndex?.content.match(/'\.\/myProgram\.events\.js'/g)).toHaveLength(1);
 });
+
+test('it renders custom parsed event keys via nameTransformers', async () => {
+    // Given two events with constant discriminators.
+    const discriminator1 = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const discriminator2 = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', '1122334455667788'),
+    );
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() })]),
+                    [discriminator1],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator1)],
+                name: 'guardCreatedEvent',
+            }),
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'version', type: numberTypeNode('u8') })]),
+                    [discriminator2],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator2)],
+                name: 'guardUpdatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it with overridden parsed-event keys.
+    const renderMap = visit(
+        node,
+        getRenderMapVisitor({
+            nameTransformers: {
+                programEventsParsedDataKey: () => 'payload',
+                programEventsParsedDiscriminatorKey: () => 'kind',
+            },
+        }),
+    );
+
+    // Then the parsed union and switch cases use the custom keys.
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        "| { kind: 'guardCreatedEvent'; payload: GuardCreatedEvent }",
+        "| { kind: 'guardUpdatedEvent'; payload: GuardUpdatedEvent }",
+        /kind:\s*'guardCreatedEvent',\s*payload:\s*getGuardCreatedEventDecoder\(\)/s,
+    ]);
+    // And the data-key override must not rename the identifier's local `data` variable.
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        "const data = 'data' in event ? event.data : event;",
+        /containsBytes\(\s*data,/s,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/myProgram.events.ts', ['eventType:', 'data: getGuard']);
+});
+
+test('it throws when the parsed event discriminator and data keys are identical', () => {
+    // Given an event with a constant discriminator.
+    const discriminator = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() })]),
+                    [discriminator],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator)],
+                name: 'guardCreatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When both keys resolve to the same string, the generated objects would have
+    // duplicate keys, so generation throws instead of emitting broken code.
+    expect(() =>
+        visit(
+            node,
+            getRenderMapVisitor({
+                nameTransformers: {
+                    programEventsParsedDataKey: () => 'kind',
+                    programEventsParsedDiscriminatorKey: () => 'kind',
+                },
+            }),
+        ),
+    ).toThrow(/programEventsParsedDiscriminatorKey.*programEventsParsedDataKey/);
+});
