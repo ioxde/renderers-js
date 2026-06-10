@@ -42,9 +42,28 @@ export function getDiscriminatorConditionFragment(
         struct: StructTypeNode;
     },
 ): Fragment {
-    return pipe(
-        mergeFragments([...(scope.leadingConditions ?? []), ...getDiscriminatorConditions(scope)], c => c.join(' && ')),
-        f => mapFragmentContent(f, c => `if (${c}) { ${scope.ifTrue} }`),
+    return pipe(getDiscriminatorConditionExprFragment(scope), f =>
+        mapFragmentContent(f, c => `if (${c}) { ${scope.ifTrue} }`),
+    );
+}
+
+/**
+ * Renders the bare boolean expression ANDing the leading conditions and discriminator
+ * checks, without the wrapping `if` statement of {@link getDiscriminatorConditionFragment}.
+ */
+export function getDiscriminatorConditionExprFragment(
+    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
+        constantSource: ConstantSource;
+        dataName: string;
+        discriminators: DiscriminatorNode[];
+        /** Conditions ANDed in ahead of the discriminator checks (e.g. a shared event-framing prefix). */
+        leadingConditions?: Fragment[];
+        prefix: string;
+        struct: StructTypeNode;
+    },
+): Fragment {
+    return mergeFragments([...(scope.leadingConditions ?? []), ...getDiscriminatorConditions(scope)], c =>
+        c.join(' && '),
     );
 }
 

@@ -56,12 +56,30 @@ export function getPoolCreateEventDecoder(): Decoder<PoolCreateEvent> {
     ]));
 }
 
-export function decodePoolCreateEvent(data: ReadonlyUint8Array): PoolCreateEvent {
-    if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event CPI framing for poolCreateEvent');
-    }
-    if (!containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 8)) {
-        throw new Error('Invalid event discriminator for poolCreateEvent');
+/**
+ * Checks whether the event data matches the framing and discriminator bytes of a
+ * {@link PoolCreateEvent}, without decoding. Never throws.
+ *
+ * @see parsePoolCreateEvent to decode the matching data
+ */
+export function isPoolCreateEvent(data: ReadonlyUint8Array): boolean {
+    return (
+        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
+        containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 8)
+    );
+}
+
+/**
+ * Parses raw event data as a {@link PoolCreateEvent}. Returns `null` on framing or discriminator
+ * mismatch; throws if the event matches but its body fails to decode.
+ *
+ * @see isPoolCreateEvent to check without decoding
+ * @see identifyEvent to identify any program event
+ * @see parseEvent
+ */
+export function parsePoolCreateEvent(data: ReadonlyUint8Array): PoolCreateEvent | null {
+    if (!isPoolCreateEvent(data)) {
+        return null;
     }
     return getPoolCreateEventDecoder().decode(
         data,

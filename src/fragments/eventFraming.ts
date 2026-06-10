@@ -73,6 +73,29 @@ export function getProgramEventFraming(programNode: ProgramNode): ResolvedProgra
 }
 
 /**
+ * Discriminators that distinguish this event from other framed events: the hoisted
+ * framing discriminator is excluded since it is shared by every framed event.
+ */
+export function getEventOwnDiscriminators(
+    event: EventNode,
+    programEventFraming: ResolvedProgramEventFraming | undefined,
+): DiscriminatorNode[] {
+    const all = event.discriminators ?? [];
+    return getEventCpiFraming(event, programEventFraming) ? all.slice(1) : all;
+}
+
+/**
+ * Whether the event has at least one discriminator beyond the shared framing, which is
+ * the same bytes on every framed event and so cannot identify one.
+ */
+export function isEventIdentifiable(
+    event: EventNode,
+    programEventFraming: ResolvedProgramEventFraming | undefined,
+): boolean {
+    return getEventOwnDiscriminators(event, programEventFraming).length > 0;
+}
+
+/**
  * Resolves the event's participation in the program's hoisted CPI framing. Returns the
  * resolved framing when the event is framed by it, or `undefined` when the event should
  * be rendered unframed.
@@ -142,9 +165,15 @@ export function getEventFramingPageFragment(
     },
 ): Fragment {
     const { constant, framing } = scope.programEventFraming;
+    const constantName = scope.nameApi.constant(camelCase(framing.sharedConstantName));
     return mergeFragments(
         [
-            fragment`/** Shared event-framing tag prepended to every CPI-framed event. */`,
+            fragment`/**
+ * Shared event-framing tag prepended to every CPI-framed event.
+ *
+ * \`containsBytes(data, ${constantName}, 0)\` checks whether data is a framed event
+ * at all — including event kinds unknown to this program.
+ */`,
             getConstantValueConstantFragment(camelCase(framing.sharedConstantName), constant, scope),
         ],
         cs => cs.join('\n'),

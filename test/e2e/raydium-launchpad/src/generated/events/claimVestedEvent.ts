@@ -39,12 +39,30 @@ export function getClaimVestedEventDecoder(): FixedSizeDecoder<ClaimVestedEvent>
     ]));
 }
 
-export function decodeClaimVestedEvent(data: ReadonlyUint8Array): ClaimVestedEvent {
-    if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event CPI framing for claimVestedEvent');
-    }
-    if (!containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)) {
-        throw new Error('Invalid event discriminator for claimVestedEvent');
+/**
+ * Checks whether the event data matches the framing and discriminator bytes of a
+ * {@link ClaimVestedEvent}, without decoding. Never throws.
+ *
+ * @see parseClaimVestedEvent to decode the matching data
+ */
+export function isClaimVestedEvent(data: ReadonlyUint8Array): boolean {
+    return (
+        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
+        containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)
+    );
+}
+
+/**
+ * Parses raw event data as a {@link ClaimVestedEvent}. Returns `null` on framing or discriminator
+ * mismatch; throws if the event matches but its body fails to decode.
+ *
+ * @see isClaimVestedEvent to check without decoding
+ * @see identifyRaydiumLaunchpadEvent to identify any program event
+ * @see parseRaydiumLaunchpadEvent
+ */
+export function parseClaimVestedEvent(data: ReadonlyUint8Array): ClaimVestedEvent | null {
+    if (!isClaimVestedEvent(data)) {
+        return null;
     }
     return getClaimVestedEventDecoder().decode(
         data,

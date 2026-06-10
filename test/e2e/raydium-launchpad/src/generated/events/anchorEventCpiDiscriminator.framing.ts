@@ -8,7 +8,12 @@
 
 import { fixEncoderSize, getBytesEncoder, type ReadonlyUint8Array } from '@solana/kit';
 
-/** Shared event-framing tag prepended to every CPI-framed event. */
+/**
+ * Shared event-framing tag prepended to every CPI-framed event.
+ *
+ * `containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)` checks whether data is a framed event
+ * at all — including event kinds unknown to this program.
+ */
 export const ANCHOR_EVENT_CPI_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([228, 69, 165, 46, 81, 203, 154, 29]);
 
 export function getAnchorEventCpiDiscriminatorBytes(): ReadonlyUint8Array {

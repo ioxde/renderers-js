@@ -35,7 +35,6 @@ test('identifyEvent recognizes framed event data and returns null on garbage', (
   const eventData = claimVestedEventBytes(123n);
 
   t.is(identifyEvent(eventData), 'claimVestedEvent');
-  t.is(identifyEvent({ data: eventData }), 'claimVestedEvent');
   t.is(identifyEvent(new Uint8Array(16)), null);
 });
 

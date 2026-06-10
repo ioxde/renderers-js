@@ -31,7 +31,8 @@ export type NameTransformerKey =
     | 'discriminatedUnionVariant'
     | 'encoderFunction'
     | 'enumVariant'
-    | 'eventDecodeFunction'
+    | 'eventIsFunction'
+    | 'eventParseFunction'
     | 'instructionAsyncFunction'
     | 'instructionAsyncInputType'
     | 'instructionDataType'
@@ -119,7 +120,8 @@ export const DEFAULT_NAME_TRANSFORMERS: NameTransformers = {
     discriminatedUnionVariant: name => `${pascalCase(name)}`,
     encoderFunction: name => `get${pascalCase(name)}Encoder`,
     enumVariant: name => `${pascalCase(name)}`,
-    eventDecodeFunction: name => `decode${pascalCase(name)}`,
+    eventIsFunction: name => `is${pascalCase(name)}`,
+    eventParseFunction: name => `parse${pascalCase(name)}`,
     instructionAsyncFunction: name => `get${pascalCase(name)}InstructionAsync`,
     instructionAsyncInputType: name => `${pascalCase(name)}AsyncInput`,
     instructionDataType: name => `${pascalCase(name)}InstructionData`,

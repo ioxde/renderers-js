@@ -1,16 +1,31 @@
-import { camelCase, definedTypeNode, EventNode, isNode, isNodeFilter, resolveNestedTypeNode } from '@codama/nodes';
+import { logWarn } from '@codama/errors';
+import {
+    camelCase,
+    definedTypeNode,
+    EventNode,
+    isNode,
+    isNodeFilter,
+    ProgramNode,
+    resolveNestedTypeNode,
+} from '@codama/nodes';
 import { pipe, visit } from '@codama/visitors-core';
 
 import { Fragment, fragment, getDocblockFragment, mergeFragments, removeFragmentImports, RenderScope } from '../utils';
 import { getDiscriminatorConstantName, getDiscriminatorConstantsFragment } from './discriminatorConstants';
-import { getEventDecodeFragment } from './eventDecode';
-import { getEventCpiFraming, ResolvedProgramEventFraming } from './eventFraming';
+import {
+    getEventCpiFraming,
+    getEventOwnDiscriminators,
+    isEventIdentifiable,
+    ResolvedProgramEventFraming,
+} from './eventFraming';
+import { getEventParseFragment } from './eventParse';
 import { getTypeDecoderFragment } from './typeDecoder';
 
 export function getEventPageFragment(
     scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
         eventNode: EventNode;
         programEventFraming?: ResolvedProgramEventFraming;
+        programNode?: ProgramNode;
         size: number | null;
     },
 ): Fragment {
@@ -20,13 +35,18 @@ export function getEventPageFragment(
     const typeManifest = visit(syntheticType, scope.typeManifestVisitor);
 
     const cpiFraming = getEventCpiFraming(node, scope.programEventFraming);
-    const allDiscriminators = node.discriminators ?? [];
     // Drop the hoisted framing discriminator so generated constants match the IDL `events[].discriminator` bytes.
-    const discriminatorNodes = cpiFraming ? allDiscriminators.slice(1) : allDiscriminators;
+    const discriminatorNodes = getEventOwnDiscriminators(node, scope.programEventFraming);
     const fields = isNode(innerType, 'structTypeNode') ? innerType.fields : [];
-    const hasConstantDiscriminator = discriminatorNodes.some(d => isNode(d, 'constantDiscriminatorNode'));
-    const shouldGenerateDecode =
-        (hasConstantDiscriminator || cpiFraming !== undefined) && isNode(node.data, 'hiddenPrefixTypeNode');
+    const shouldGenerateParse = isEventIdentifiable(node, scope.programEventFraming);
+    if (!shouldGenerateParse && cpiFraming) {
+        logWarn(
+            `Event [${node.name}] has no discriminator beyond the shared CPI framing, which is ` +
+                `common to all framed events and cannot identify it. Its parse helper will be skipped ` +
+                `and it will be excluded from the program's identify/parse event helpers. Add a constant ` +
+                `or field discriminator after the framing prefix to make it identifiable.`,
+        );
+    }
 
     const constantDiscriminatorImports = discriminatorNodes
         .filter(isNodeFilter('constantDiscriminatorNode'))
@@ -62,7 +82,7 @@ export function getEventPageFragment(
                     node: innerType,
                     size: scope.size,
                 }),
-                shouldGenerateDecode ? getEventDecodeFragment({ ...scope, eventNode: node }) : undefined,
+                shouldGenerateParse ? getEventParseFragment({ ...scope, eventNode: node }) : undefined,
             ],
             cs => cs.join('\n\n'),
         ),
@@ -70,7 +90,8 @@ export function getEventPageFragment(
             removeFragmentImports(f, 'generatedEvents', [
                 scope.nameApi.dataType(node.name),
                 scope.nameApi.decoderFunction(node.name),
-                scope.nameApi.eventDecodeFunction(node.name),
+                scope.nameApi.eventIsFunction(node.name),
+                scope.nameApi.eventParseFunction(node.name),
                 ...discriminatorSelfImports,
             ]),
     );

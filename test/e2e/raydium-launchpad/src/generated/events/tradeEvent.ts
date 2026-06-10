@@ -71,12 +71,27 @@ export function getTradeEventDecoder(): FixedSizeDecoder<TradeEvent> {
     ]));
 }
 
-export function decodeTradeEvent(data: ReadonlyUint8Array): TradeEvent {
-    if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event CPI framing for tradeEvent');
-    }
-    if (!containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)) {
-        throw new Error('Invalid event discriminator for tradeEvent');
+/**
+ * Checks whether the event data matches the framing and discriminator bytes of a
+ * {@link TradeEvent}, without decoding. Never throws.
+ *
+ * @see parseTradeEvent to decode the matching data
+ */
+export function isTradeEvent(data: ReadonlyUint8Array): boolean {
+    return containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8);
+}
+
+/**
+ * Parses raw event data as a {@link TradeEvent}. Returns `null` on framing or discriminator
+ * mismatch; throws if the event matches but its body fails to decode.
+ *
+ * @see isTradeEvent to check without decoding
+ * @see identifyRaydiumLaunchpadEvent to identify any program event
+ * @see parseRaydiumLaunchpadEvent
+ */
+export function parseTradeEvent(data: ReadonlyUint8Array): TradeEvent | null {
+    if (!isTradeEvent(data)) {
+        return null;
     }
     return getTradeEventDecoder().decode(
         data,

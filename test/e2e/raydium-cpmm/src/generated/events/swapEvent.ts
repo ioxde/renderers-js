@@ -55,9 +55,27 @@ export function getSwapEventDecoder(): FixedSizeDecoder<SwapEvent> {
     ]));
 }
 
-export function decodeSwapEvent(data: ReadonlyUint8Array): SwapEvent {
-    if (!containsBytes(data, SWAP_EVENT_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event discriminator for swapEvent');
+/**
+ * Checks whether the event data matches the discriminator bytes of a
+ * {@link SwapEvent}, without decoding. Never throws.
+ *
+ * @see parseSwapEvent to decode the matching data
+ */
+export function isSwapEvent(data: ReadonlyUint8Array): boolean {
+    return containsBytes(data, SWAP_EVENT_DISCRIMINATOR, 0);
+}
+
+/**
+ * Parses raw event data as a {@link SwapEvent}. Returns `null` on discriminator
+ * mismatch; throws if the event matches but its body fails to decode.
+ *
+ * @see isSwapEvent to check without decoding
+ * @see identifyRaydiumCpSwapEvent to identify any program event
+ * @see parseRaydiumCpSwapEvent
+ */
+export function parseSwapEvent(data: ReadonlyUint8Array): SwapEvent | null {
+    if (!isSwapEvent(data)) {
+        return null;
     }
     return getSwapEventDecoder().decode(data, SWAP_EVENT_DISCRIMINATOR.length);
 }

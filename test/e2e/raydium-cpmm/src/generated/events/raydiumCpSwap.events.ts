@@ -14,13 +14,10 @@ import { getSwapEventDecoder, SWAP_EVENT_DISCRIMINATOR, type SwapEvent } from '.
 export type RaydiumCpSwapEventType = 'lpChangeEvent' | 'swapEvent';
 
 /**
- * Identifies raydiumCpSwap event data by its discriminators.
- * Returns `null` when the data matches no known event.
+ * Identifies raydiumCpSwap event data by its discriminators, without decoding.
+ * Returns `null` when no known event matches. Never throws.
  */
-export function identifyRaydiumCpSwapEvent(
-    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
-): RaydiumCpSwapEventType | null {
-    const data = 'data' in event ? event.data : event;
+export function identifyRaydiumCpSwapEvent(data: ReadonlyUint8Array): RaydiumCpSwapEventType | null {
     if (containsBytes(data, LP_CHANGE_EVENT_DISCRIMINATOR, 0)) {
         return 'lpChangeEvent';
     }
@@ -39,11 +36,8 @@ export type ParsedRaydiumCpSwapEvent =
  * Parses raydiumCpSwap event data into its event kind and decoded payload.
  * Returns `null` when no known event matches; throws if a matched event fails to decode.
  */
-export function parseRaydiumCpSwapEvent(
-    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
-): ParsedRaydiumCpSwapEvent | null {
-    const data = 'data' in event ? event.data : event;
-    const eventType = identifyRaydiumCpSwapEvent(event);
+export function parseRaydiumCpSwapEvent(data: ReadonlyUint8Array): ParsedRaydiumCpSwapEvent | null {
+    const eventType = identifyRaydiumCpSwapEvent(data);
     if (eventType === null) return null;
     switch (eventType) {
         case 'lpChangeEvent': {

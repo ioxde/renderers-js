@@ -25,33 +25,23 @@ import { getTradeEventDecoder, TRADE_EVENT_DISCRIMINATOR, type TradeEvent } from
 export type RaydiumLaunchpadEventType = 'claimVestedEvent' | 'createVestingEvent' | 'poolCreateEvent' | 'tradeEvent';
 
 /**
- * Identifies raydiumLaunchpad event data by its discriminators.
- * Returns `null` when the data matches no known event.
+ * Identifies raydiumLaunchpad event data by its discriminators, without decoding.
+ * Returns `null` when no known event matches. Never throws.
  */
-export function identifyRaydiumLaunchpadEvent(
-    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
-): RaydiumLaunchpadEventType | null {
-    const data = 'data' in event ? event.data : event;
-    if (
-        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
-        containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)
-    ) {
-        return 'claimVestedEvent';
-    }
-    if (
-        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
-        containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)
-    ) {
-        return 'createVestingEvent';
-    }
-    if (
-        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
-        containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 8)
-    ) {
-        return 'poolCreateEvent';
-    }
-    if (containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)) {
-        return 'tradeEvent';
+export function identifyRaydiumLaunchpadEvent(data: ReadonlyUint8Array): RaydiumLaunchpadEventType | null {
+    if (containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
+        if (containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)) {
+            return 'claimVestedEvent';
+        }
+        if (containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)) {
+            return 'createVestingEvent';
+        }
+        if (containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 8)) {
+            return 'poolCreateEvent';
+        }
+        if (containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)) {
+            return 'tradeEvent';
+        }
     }
     return null;
 }
@@ -67,11 +57,8 @@ export type ParsedRaydiumLaunchpadEvent =
  * Parses raydiumLaunchpad event data into its event kind and decoded payload.
  * Returns `null` when no known event matches; throws if a matched event fails to decode.
  */
-export function parseRaydiumLaunchpadEvent(
-    event: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
-): ParsedRaydiumLaunchpadEvent | null {
-    const data = 'data' in event ? event.data : event;
-    const eventType = identifyRaydiumLaunchpadEvent(event);
+export function parseRaydiumLaunchpadEvent(data: ReadonlyUint8Array): ParsedRaydiumLaunchpadEvent | null {
+    const eventType = identifyRaydiumLaunchpadEvent(data);
     if (eventType === null) return null;
     switch (eventType) {
         case 'claimVestedEvent': {

@@ -154,6 +154,7 @@ export function getRenderMapVisitor(
                                 ...renderScope,
                                 eventNode: node,
                                 programEventFraming: programNode ? getProgramEventFraming(programNode) : undefined,
+                                programNode: programNode ?? undefined,
                                 size: visit(syntheticType, byteSizeVisitor),
                             }),
                             { generatedEvents: '.' },

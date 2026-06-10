@@ -1,6 +1,8 @@
 import {
     camelCase,
     EventNode,
+    getAllInstructionsWithSubs,
+    isDataEnum,
     isNode,
     ProgramNode,
     resolveNestedTypeNode,
@@ -15,13 +17,19 @@ import {
     getEventCpiFraming,
     getEventFramingConstantFragment,
     getEventFramingFileName,
+    getEventOwnDiscriminators,
     getProgramEventFraming,
+    isEventIdentifiable,
     ResolvedProgramEventFraming,
 } from './eventFraming';
 
-/** Only events with discriminators can be matched by the identify/parse helpers. */
+/**
+ * Events the identify/parse helpers can match. An event whose only discriminator is the
+ * shared CPI framing would match every framed event, so it is excluded here and on its own page.
+ */
 function getParsableEvents(programNode: ProgramNode): EventNode[] {
-    return (programNode.events ?? []).filter(event => (event.discriminators ?? []).length > 0);
+    const programEventFraming = getProgramEventFraming(programNode);
+    return (programNode.events ?? []).filter(event => isEventIdentifiable(event, programEventFraming));
 }
 
 /**
@@ -47,7 +55,7 @@ function getEventModule(event: EventNode): `./${string}` {
  * and `parse*` helpers. Both helpers return `null` when no known event matches.
  */
 export function getProgramEventsPageFragment(
-    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
+    scope: Pick<RenderScope, 'nameApi' | 'renderParentInstructions' | 'typeManifestVisitor'> & {
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
@@ -63,6 +71,7 @@ export function getProgramEventsPageFragment(
     }
 
     const events = getParsableEvents(scope.programNode);
+    assertNoExportNameConflicts({ ...scope, events });
     const programEventFraming = getProgramEventFraming(scope.programNode);
     return mergeFragments(
         [
@@ -73,6 +82,60 @@ export function getProgramEventsPageFragment(
         ],
         c => c.join('\n\n'),
     );
+}
+
+/**
+ * Fails fast on export-name collisions across the events page and sibling parse helpers,
+ * which the root barrel's `export *` would otherwise silently drop.
+ */
+function assertNoExportNameConflicts(
+    scope: Pick<RenderScope, 'nameApi' | 'renderParentInstructions'> & {
+        events: EventNode[];
+        programNode: ProgramNode;
+    },
+): void {
+    const { events, nameApi, programNode } = scope;
+    const origins = new Map<string, string>();
+    const register = (name: string, origin: string) => {
+        const existing = origins.get(name);
+        if (existing) {
+            throw new Error(
+                `Naming conflict in program '${programNode.name}': ${origin} generates the export ` +
+                    `'${name}', which collides with ${existing}. Rename the conflicting node, or ` +
+                    `override the relevant name transformers so the names differ.`,
+            );
+        }
+        origins.set(name, origin);
+    };
+
+    for (const event of events) {
+        register(nameApi.eventIsFunction(event.name), `event '${event.name}' (its is helper)`);
+        register(nameApi.eventParseFunction(event.name), `event '${event.name}' (its parse helper)`);
+    }
+    register(nameApi.programEventsIdentifierFunction(programNode.name), 'the aggregate event identify helper');
+    register(nameApi.programEventsParseFunction(programNode.name), 'the aggregate event parse helper');
+    register(nameApi.programEventsTypeUnion(programNode.name), 'the aggregate event-type union');
+    register(nameApi.programEventsParsedUnionType(programNode.name), 'the aggregate parsed-event union');
+    for (const instruction of getAllInstructionsWithSubs(programNode, {
+        leavesOnly: !scope.renderParentInstructions,
+    })) {
+        register(
+            nameApi.instructionParseFunction(instruction.name),
+            `instruction '${instruction.name}' (its parse helper)`,
+        );
+    }
+    register(nameApi.programInstructionsParseFunction(programNode.name), 'the aggregate instruction parse helper');
+    for (const definedType of programNode.definedTypes ?? []) {
+        if (!isNode(definedType.type, 'enumTypeNode') || !isDataEnum(definedType.type)) continue;
+        register(
+            nameApi.discriminatedUnionFunction(definedType.name),
+            `defined type '${definedType.name}' (its discriminated-union constructor)`,
+        );
+        register(
+            nameApi.isDiscriminatedUnionFunction(definedType.name),
+            `defined type '${definedType.name}' (its discriminated-union type guard)`,
+        );
+    }
 }
 
 function getProgramEventsTypeUnionFragment(
@@ -100,42 +163,45 @@ function getProgramEventsIdentifierFunctionFragment(
     const programEventsTypeUnion = nameApi.programEventsTypeUnion(programNode.name);
     const programEventsIdentifierFunction = nameApi.programEventsIdentifierFunction(programNode.name);
 
-    const discriminatorsFragment = mergeFragments(
-        events.map((event): Fragment => {
-            const variant = nameApi.programEventsTypeVariant(event.name);
-            const resolved = resolveNestedTypeNode(event.data);
-            const struct: StructTypeNode = isNode(resolved, 'structTypeNode') ? resolved : structTypeNode([]);
-            const cpiFraming = getEventCpiFraming(event, programEventFraming);
-            const allDiscriminators = event.discriminators ?? [];
-            // Check the shared framing constant first, then the per-event discriminators.
-            const leadingConditions = cpiFraming
-                ? [
-                      fragment`${use('containsBytes', 'solanaCodecsCore')}(data, ${getEventFramingConstantFragment(cpiFraming.framing, nameApi, `./${getEventFramingFileName(cpiFraming.framing)}`)}, 0)`,
-                  ]
-                : [];
-            return getDiscriminatorConditionFragment({
-                ...scope,
-                constantSource: getEventModule(event),
-                dataName: 'data',
-                discriminators: cpiFraming ? allDiscriminators.slice(1) : allDiscriminators,
-                ifTrue: `return '${variant}';`,
-                leadingConditions,
-                prefix: event.name,
-                struct,
-            });
-        }),
-        c => c.join('\n'),
+    const eventCondition = (event: EventNode): Fragment => {
+        const variant = nameApi.programEventsTypeVariant(event.name);
+        const resolved = resolveNestedTypeNode(event.data);
+        const struct: StructTypeNode = isNode(resolved, 'structTypeNode') ? resolved : structTypeNode([]);
+        return getDiscriminatorConditionFragment({
+            ...scope,
+            constantSource: getEventModule(event),
+            dataName: 'data',
+            discriminators: getEventOwnDiscriminators(event, programEventFraming),
+            ifTrue: `return '${variant}';`,
+            prefix: event.name,
+            struct,
+        });
+    };
+
+    // Hoist the shared framing check so foreign data is rejected with a single compare.
+    // Unframed events stay outside the block and remain reachable when the check fails.
+    const framedEvents = events.filter(event => getEventCpiFraming(event, programEventFraming) !== undefined);
+    const unframedEvents = events.filter(event => getEventCpiFraming(event, programEventFraming) === undefined);
+    const framedBlock =
+        framedEvents.length > 0 && programEventFraming
+            ? [
+                  fragment`if (${use('containsBytes', 'solanaCodecsCore')}(data, ${getEventFramingConstantFragment(programEventFraming.framing, nameApi, `./${getEventFramingFileName(programEventFraming.framing)}`)}, 0)) {
+        ${mergeFragments(framedEvents.map(eventCondition), c => c.join('\n'))}
+    }`,
+              ]
+            : [];
+    const conditionsFragment = mergeFragments([...framedBlock, ...unframedEvents.map(eventCondition)], c =>
+        c.join('\n'),
     );
 
     const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
 
     return fragment`/**
- * Identifies ${programNode.name} event data by its discriminators.
- * Returns \`null\` when the data matches no known event.
+ * Identifies ${programNode.name} event data by its discriminators, without decoding.
+ * Returns \`null\` when no known event matches. Never throws.
  */
-export function ${programEventsIdentifierFunction}(event: { data: ${readonlyUint8Array} } | ${readonlyUint8Array}): ${programEventsTypeUnion} | null {
-    const data = 'data' in event ? event.data : event;
-    ${discriminatorsFragment}
+export function ${programEventsIdentifierFunction}(data: ${readonlyUint8Array}): ${programEventsTypeUnion} | null {
+    ${conditionsFragment}
     return null;
 }`;
 }
@@ -204,9 +270,8 @@ function getProgramEventsParseFunctionFragment(
  * Parses ${programNode.name} event data into its event kind and decoded payload.
  * Returns \`null\` when no known event matches; throws if a matched event fails to decode.
  */
-export function ${parseFunction}(event: { data: ${readonlyUint8Array} } | ${readonlyUint8Array}): ${programEventsParsedUnionType} | null {
-    const data = 'data' in event ? event.data : event;
-    const eventType = ${programEventsIdentifierFunction}(event);
+export function ${parseFunction}(data: ${readonlyUint8Array}): ${programEventsParsedUnionType} | null {
+    const eventType = ${programEventsIdentifierFunction}(data);
     if (eventType === null) return null;
     switch (eventType) {
         ${switchCases}
@@ -220,8 +285,7 @@ function getHiddenPrefixSkipExpr(
     programEventFraming: ResolvedProgramEventFraming | undefined,
 ): Fragment | null {
     const cpiFraming = getEventCpiFraming(event, programEventFraming);
-    const allDiscriminators = event.discriminators ?? [];
-    const discriminators = cpiFraming ? allDiscriminators.slice(1) : allDiscriminators;
+    const discriminators = getEventOwnDiscriminators(event, programEventFraming);
     const hasConstantDiscriminator = discriminators.some(d => isNode(d, 'constantDiscriminatorNode'));
     if ((!hasConstantDiscriminator && !cpiFraming) || !isNode(event.data, 'hiddenPrefixTypeNode')) {
         return null;

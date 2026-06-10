@@ -39,12 +39,30 @@ export function getCreateVestingEventDecoder(): FixedSizeDecoder<CreateVestingEv
     ]));
 }
 
-export function decodeCreateVestingEvent(data: ReadonlyUint8Array): CreateVestingEvent {
-    if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event CPI framing for createVestingEvent');
-    }
-    if (!containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)) {
-        throw new Error('Invalid event discriminator for createVestingEvent');
+/**
+ * Checks whether the event data matches the framing and discriminator bytes of a
+ * {@link CreateVestingEvent}, without decoding. Never throws.
+ *
+ * @see parseCreateVestingEvent to decode the matching data
+ */
+export function isCreateVestingEvent(data: ReadonlyUint8Array): boolean {
+    return (
+        containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
+        containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)
+    );
+}
+
+/**
+ * Parses raw event data as a {@link CreateVestingEvent}. Returns `null` on framing or discriminator
+ * mismatch; throws if the event matches but its body fails to decode.
+ *
+ * @see isCreateVestingEvent to check without decoding
+ * @see identifyRaydiumLaunchpadEvent to identify any program event
+ * @see parseRaydiumLaunchpadEvent
+ */
+export function parseCreateVestingEvent(data: ReadonlyUint8Array): CreateVestingEvent | null {
+    if (!isCreateVestingEvent(data)) {
+        return null;
     }
     return getCreateVestingEventDecoder().decode(
         data,

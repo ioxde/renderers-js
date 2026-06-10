@@ -57,9 +57,27 @@ export function getLpChangeEventDecoder(): FixedSizeDecoder<LpChangeEvent> {
     ]));
 }
 
-export function decodeLpChangeEvent(data: ReadonlyUint8Array): LpChangeEvent {
-    if (!containsBytes(data, LP_CHANGE_EVENT_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event discriminator for lpChangeEvent');
+/**
+ * Checks whether the event data matches the discriminator bytes of a
+ * {@link LpChangeEvent}, without decoding. Never throws.
+ *
+ * @see parseLpChangeEvent to decode the matching data
+ */
+export function isLpChangeEvent(data: ReadonlyUint8Array): boolean {
+    return containsBytes(data, LP_CHANGE_EVENT_DISCRIMINATOR, 0);
+}
+
+/**
+ * Parses raw event data as a {@link LpChangeEvent}. Returns `null` on discriminator
+ * mismatch; throws if the event matches but its body fails to decode.
+ *
+ * @see isLpChangeEvent to check without decoding
+ * @see identifyRaydiumCpSwapEvent to identify any program event
+ * @see parseRaydiumCpSwapEvent
+ */
+export function parseLpChangeEvent(data: ReadonlyUint8Array): LpChangeEvent | null {
+    if (!isLpChangeEvent(data)) {
+        return null;
     }
     return getLpChangeEventDecoder().decode(data, LP_CHANGE_EVENT_DISCRIMINATOR.length);
 }
