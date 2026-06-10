@@ -35,7 +35,7 @@ export function getEventDecodeFragment(
     const framingCheck = framingConstant
         ? [
               fragment`if (!${containsBytes}(data, ${framingConstant}, 0)) {
-    throw new Error('Invalid event discriminator for ${eventNode.name}');
+    throw new Error('Invalid event CPI framing for ${eventNode.name}');
   }`,
           ]
         : [];

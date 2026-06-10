@@ -29,17 +29,19 @@ export function getCreateVestingEventDiscriminatorBytes(): ReadonlyUint8Array {
 
 export type CreateVestingEvent = { poolState: Address; beneficiary: Address; shareAmount: bigint };
 
+let getCreateVestingEventDecoderCache: FixedSizeDecoder<CreateVestingEvent> | undefined;
+
 export function getCreateVestingEventDecoder(): FixedSizeDecoder<CreateVestingEvent> {
-    return getStructDecoder([
+    return (getCreateVestingEventDecoderCache ??= getStructDecoder([
         ['poolState', getAddressDecoder()],
         ['beneficiary', getAddressDecoder()],
         ['shareAmount', getU64Decoder()],
-    ]);
+    ]));
 }
 
 export function decodeCreateVestingEvent(data: ReadonlyUint8Array): CreateVestingEvent {
     if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event discriminator for createVestingEvent');
+        throw new Error('Invalid event CPI framing for createVestingEvent');
     }
     if (!containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)) {
         throw new Error('Invalid event discriminator for createVestingEvent');

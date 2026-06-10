@@ -40,8 +40,10 @@ export type SwapEvent = {
     baseInput: boolean;
 };
 
+let getSwapEventDecoderCache: FixedSizeDecoder<SwapEvent> | undefined;
+
 export function getSwapEventDecoder(): FixedSizeDecoder<SwapEvent> {
-    return getStructDecoder([
+    return (getSwapEventDecoderCache ??= getStructDecoder([
         ['poolId', getAddressDecoder()],
         ['inputVaultBefore', getU64Decoder()],
         ['outputVaultBefore', getU64Decoder()],
@@ -50,7 +52,7 @@ export function getSwapEventDecoder(): FixedSizeDecoder<SwapEvent> {
         ['inputTransferFee', getU64Decoder()],
         ['outputTransferFee', getU64Decoder()],
         ['baseInput', getBooleanDecoder()],
-    ]);
+    ]));
 }
 
 export function decodeSwapEvent(data: ReadonlyUint8Array): SwapEvent {

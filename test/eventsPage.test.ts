@@ -96,6 +96,26 @@ test('it renders an event without a discriminator', async () => {
     ]);
 });
 
+test('it lazily memoizes the event decoder', async () => {
+    const node = programNode({
+        events: [
+            eventNode({
+                data: structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+                name: 'simpleEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/simpleEvent.ts', [
+        'let getSimpleEventDecoderCache: FixedSizeDecoder<SimpleEvent> | undefined;',
+        /return\s*\(getSimpleEventDecoderCache\s*\?\?=\s*getStructDecoder\(/,
+    ]);
+});
+
 test('it renders events in the events index', async () => {
     const node = rootNode(
         programNode({
@@ -510,7 +530,9 @@ test('it generates decode that validates both the framing prefix and the event d
     await renderMapContains(renderMap, 'events/tradeEvent.ts', [
         'export function decodeTradeEvent',
         'containsBytes(data, EVENT_CPI_PREFIX, 0)',
+        "throw new Error('Invalid event CPI framing for tradeEvent');",
         'containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)',
+        "throw new Error('Invalid event discriminator for tradeEvent');",
         /decode\(\s*data,\s*EVENT_CPI_PREFIX\.length \+ TRADE_EVENT_DISCRIMINATOR\.length,?\s*\)/s,
     ]);
     await renderMapContainsImports(renderMap, 'events/tradeEvent.ts', {

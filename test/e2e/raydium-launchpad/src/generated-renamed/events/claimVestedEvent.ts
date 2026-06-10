@@ -29,17 +29,19 @@ export function getClaimVestedEventDiscriminatorBytes(): ReadonlyUint8Array {
 
 export type ClaimVestedEvent = { poolState: Address; beneficiary: Address; claimAmount: bigint };
 
+let getClaimVestedEventDecoderCache: FixedSizeDecoder<ClaimVestedEvent> | undefined;
+
 export function getClaimVestedEventDecoder(): FixedSizeDecoder<ClaimVestedEvent> {
-    return getStructDecoder([
+    return (getClaimVestedEventDecoderCache ??= getStructDecoder([
         ['poolState', getAddressDecoder()],
         ['beneficiary', getAddressDecoder()],
         ['claimAmount', getU64Decoder()],
-    ]);
+    ]));
 }
 
 export function decodeClaimVestedEvent(data: ReadonlyUint8Array): ClaimVestedEvent {
     if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event discriminator for claimVestedEvent');
+        throw new Error('Invalid event CPI framing for claimVestedEvent');
     }
     if (!containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)) {
         throw new Error('Invalid event discriminator for claimVestedEvent');

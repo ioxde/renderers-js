@@ -56,6 +56,8 @@ export function getEventPageFragment(
                 getTypeDecoderFragment({
                     ...scope,
                     manifest: typeManifest,
+                    // Event decoding is a hot path (log/CPI streaming), so reuse one decoder instance.
+                    memoize: true,
                     name: node.name,
                     node: innerType,
                     size: scope.size,

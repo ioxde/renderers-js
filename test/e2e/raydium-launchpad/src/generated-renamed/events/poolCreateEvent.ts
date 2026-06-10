@@ -43,20 +43,22 @@ export type PoolCreateEvent = {
     vestingParam: VestingParams;
 };
 
+let getPoolCreateEventDecoderCache: Decoder<PoolCreateEvent> | undefined;
+
 export function getPoolCreateEventDecoder(): Decoder<PoolCreateEvent> {
-    return getStructDecoder([
+    return (getPoolCreateEventDecoderCache ??= getStructDecoder([
         ['poolState', getAddressDecoder()],
         ['creator', getAddressDecoder()],
         ['config', getAddressDecoder()],
         ['baseMintParam', getMintParamsDecoder()],
         ['curveParam', getCurveParamsDecoder()],
         ['vestingParam', getVestingParamsDecoder()],
-    ]);
+    ]));
 }
 
 export function decodePoolCreateEvent(data: ReadonlyUint8Array): PoolCreateEvent {
     if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event discriminator for poolCreateEvent');
+        throw new Error('Invalid event CPI framing for poolCreateEvent');
     }
     if (!containsBytes(data, POOL_CREATE_EVENT_DISCRIMINATOR, 8)) {
         throw new Error('Invalid event discriminator for poolCreateEvent');

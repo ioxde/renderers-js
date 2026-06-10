@@ -41,8 +41,10 @@ export type LpChangeEvent = {
     changeType: number;
 };
 
+let getLpChangeEventDecoderCache: FixedSizeDecoder<LpChangeEvent> | undefined;
+
 export function getLpChangeEventDecoder(): FixedSizeDecoder<LpChangeEvent> {
-    return getStructDecoder([
+    return (getLpChangeEventDecoderCache ??= getStructDecoder([
         ['poolId', getAddressDecoder()],
         ['lpAmountBefore', getU64Decoder()],
         ['token0VaultBefore', getU64Decoder()],
@@ -52,7 +54,7 @@ export function getLpChangeEventDecoder(): FixedSizeDecoder<LpChangeEvent> {
         ['token0TransferFee', getU64Decoder()],
         ['token1TransferFee', getU64Decoder()],
         ['changeType', getU8Decoder()],
-    ]);
+    ]));
 }
 
 export function decodeLpChangeEvent(data: ReadonlyUint8Array): LpChangeEvent {

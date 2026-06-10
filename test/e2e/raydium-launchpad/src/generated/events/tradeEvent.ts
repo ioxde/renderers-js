@@ -49,8 +49,10 @@ export type TradeEvent = {
     poolStatus: PoolStatus;
 };
 
+let getTradeEventDecoderCache: FixedSizeDecoder<TradeEvent> | undefined;
+
 export function getTradeEventDecoder(): FixedSizeDecoder<TradeEvent> {
-    return getStructDecoder([
+    return (getTradeEventDecoderCache ??= getStructDecoder([
         ['poolState', getAddressDecoder()],
         ['totalBaseSell', getU64Decoder()],
         ['virtualBase', getU64Decoder()],
@@ -66,12 +68,12 @@ export function getTradeEventDecoder(): FixedSizeDecoder<TradeEvent> {
         ['shareFee', getU64Decoder()],
         ['tradeDirection', getTradeDirectionDecoder()],
         ['poolStatus', getPoolStatusDecoder()],
-    ]);
+    ]));
 }
 
 export function decodeTradeEvent(data: ReadonlyUint8Array): TradeEvent {
     if (!containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
-        throw new Error('Invalid event discriminator for tradeEvent');
+        throw new Error('Invalid event CPI framing for tradeEvent');
     }
     if (!containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8)) {
         throw new Error('Invalid event discriminator for tradeEvent');
