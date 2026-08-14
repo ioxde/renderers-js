@@ -10,6 +10,7 @@ import {
     assertAccountExists,
     assertAccountsExist,
     combineCodec,
+    containsBytes,
     decodeAccount,
     fetchEncodedAccount,
     fetchEncodedAccounts,
@@ -42,6 +43,7 @@ import {
     type MaybeEncodedAccount,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     getObservationDecoder,
     getObservationEncoder,
@@ -116,20 +118,39 @@ export function getObservationStateCodec(): FixedSizeCodec<ObservationStateArgs,
 
 export function decodeObservationState<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<ObservationState, TAddress>;
 export function decodeObservationState<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<ObservationState, TAddress>;
 export function decodeObservationState<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 ): Account<ObservationState, TAddress> | MaybeAccount<ObservationState, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodeObservationState: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+        if (!containsBytes(encodedAccount.data, OBSERVATION_STATE_DISCRIMINATOR, 0)) {
+            const error = new Error(
+                `decodeObservationState: account ${encodedAccount.address} does not match the ObservationState discriminator`,
+            );
+            error.name = 'AccountDiscriminatorMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getObservationStateDecoder());
 }
 
 export async function fetchObservationState<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<ObservationState, TAddress>> {
     const maybeAccount = await fetchMaybeObservationState(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -139,10 +160,11 @@ export async function fetchObservationState<TAddress extends string = string>(
 export async function fetchMaybeObservationState<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<ObservationState, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodeObservationState(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodeObservationState(maybeAccount, programAddress);
 }
 
 export async function fetchAllObservationState(

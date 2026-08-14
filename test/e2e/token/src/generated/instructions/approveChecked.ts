@@ -8,7 +8,9 @@
 
 import {
     AccountRole,
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getStructDecoder,
     getStructEncoder,
     getU64Decoder,
@@ -206,6 +208,14 @@ export function parseApproveCheckedInstruction<TProgram extends string, TAccount
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedApproveCheckedInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, TOKEN_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU8Encoder().encode(APPROVE_CHECKED_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseApproveCheckedInstruction: instruction data does not match the ApproveChecked discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 4) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

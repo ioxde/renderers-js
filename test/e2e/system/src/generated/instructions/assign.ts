@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getAddressDecoder,
     getAddressEncoder,
     getStructDecoder,
@@ -125,6 +127,12 @@ export function parseAssignInstruction<TProgram extends string, TAccountMetas ex
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedAssignInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, SYSTEM_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU32Encoder().encode(ASSIGN_DISCRIMINATOR), 0)) {
+        const error = new Error(`parseAssignInstruction: instruction data does not match the Assign discriminator`);
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 1) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

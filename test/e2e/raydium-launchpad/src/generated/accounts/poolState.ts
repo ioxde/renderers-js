@@ -10,6 +10,7 @@ import {
     assertAccountExists,
     assertAccountsExist,
     combineCodec,
+    containsBytes,
     decodeAccount,
     fetchEncodedAccount,
     fetchEncodedAccounts,
@@ -40,6 +41,7 @@ import {
     type MaybeEncodedAccount,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     getVestingScheduleDecoder,
     getVestingScheduleEncoder,
@@ -300,20 +302,39 @@ export function getPoolStateCodec(): FixedSizeCodec<PoolStateArgs, PoolState> {
 
 export function decodePoolState<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<PoolState, TAddress>;
 export function decodePoolState<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<PoolState, TAddress>;
 export function decodePoolState<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 ): Account<PoolState, TAddress> | MaybeAccount<PoolState, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodePoolState: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+        if (!containsBytes(encodedAccount.data, POOL_STATE_DISCRIMINATOR, 0)) {
+            const error = new Error(
+                `decodePoolState: account ${encodedAccount.address} does not match the PoolState discriminator`,
+            );
+            error.name = 'AccountDiscriminatorMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getPoolStateDecoder());
 }
 
 export async function fetchPoolState<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<PoolState, TAddress>> {
     const maybeAccount = await fetchMaybePoolState(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -323,10 +344,11 @@ export async function fetchPoolState<TAddress extends string = string>(
 export async function fetchMaybePoolState<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<PoolState, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodePoolState(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodePoolState(maybeAccount, programAddress);
 }
 
 export async function fetchAllPoolState(

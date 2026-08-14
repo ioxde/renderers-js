@@ -16,12 +16,23 @@ import {
     type GetMultipleAccountsApi,
 } from '@solana/kit';
 import {
-    addSelfFetchFunctions,
     addSelfPlanAndSendFunctions,
     type SelfFetchFunctions,
     type SelfPlanAndSendFunctions,
 } from '@solana/kit/program-client-core';
 import {
+    fetchAllAmmConfig,
+    fetchAllMaybeAmmConfig,
+    fetchAllMaybeObservationState,
+    fetchAllMaybePoolState,
+    fetchAllObservationState,
+    fetchAllPoolState,
+    fetchAmmConfig,
+    fetchMaybeAmmConfig,
+    fetchMaybeObservationState,
+    fetchMaybePoolState,
+    fetchObservationState,
+    fetchPoolState,
     getAmmConfigCodec,
     getObservationStateCodec,
     getPoolStateCodec,
@@ -139,9 +150,28 @@ export function raydiumCpSwapProgram() {
         return extendClient(client, {
             raydiumCpSwap: <RaydiumCpSwapPlugin>{
                 accounts: {
-                    ammConfig: addSelfFetchFunctions(client, getAmmConfigCodec()),
-                    observationState: addSelfFetchFunctions(client, getObservationStateCodec()),
-                    poolState: addSelfFetchFunctions(client, getPoolStateCodec()),
+                    ammConfig: Object.freeze({
+                        ...getAmmConfigCodec(),
+                        fetch: (address, config) => fetchAmmConfig(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllAmmConfig(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeAmmConfig(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeAmmConfig(client.rpc, address, config),
+                    }),
+                    observationState: Object.freeze({
+                        ...getObservationStateCodec(),
+                        fetch: (address, config) => fetchObservationState(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllObservationState(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) =>
+                            fetchAllMaybeObservationState(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeObservationState(client.rpc, address, config),
+                    }),
+                    poolState: Object.freeze({
+                        ...getPoolStateCodec(),
+                        fetch: (address, config) => fetchPoolState(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllPoolState(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybePoolState(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybePoolState(client.rpc, address, config),
+                    }),
                 },
                 events: { lpChangeEvent: getLpChangeEventDecoder(), swapEvent: getSwapEventDecoder() },
                 instructions: {

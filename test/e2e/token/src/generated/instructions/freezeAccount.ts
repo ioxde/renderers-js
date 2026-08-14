@@ -8,7 +8,9 @@
 
 import {
     AccountRole,
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getStructDecoder,
     getStructEncoder,
     getU8Decoder,
@@ -171,6 +173,14 @@ export function parseFreezeAccountInstruction<TProgram extends string, TAccountM
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedFreezeAccountInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, TOKEN_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU8Encoder().encode(FREEZE_ACCOUNT_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseFreezeAccountInstruction: instruction data does not match the FreezeAccount discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 3) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

@@ -40,6 +40,7 @@ import {
     type Option,
     type OptionOrNullable,
 } from '@solana/kit';
+import { TOKEN_PROGRAM_ADDRESS } from '../programs/index.js';
 
 /** Uniquely represents a token on the network and stores global metadata about the token. */
 export type Mint = {
@@ -105,20 +106,32 @@ export function getMintCodec(): FixedSizeCodec<MintArgs, Mint> {
 
 export function decodeMint<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<Mint, TAddress>;
 export function decodeMint<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<Mint, TAddress>;
 export function decodeMint<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = TOKEN_PROGRAM_ADDRESS,
 ): Account<Mint, TAddress> | MaybeAccount<Mint, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodeMint: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getMintDecoder());
 }
 
 export async function fetchMint<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<Mint, TAddress>> {
     const maybeAccount = await fetchMaybeMint(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -128,10 +141,11 @@ export async function fetchMint<TAddress extends string = string>(
 export async function fetchMaybeMint<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Mint, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodeMint(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodeMint(maybeAccount, programAddress);
 }
 
 export async function fetchAllMint(

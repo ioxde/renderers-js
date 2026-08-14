@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -269,6 +271,14 @@ export function parseCreateAmmConfigInstruction<TProgram extends string, TAccoun
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCreateAmmConfigInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_CP_SWAP_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, CREATE_AMM_CONFIG_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseCreateAmmConfigInstruction: instruction data does not match the CreateAmmConfig discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 3) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

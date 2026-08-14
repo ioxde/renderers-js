@@ -9,10 +9,12 @@
 import {
     assertIsInstructionWithAccounts,
     containsBytes,
+    type Address,
     type Instruction,
     type InstructionWithData,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     COLLECT_FUND_FEE_DISCRIMINATOR,
     parseCollectFundFeeInstruction,
@@ -71,11 +73,12 @@ export type RaydiumCpSwapInstructionType =
 
 /**
  * Identifies raydiumCpSwap instruction data by its discriminators.
- * Returns `null` when the data matches no known instruction.
+ * Returns `null` when the instruction is for another program or the data matches no known instruction.
  */
 export function identifyRaydiumCpSwapInstruction(
-    instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    instruction: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): RaydiumCpSwapInstructionType | null {
+    if ('data' in instruction && instruction.programAddress !== RAYDIUM_CP_SWAP_PROGRAM_ADDRESS) return null;
     const data = 'data' in instruction ? instruction.data : instruction;
     if (containsBytes(data, COLLECT_FUND_FEE_DISCRIMINATOR, 0)) {
         return 'collectFundFee';
@@ -125,11 +128,13 @@ export type ParsedRaydiumCpSwapInstruction<TProgram extends string = 'CPMMoo8L3F
 
 /**
  * Parses a raydiumCpSwap instruction into its kind tag plus parsed accounts and data.
- * Returns `null` when no known instruction matches; throws if a matched instruction fails to parse.
+ * Returns `null` when the instruction is for another program or no known instruction matches;
+ * throws if a matched instruction fails to parse.
  */
 export function parseRaydiumCpSwapInstruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedRaydiumCpSwapInstruction<TProgram> | null {
+    if (instruction.programAddress !== RAYDIUM_CP_SWAP_PROGRAM_ADDRESS) return null;
     const instructionType = identifyRaydiumCpSwapInstruction(instruction);
     if (instructionType === null) return null;
     switch (instructionType) {

@@ -10,10 +10,12 @@ import {
     assertIsInstructionWithAccounts,
     containsBytes,
     getU32Encoder,
+    type Address,
     type Instruction,
     type InstructionWithData,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     ADVANCE_NONCE_ACCOUNT_DISCRIMINATOR,
     parseAdvanceNonceAccountInstruction,
@@ -90,11 +92,12 @@ export type SystemInstructionType =
 
 /**
  * Identifies system instruction data by its discriminators.
- * Returns `null` when the data matches no known instruction.
+ * Returns `null` when the instruction is for another program or the data matches no known instruction.
  */
 export function identifySystemInstruction(
-    instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    instruction: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): SystemInstructionType | null {
+    if ('data' in instruction && instruction.programAddress !== SYSTEM_PROGRAM_ADDRESS) return null;
     const data = 'data' in instruction ? instruction.data : instruction;
     if (containsBytes(data, getU32Encoder().encode(CREATE_ACCOUNT_DISCRIMINATOR), 0)) {
         return 'createAccount';
@@ -156,11 +159,13 @@ export type ParsedSystemInstruction<TProgram extends string = '11111111111111111
 
 /**
  * Parses a system instruction into its kind tag plus parsed accounts and data.
- * Returns `null` when no known instruction matches; throws if a matched instruction fails to parse.
+ * Returns `null` when the instruction is for another program or no known instruction matches;
+ * throws if a matched instruction fails to parse.
  */
 export function parseSystemInstruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedSystemInstruction<TProgram> | null {
+    if (instruction.programAddress !== SYSTEM_PROGRAM_ADDRESS) return null;
     const instructionType = identifySystemInstruction(instruction);
     if (instructionType === null) return null;
     switch (instructionType) {

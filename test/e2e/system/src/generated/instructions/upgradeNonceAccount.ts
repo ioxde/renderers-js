@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getStructDecoder,
     getStructEncoder,
     getU32Decoder,
@@ -115,6 +117,14 @@ export function parseUpgradeNonceAccountInstruction<
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedUpgradeNonceAccountInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, SYSTEM_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU32Encoder().encode(UPGRADE_NONCE_ACCOUNT_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseUpgradeNonceAccountInstruction: instruction data does not match the UpgradeNonceAccount discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 1) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

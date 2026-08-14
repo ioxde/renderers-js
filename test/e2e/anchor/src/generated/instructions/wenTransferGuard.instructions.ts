@@ -9,10 +9,12 @@
 import {
     assertIsInstructionWithAccounts,
     containsBytes,
+    type Address,
     type Instruction,
     type InstructionWithData,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { WEN_TRANSFER_GUARD_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     CREATE_GUARD_DISCRIMINATOR,
     parseCreateGuardInstruction,
@@ -35,11 +37,12 @@ export type WenTransferGuardInstructionType = 'createGuard' | 'execute' | 'initi
 
 /**
  * Identifies wenTransferGuard instruction data by its discriminators.
- * Returns `null` when the data matches no known instruction.
+ * Returns `null` when the instruction is for another program or the data matches no known instruction.
  */
 export function identifyWenTransferGuardInstruction(
-    instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    instruction: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): WenTransferGuardInstructionType | null {
+    if ('data' in instruction && instruction.programAddress !== WEN_TRANSFER_GUARD_PROGRAM_ADDRESS) return null;
     const data = 'data' in instruction ? instruction.data : instruction;
     if (containsBytes(data, CREATE_GUARD_DISCRIMINATOR, 0)) {
         return 'createGuard';
@@ -65,11 +68,13 @@ export type ParsedWenTransferGuardInstruction<TProgram extends string = 'LockdqY
 
 /**
  * Parses a wenTransferGuard instruction into its kind tag plus parsed accounts and data.
- * Returns `null` when no known instruction matches; throws if a matched instruction fails to parse.
+ * Returns `null` when the instruction is for another program or no known instruction matches;
+ * throws if a matched instruction fails to parse.
  */
 export function parseWenTransferGuardInstruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedWenTransferGuardInstruction<TProgram> | null {
+    if (instruction.programAddress !== WEN_TRANSFER_GUARD_PROGRAM_ADDRESS) return null;
     const instructionType = identifyWenTransferGuardInstruction(instruction);
     if (instructionType === null) return null;
     switch (instructionType) {

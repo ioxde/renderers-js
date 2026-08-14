@@ -7,6 +7,7 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
     getStructDecoder,
     getStructEncoder,
@@ -76,6 +77,8 @@ export type ParsedInstruction4Instruction<TProgram extends string = typeof DUMMY
 export function parseInstruction4Instruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInstruction4Instruction<TProgram> {
+    assertIsInstructionForProgram(instruction, DUMMY_PROGRAM_ADDRESS);
+
     return {
         programAddress: instruction.programAddress,
         data: getInstruction4InstructionDataDecoder().decode(instruction.data),

@@ -8,7 +8,9 @@
 
 import {
     AccountRole,
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getStructDecoder,
     getStructEncoder,
     getU8Decoder,
@@ -171,6 +173,14 @@ export function parseThawAccountInstruction<TProgram extends string, TAccountMet
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedThawAccountInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, TOKEN_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU8Encoder().encode(THAW_ACCOUNT_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseThawAccountInstruction: instruction data does not match the ThawAccount discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 3) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

@@ -10,6 +10,7 @@ import {
     assertAccountExists,
     assertAccountsExist,
     combineCodec,
+    containsBytes,
     decodeAccount,
     fetchEncodedAccount,
     fetchEncodedAccounts,
@@ -36,6 +37,7 @@ import {
     type MaybeEncodedAccount,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const PLATFORM_CONFIG_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([160, 78, 128, 0, 248, 83, 230, 160]);
 
@@ -140,20 +142,39 @@ export function getPlatformConfigCodec(): FixedSizeCodec<PlatformConfigArgs, Pla
 
 export function decodePlatformConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<PlatformConfig, TAddress>;
 export function decodePlatformConfig<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<PlatformConfig, TAddress>;
 export function decodePlatformConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 ): Account<PlatformConfig, TAddress> | MaybeAccount<PlatformConfig, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodePlatformConfig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+        if (!containsBytes(encodedAccount.data, PLATFORM_CONFIG_DISCRIMINATOR, 0)) {
+            const error = new Error(
+                `decodePlatformConfig: account ${encodedAccount.address} does not match the PlatformConfig discriminator`,
+            );
+            error.name = 'AccountDiscriminatorMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getPlatformConfigDecoder());
 }
 
 export async function fetchPlatformConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<PlatformConfig, TAddress>> {
     const maybeAccount = await fetchMaybePlatformConfig(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -163,10 +184,11 @@ export async function fetchPlatformConfig<TAddress extends string = string>(
 export async function fetchMaybePlatformConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<PlatformConfig, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodePlatformConfig(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodePlatformConfig(maybeAccount, programAddress);
 }
 
 export async function fetchAllPlatformConfig(

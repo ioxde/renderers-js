@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getStructDecoder,
     getStructEncoder,
     getU32Decoder,
@@ -80,6 +82,15 @@ export type ParsedInstruction3Instruction<TProgram extends string = typeof DUMMY
 export function parseInstruction3Instruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInstruction3Instruction<TProgram> {
+    assertIsInstructionForProgram(instruction, DUMMY_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU32Encoder().encode(INSTRUCTION3_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseInstruction3Instruction: instruction data does not match the Instruction3 discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
+
     return {
         programAddress: instruction.programAddress,
         data: getInstruction3InstructionDataDecoder().decode(instruction.data),

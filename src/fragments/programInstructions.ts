@@ -26,7 +26,8 @@ function getInstructionModule(instruction: InstructionNode): `./${string}` {
 
 /**
  * Renders a program's aggregate instructions page: the type union, the parsed union, and
- * the `identify*`/`parse*` helpers. Both helpers return `null` when no instruction matches.
+ * the `identify*`/`parse*` helpers. Both helpers return `null` when the instruction is for
+ * another program or no instruction matches.
  */
 export function getProgramInstructionsPageFragment(
     scope: Pick<RenderScope, 'nameApi' | 'renderParentInstructions' | 'typeManifestVisitor'> & {
@@ -105,12 +106,16 @@ function getProgramInstructionsIdentifierFunctionFragment(
     );
 
     const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
+    // `programAddress` is required, not optional: an optional field lets the owner check be skipped
+    // by call shape. Bytes-only callers pass data directly and opt out explicitly.
+    const programAddressConstant = use(nameApi.programAddressConstant(programNode.name), 'generatedPrograms');
 
     return fragment`/**
  * Identifies ${programNode.name} instruction data by its discriminators.
- * Returns \`null\` when the data matches no known instruction.
+ * Returns \`null\` when the instruction is for another program or the data matches no known instruction.
  */
-export function ${programInstructionsIdentifierFunction}(instruction: { data: ${readonlyUint8Array} } | ${readonlyUint8Array}): ${programInstructionsTypeUnion} | null {
+export function ${programInstructionsIdentifierFunction}(instruction: { data: ${readonlyUint8Array}; programAddress: ${use('type Address', 'solanaAddresses')} } | ${readonlyUint8Array}): ${programInstructionsTypeUnion} | null {
+    if ('data' in instruction && instruction.programAddress !== ${programAddressConstant}) return null;
     const data = 'data' in instruction ? instruction.data : instruction;
     ${discriminatorsFragment}
     return null;
@@ -163,6 +168,7 @@ function getProgramInstructionsParseFunctionFragment(
     );
     if (instructionsWithDiscriminators.length === 0) return;
 
+    const programAddressConstant = use(nameApi.programAddressConstant(programNode.name), 'generatedPrograms');
     const programInstructionsIdentifierFunction = nameApi.programInstructionsIdentifierFunction(programNode.name);
     const programInstructionsParsedUnionType = nameApi.programInstructionsParsedUnionType(programNode.name);
     const parseFunction = nameApi.programInstructionsParseFunction(programNode.name);
@@ -188,14 +194,19 @@ function getProgramInstructionsParseFunctionFragment(
 
     // No default case: the switch is exhaustive over the identified instruction type.
     // Parse errors propagate: a matched discriminator with malformed data should throw, not return null.
+    // The program guard returns null where the per-instruction parse throws: transaction scans expect foreign instructions.
+    // Dispatching through identify means the per-instruction discriminator guard re-checks bytes this
+    // switch already matched. That is redundant but cheap, and keeps the specific parsers safe standalone.
     return fragment`/**
  * Parses a ${programNode.name} instruction into its kind tag plus parsed accounts and data.
- * Returns \`null\` when no known instruction matches; throws if a matched instruction fails to parse.
+ * Returns \`null\` when the instruction is for another program or no known instruction matches;
+ * throws if a matched instruction fails to parse.
  */
 export function ${parseFunction}<TProgram extends string>(
     instruction: ${use('type Instruction', 'solanaInstructions')}<TProgram>
         & ${use('type InstructionWithData', 'solanaInstructions')}<${use('type ReadonlyUint8Array', 'solanaCodecsCore')}>
 ): ${programInstructionsParsedUnionType}<TProgram> | null {
+    if (instruction.programAddress !== ${programAddressConstant}) return null;
     const instructionType = ${programInstructionsIdentifierFunction}(instruction);
     if (instructionType === null) return null;
     switch (instructionType) {

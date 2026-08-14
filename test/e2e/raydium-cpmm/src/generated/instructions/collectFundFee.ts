@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -475,6 +477,14 @@ export function parseCollectFundFeeInstruction<TProgram extends string, TAccount
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCollectFundFeeInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_CP_SWAP_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, COLLECT_FUND_FEE_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseCollectFundFeeInstruction: instruction data does not match the CollectFundFee discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 12) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

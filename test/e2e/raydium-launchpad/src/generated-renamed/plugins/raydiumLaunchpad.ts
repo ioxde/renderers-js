@@ -16,12 +16,27 @@ import {
     type GetMultipleAccountsApi,
 } from '@solana/kit';
 import {
-    addSelfFetchFunctions,
     addSelfPlanAndSendFunctions,
     type SelfFetchFunctions,
     type SelfPlanAndSendFunctions,
 } from '@solana/kit/program-client-core';
 import {
+    fetchAllGlobalConfig,
+    fetchAllMaybeGlobalConfig,
+    fetchAllMaybePlatformConfig,
+    fetchAllMaybePoolState,
+    fetchAllMaybeVestingRecord,
+    fetchAllPlatformConfig,
+    fetchAllPoolState,
+    fetchAllVestingRecord,
+    fetchGlobalConfig,
+    fetchMaybeGlobalConfig,
+    fetchMaybePlatformConfig,
+    fetchMaybePoolState,
+    fetchMaybeVestingRecord,
+    fetchPlatformConfig,
+    fetchPoolState,
+    fetchVestingRecord,
     getGlobalConfigCodec,
     getPlatformConfigCodec,
     getPoolStateCodec,
@@ -215,10 +230,35 @@ export function raydiumLaunchpadProgram() {
         return extendClient(client, {
             raydiumLaunchpad: <RaydiumLaunchpadPlugin>{
                 accounts: {
-                    globalConfig: addSelfFetchFunctions(client, getGlobalConfigCodec()),
-                    platformConfig: addSelfFetchFunctions(client, getPlatformConfigCodec()),
-                    poolState: addSelfFetchFunctions(client, getPoolStateCodec()),
-                    vestingRecord: addSelfFetchFunctions(client, getVestingRecordCodec()),
+                    globalConfig: Object.freeze({
+                        ...getGlobalConfigCodec(),
+                        fetch: (address, config) => fetchGlobalConfig(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllGlobalConfig(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeGlobalConfig(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeGlobalConfig(client.rpc, address, config),
+                    }),
+                    platformConfig: Object.freeze({
+                        ...getPlatformConfigCodec(),
+                        fetch: (address, config) => fetchPlatformConfig(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllPlatformConfig(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) =>
+                            fetchAllMaybePlatformConfig(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybePlatformConfig(client.rpc, address, config),
+                    }),
+                    poolState: Object.freeze({
+                        ...getPoolStateCodec(),
+                        fetch: (address, config) => fetchPoolState(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllPoolState(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybePoolState(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybePoolState(client.rpc, address, config),
+                    }),
+                    vestingRecord: Object.freeze({
+                        ...getVestingRecordCodec(),
+                        fetch: (address, config) => fetchVestingRecord(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllVestingRecord(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeVestingRecord(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeVestingRecord(client.rpc, address, config),
+                    }),
                 },
                 events: {
                     claimVestedEvent: getClaimVestedEventDecoder(),

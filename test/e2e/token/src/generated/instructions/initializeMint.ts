@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getAddressDecoder,
     getAddressEncoder,
     getOptionDecoder,
@@ -173,6 +175,14 @@ export function parseInitializeMintInstruction<TProgram extends string, TAccount
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInitializeMintInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, TOKEN_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU8Encoder().encode(INITIALIZE_MINT_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseInitializeMintInstruction: instruction data does not match the InitializeMint discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 2) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

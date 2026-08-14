@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -627,6 +629,14 @@ export function parseSellExactInInstruction<TProgram extends string, TAccountMet
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedSellExactInInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, SELL_EXACT_IN_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseSellExactInInstruction: instruction data does not match the SellExactIn discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 15) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

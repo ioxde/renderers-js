@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getAddressDecoder,
     getAddressEncoder,
     getStructDecoder,
@@ -169,6 +171,14 @@ export function parseInitializeAccount2Instruction<
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInitializeAccount2Instruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, TOKEN_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU8Encoder().encode(INITIALIZE_ACCOUNT2_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseInitializeAccount2Instruction: instruction data does not match the InitializeAccount2 discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 3) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

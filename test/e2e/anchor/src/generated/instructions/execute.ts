@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -336,6 +338,12 @@ export function parseExecuteInstruction<TProgram extends string, TAccountMetas e
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedExecuteInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, WEN_TRANSFER_GUARD_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, EXECUTE_DISCRIMINATOR, 0)) {
+        const error = new Error(`parseExecuteInstruction: instruction data does not match the Execute discriminator`);
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 7) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

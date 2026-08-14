@@ -101,7 +101,8 @@ test('it renders an function that identifies accounts in a program', async () =>
     // Then we expect the following identifier function to be rendered.
     // Notice it does not include the `mint` account because it has no discriminators.
     await renderMapContains(renderMap, 'accounts/splToken.accounts.ts', [
-        `export function identifySplTokenAccount( account: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenAccountType | null { ` +
+        `export function identifySplTokenAccount( account: | { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array ): SplTokenAccountType | null { ` +
+            `if ( 'data' in account && account.programAddress !== SPL_TOKEN_PROGRAM_ADDRESS ) return null; ` +
             `const data = 'data' in account ? account.data : account; ` +
             `if ( containsBytes(data, getU8Encoder().encode(METADATA_KEY), 0) ) { return 'metadata'; } ` +
             `if ( data.length === 72 && containsBytes(data, TOKEN_DISCRIMINATOR, 4) ) { return 'token'; } ` +
@@ -111,9 +112,10 @@ test('it renders an function that identifies accounts in a program', async () =>
 
     // And we expect the per-account constants to be imported from their sibling pages.
     await renderMapContainsImports(renderMap, 'accounts/splToken.accounts.ts', {
+        '../programs/index.js': ['SPL_TOKEN_PROGRAM_ADDRESS'],
         './metadata.js': ['METADATA_KEY'],
         './token.js': ['TOKEN_DISCRIMINATOR'],
-        '@solana/kit': ['containsBytes', 'ReadonlyUint8Array'],
+        '@solana/kit': ['Address', 'containsBytes', 'ReadonlyUint8Array'],
     });
 });
 
@@ -208,7 +210,8 @@ test('it renders an function that identifies instructions in a program', async (
     // Then we expect the following identifier function to be rendered.
     // Notice it does not include the `updateAuthority` instruction because it has no discriminators.
     await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
-        `export function identifySplTokenInstruction ( instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array ): SplTokenInstructionType | null { ` +
+        `export function identifySplTokenInstruction ( instruction: | { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array ): SplTokenInstructionType | null { ` +
+            `if ( 'data' in instruction && instruction.programAddress !== SPL_TOKEN_PROGRAM_ADDRESS ) return null; ` +
             `const data = 'data' in instruction ? instruction.data : instruction; ` +
             `if ( containsBytes(data, getU8Encoder().encode(MINT_TOKENS_DISCRIMINATOR), 0) ) { return 'mintTokens'; } ` +
             `if ( data.length === 72 && containsBytes(data, TRANSFER_TOKENS_DISCRIMINATOR, 4) ) { return 'transferTokens'; } ` +
@@ -218,9 +221,10 @@ test('it renders an function that identifies instructions in a program', async (
 
     // And we expect the per-instruction constants to be imported from their sibling pages.
     await renderMapContainsImports(renderMap, 'instructions/splToken.instructions.ts', {
+        '../programs/index.js': ['SPL_TOKEN_PROGRAM_ADDRESS'],
         './mintTokens.js': ['MINT_TOKENS_DISCRIMINATOR'],
         './transferTokens.js': ['TRANSFER_TOKENS_DISCRIMINATOR'],
-        '@solana/kit': ['containsBytes', 'ReadonlyUint8Array'],
+        '@solana/kit': ['Address', 'containsBytes', 'ReadonlyUint8Array'],
     });
 });
 
@@ -367,6 +371,42 @@ test('it renders a function that parses instructions in a program', async () => 
     // And we expect the following imports.
     await renderMapContainsImports(renderMap, 'instructions/splToken.instructions.ts', {
         '@solana/kit': ['Instruction', 'InstructionWithData', 'ReadonlyUint8Array'],
+    });
+});
+
+test('it renders a program guard that returns null before identifying the instruction', async () => {
+    // Given the following program with an instruction that has a discriminator.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'discriminator',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                discriminators: [fieldDiscriminatorNode('discriminator')],
+                name: 'mintTokens',
+            }),
+        ],
+        name: 'splToken',
+        publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect instructions of other programs to return null rather than throw, rejected
+    // before the discriminator-based identification runs.
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
+        'if (instruction.programAddress !== SPL_TOKEN_PROGRAM_ADDRESS) return null; ' +
+            'const instructionType = identifySplTokenInstruction(instruction);',
+    ]);
+
+    // And we expect the following imports.
+    await renderMapContainsImports(renderMap, 'instructions/splToken.instructions.ts', {
+        '../programs/index.js': ['SPL_TOKEN_PROGRAM_ADDRESS'],
     });
 });
 
@@ -671,4 +711,45 @@ test('it throws when the parsed instruction discriminator key collides with a pa
             }),
         ),
     ).toThrow(/programInstructionsParsedDiscriminatorKey.*'data'/);
+});
+
+test('it renders a program guard in the identify helpers that cannot be skipped by call shape', async () => {
+    // Given a program with one discriminated account and one discriminated instruction.
+    const node = programNode({
+        accounts: [
+            accountNode({
+                discriminators: [constantDiscriminatorNode(constantValueNodeFromBytes('base16', '01'))],
+                name: 'mint',
+            }),
+        ],
+        instructions: [
+            instructionNode({
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: numberValueNode(1),
+                        name: 'discriminator',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                discriminators: [fieldDiscriminatorNode('discriminator')],
+                name: 'mintTokens',
+            }),
+        ],
+        name: 'splToken',
+        publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect `programAddress` to be required on the object arm, so an object caller cannot
+    // silently opt out of the check. Bytes-only callers opt out explicitly.
+    await renderMapContains(renderMap, 'accounts/splToken.accounts.ts', [
+        'account: | { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array',
+        "if ( 'data' in account && account.programAddress !== SPL_TOKEN_PROGRAM_ADDRESS ) return null;",
+    ]);
+    await renderMapContains(renderMap, 'instructions/splToken.instructions.ts', [
+        'instruction: | { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array',
+        "if ( 'data' in instruction && instruction.programAddress !== SPL_TOKEN_PROGRAM_ADDRESS ) return null;",
+    ]);
 });

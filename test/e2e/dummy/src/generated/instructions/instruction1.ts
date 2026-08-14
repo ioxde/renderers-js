@@ -6,7 +6,13 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { type AccountMeta, type Address, type Instruction, type InstructionWithAccounts } from '@solana/kit';
+import {
+    assertIsInstructionForProgram,
+    type AccountMeta,
+    type Address,
+    type Instruction,
+    type InstructionWithAccounts,
+} from '@solana/kit';
 import { DUMMY_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type Instruction1Instruction<
@@ -32,5 +38,7 @@ export type ParsedInstruction1Instruction<TProgram extends string = typeof DUMMY
 export function parseInstruction1Instruction<TProgram extends string>(
     instruction: Instruction<TProgram>,
 ): ParsedInstruction1Instruction<TProgram> {
+    assertIsInstructionForProgram(instruction, DUMMY_PROGRAM_ADDRESS);
+
     return { programAddress: instruction.programAddress };
 }

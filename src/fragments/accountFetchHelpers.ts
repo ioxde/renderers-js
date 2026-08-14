@@ -1,16 +1,21 @@
-import { AccountNode } from '@codama/nodes';
-import { getLastNodeFromPath, NodePath, pipe } from '@codama/visitors-core';
+import { AccountNode, resolveNestedTypeNode } from '@codama/nodes';
+import { findProgramNodeFromPath, getLastNodeFromPath, NodePath, pipe } from '@codama/visitors-core';
 
-import { addFragmentImports, Fragment, fragment, RenderScope, TypeManifest } from '../utils';
+import { addFragmentImports, Fragment, fragment, RenderScope, TypeManifest, use } from '../utils';
+import { getDiscriminatorGuardFragment } from './discriminatorCondition';
 
 export function getAccountFetchHelpersFragment(
-    scope: Pick<RenderScope, 'customAccountData' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'customAccountData' | 'nameApi' | 'typeManifestVisitor'> & {
         accountPath: NodePath<AccountNode>;
         typeManifest: TypeManifest;
     },
 ): Fragment {
     const { accountPath, typeManifest, nameApi, customAccountData } = scope;
     const accountNode = getLastNodeFromPath(accountPath);
+    const programNode = findProgramNodeFromPath(accountPath)!;
+    // The emitted owner check narrows on `exists` first: the non-existing variant carries no
+    // `programAddress`, so a flat check would throw on every missing account.
+    const programAddressConstant = use(nameApi.programAddressConstant(programNode.name), 'generatedPrograms');
     const decodeFunction = nameApi.accountDecodeFunction(accountNode.name);
     const fetchAllFunction = nameApi.accountFetchAllFunction(accountNode.name);
     const fetchAllMaybeFunction = nameApi.accountFetchAllMaybeFunction(accountNode.name);
@@ -18,20 +23,42 @@ export function getAccountFetchHelpersFragment(
     const fetchMaybeFunction = nameApi.accountFetchMaybeFunction(accountNode.name);
 
     const hasCustomData = customAccountData.has(accountNode.name);
-    const accountType = hasCustomData ? typeManifest.strictType : nameApi.dataType(accountNode.name);
+    const accountTypeName = nameApi.dataType(accountNode.name);
+    const accountType = hasCustomData ? typeManifest.strictType : accountTypeName;
     const decoderFunction = hasCustomData ? typeManifest.decoder : `${nameApi.decoderFunction(accountNode.name)}()`;
 
+    // Rides inside the same `exists` narrowing as the owner check: the non-existing variant carries
+    // no data either. The owner check cannot separate an account from its siblings of one program.
+    const discriminatorGuard = getDiscriminatorGuardFragment({
+        ...scope,
+        constantSource: 'generatedAccounts',
+        dataName: 'encodedAccount.data',
+        discriminators: accountNode.discriminators ?? [],
+        errorMessage: fragment`\`${decodeFunction}: account \${encodedAccount.address} does not match the ${accountTypeName} discriminator\``,
+        errorName: 'AccountDiscriminatorMismatchError',
+        prefix: accountNode.name,
+        struct: resolveNestedTypeNode(accountNode.data),
+    });
+
     return pipe(
-        fragment`export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress>): Account<${accountType}, TAddress>;
-export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: MaybeEncodedAccount<TAddress>): MaybeAccount<${accountType}, TAddress>;
-export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>): Account<${accountType}, TAddress> | MaybeAccount<${accountType}, TAddress> {
+        fragment`export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress>, programAddress?: Address): Account<${accountType}, TAddress>;
+export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: MaybeEncodedAccount<TAddress>, programAddress?: Address): MaybeAccount<${accountType}, TAddress>;
+export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>, programAddress: Address = ${programAddressConstant}): Account<${accountType}, TAddress> | MaybeAccount<${accountType}, TAddress> {
+  if (!('exists' in encodedAccount) || encodedAccount.exists) {
+    if (encodedAccount.programAddress !== programAddress) {
+      const error = new Error(\`${decodeFunction}: account \${encodedAccount.address} is owned by \${encodedAccount.programAddress}, expected \${programAddress}\`);
+      error.name = 'AccountOwnerMismatchError';
+      throw error;
+    }
+    ${discriminatorGuard}
+  }
   return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, ${decoderFunction});
 }
 
 export async function ${fetchFunction}<TAddress extends string = string>(
   rpc: Parameters<typeof fetchEncodedAccount>[0],
   address: Address<TAddress>,
-  config?: FetchAccountConfig,
+  config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<${accountType}, TAddress>> {
   const maybeAccount = await ${fetchMaybeFunction}(rpc, address, config);
   assertAccountExists(maybeAccount);
@@ -41,10 +68,11 @@ export async function ${fetchFunction}<TAddress extends string = string>(
 export async function ${fetchMaybeFunction}<TAddress extends string = string>(
   rpc: Parameters<typeof fetchEncodedAccount>[0],
   address: Address<TAddress>,
-  config?: FetchAccountConfig,
+  config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<${accountType}, TAddress>> {
-  const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-  return ${decodeFunction}(maybeAccount);
+  const { programAddress, ...fetchConfig } = config ?? {};
+  const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+  return ${decodeFunction}(maybeAccount, programAddress);
 }
 
 export async function ${fetchAllFunction}(

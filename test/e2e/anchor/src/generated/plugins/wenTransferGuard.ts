@@ -16,12 +16,20 @@ import {
     type GetMultipleAccountsApi,
 } from '@solana/kit';
 import {
-    addSelfFetchFunctions,
     addSelfPlanAndSendFunctions,
     type SelfFetchFunctions,
     type SelfPlanAndSendFunctions,
 } from '@solana/kit/program-client-core';
-import { getGuardV1Codec, identifyWenTransferGuardAccount, type GuardV1, type GuardV1Args } from '../accounts/index.js';
+import {
+    fetchAllGuardV1,
+    fetchAllMaybeGuardV1,
+    fetchGuardV1,
+    fetchMaybeGuardV1,
+    getGuardV1Codec,
+    identifyWenTransferGuardAccount,
+    type GuardV1,
+    type GuardV1Args,
+} from '../accounts/index.js';
 import {
     getCreateGuardInstructionAsync,
     getExecuteInstructionAsync,
@@ -78,7 +86,15 @@ export function wenTransferGuardProgram() {
     ): Omit<T, 'wenTransferGuard'> & { wenTransferGuard: WenTransferGuardPlugin } => {
         return extendClient(client, {
             wenTransferGuard: <WenTransferGuardPlugin>{
-                accounts: { guardV1: addSelfFetchFunctions(client, getGuardV1Codec()) },
+                accounts: {
+                    guardV1: Object.freeze({
+                        ...getGuardV1Codec(),
+                        fetch: (address, config) => fetchGuardV1(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllGuardV1(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeGuardV1(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeGuardV1(client.rpc, address, config),
+                    }),
+                },
                 instructions: {
                     createGuard: input =>
                         addSelfPlanAndSendFunctions(

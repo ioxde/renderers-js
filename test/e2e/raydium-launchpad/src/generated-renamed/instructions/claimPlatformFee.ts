@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getAddressEncoder,
@@ -457,6 +459,14 @@ export function parseClaimPlatformFeeInstruction<TProgram extends string, TAccou
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedClaimPlatformFeeInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, CLAIM_PLATFORM_FEE_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseClaimPlatformFeeInstruction: instruction data does not match the ClaimPlatformFee discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 10) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

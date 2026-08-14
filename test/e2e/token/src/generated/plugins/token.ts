@@ -15,12 +15,23 @@ import {
     type GetMultipleAccountsApi,
 } from '@solana/kit';
 import {
-    addSelfFetchFunctions,
     addSelfPlanAndSendFunctions,
     type SelfFetchFunctions,
     type SelfPlanAndSendFunctions,
 } from '@solana/kit/program-client-core';
 import {
+    fetchAllMaybeMint,
+    fetchAllMaybeMultisig,
+    fetchAllMaybeToken,
+    fetchAllMint,
+    fetchAllMultisig,
+    fetchAllToken,
+    fetchMaybeMint,
+    fetchMaybeMultisig,
+    fetchMaybeToken,
+    fetchMint,
+    fetchMultisig,
+    fetchToken,
     getMintCodec,
     getMultisigCodec,
     getTokenCodec,
@@ -172,9 +183,27 @@ export function tokenProgram() {
         return extendClient(client, {
             token: <TokenPlugin>{
                 accounts: {
-                    mint: addSelfFetchFunctions(client, getMintCodec()),
-                    token: addSelfFetchFunctions(client, getTokenCodec()),
-                    multisig: addSelfFetchFunctions(client, getMultisigCodec()),
+                    mint: Object.freeze({
+                        ...getMintCodec(),
+                        fetch: (address, config) => fetchMint(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllMint(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeMint(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeMint(client.rpc, address, config),
+                    }),
+                    token: Object.freeze({
+                        ...getTokenCodec(),
+                        fetch: (address, config) => fetchToken(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllToken(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeToken(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeToken(client.rpc, address, config),
+                    }),
+                    multisig: Object.freeze({
+                        ...getMultisigCodec(),
+                        fetch: (address, config) => fetchMultisig(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllMultisig(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeMultisig(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeMultisig(client.rpc, address, config),
+                    }),
                 },
                 instructions: {
                     initializeMint: input => addSelfPlanAndSendFunctions(client, getInitializeMintInstruction(input)),

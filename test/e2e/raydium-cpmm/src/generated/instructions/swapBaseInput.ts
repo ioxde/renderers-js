@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -480,6 +482,14 @@ export function parseSwapBaseInputInstruction<TProgram extends string, TAccountM
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedSwapBaseInputInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_CP_SWAP_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, SWAP_BASE_INPUT_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseSwapBaseInputInstruction: instruction data does not match the SwapBaseInput discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 13) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

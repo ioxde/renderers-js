@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -448,6 +450,14 @@ export function parseCreateConfigInstruction<TProgram extends string, TAccountMe
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCreateConfigInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, CREATE_CONFIG_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseCreateConfigInstruction: instruction data does not match the CreateConfig discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 8) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

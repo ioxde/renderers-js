@@ -9,7 +9,9 @@
 import {
     addDecoderSizePrefix,
     addEncoderSizePrefix,
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -352,6 +354,14 @@ export function parseCreatePlatformConfigInstruction<
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCreatePlatformConfigInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, CREATE_PLATFORM_CONFIG_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseCreatePlatformConfigInstruction: instruction data does not match the CreatePlatformConfig discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 5) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

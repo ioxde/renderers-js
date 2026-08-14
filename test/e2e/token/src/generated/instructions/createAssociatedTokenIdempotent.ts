@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getStructDecoder,
     getStructEncoder,
     getU8Decoder,
@@ -325,6 +327,14 @@ export function parseCreateAssociatedTokenIdempotentInstruction<
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCreateAssociatedTokenIdempotentInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, ASSOCIATED_TOKEN_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU8Encoder().encode(CREATE_ASSOCIATED_TOKEN_IDEMPOTENT_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseCreateAssociatedTokenIdempotentInstruction: instruction data does not match the CreateAssociatedTokenIdempotent discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 6) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

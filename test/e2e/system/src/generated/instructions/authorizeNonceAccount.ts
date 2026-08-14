@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getAddressDecoder,
     getAddressEncoder,
     getStructDecoder,
@@ -149,6 +151,14 @@ export function parseAuthorizeNonceAccountInstruction<
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedAuthorizeNonceAccountInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, SYSTEM_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU32Encoder().encode(AUTHORIZE_NONCE_ACCOUNT_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseAuthorizeNonceAccountInstruction: instruction data does not match the AuthorizeNonceAccount discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 2) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

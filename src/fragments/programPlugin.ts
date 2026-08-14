@@ -310,9 +310,15 @@ function getProgramPluginAccountsObjectFragment(
     const fields = mergeFragments(
         (programNode.accounts ?? []).map(account => {
             const name = nameApi.programPluginAccountKey(account.name);
-            const addSelfFetchFunctions = use('addSelfFetchFunctions', 'solanaProgramClientCore');
             const codecFunction = use(nameApi.codecFunction(account.name), 'generatedAccounts');
-            return fragment`${name}: ${addSelfFetchFunctions}(client, ${codecFunction}())`;
+            const fetchFunction = use(nameApi.accountFetchFunction(account.name), 'generatedAccounts');
+            const fetchAllFunction = use(nameApi.accountFetchAllFunction(account.name), 'generatedAccounts');
+            const fetchAllMaybeFunction = use(nameApi.accountFetchAllMaybeFunction(account.name), 'generatedAccounts');
+            const fetchMaybeFunction = use(nameApi.accountFetchMaybeFunction(account.name), 'generatedAccounts');
+            // Fetch via the generated helpers, not kit's addSelfFetchFunctions: that decodes
+            // through the raw codec, skipping decode<Account>'s owner guard and accepting
+            // foreign-owned accounts. The surrounding <Plugin> assertion contextually types the bare lambdas.
+            return fragment`${name}: Object.freeze({ ...${codecFunction}(), fetch: (address, config) => ${fetchFunction}(client.rpc, address, config), fetchAll: (addresses, config) => ${fetchAllFunction}(client.rpc, addresses, config), fetchAllMaybe: (addresses, config) => ${fetchAllMaybeFunction}(client.rpc, addresses, config), fetchMaybe: (address, config) => ${fetchMaybeFunction}(client.rpc, address, config) })`;
         }),
         c => c.join(', '),
     );

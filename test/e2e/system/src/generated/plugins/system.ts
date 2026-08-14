@@ -16,12 +16,19 @@ import {
     type GetMultipleAccountsApi,
 } from '@solana/kit';
 import {
-    addSelfFetchFunctions,
     addSelfPlanAndSendFunctions,
     type SelfFetchFunctions,
     type SelfPlanAndSendFunctions,
 } from '@solana/kit/program-client-core';
-import { getNonceCodec, type Nonce, type NonceArgs } from '../accounts/index.js';
+import {
+    fetchAllMaybeNonce,
+    fetchAllNonce,
+    fetchMaybeNonce,
+    fetchNonce,
+    getNonceCodec,
+    type Nonce,
+    type NonceArgs,
+} from '../accounts/index.js';
 import {
     getAdvanceNonceAccountInstruction,
     getAllocateInstruction,
@@ -107,7 +114,15 @@ export function systemProgram() {
     return <T extends SystemPluginRequirements>(client: T): Omit<T, 'system'> & { system: SystemPlugin } => {
         return extendClient(client, {
             system: <SystemPlugin>{
-                accounts: { nonce: addSelfFetchFunctions(client, getNonceCodec()) },
+                accounts: {
+                    nonce: Object.freeze({
+                        ...getNonceCodec(),
+                        fetch: (address, config) => fetchNonce(client.rpc, address, config),
+                        fetchAll: (addresses, config) => fetchAllNonce(client.rpc, addresses, config),
+                        fetchAllMaybe: (addresses, config) => fetchAllMaybeNonce(client.rpc, addresses, config),
+                        fetchMaybe: (address, config) => fetchMaybeNonce(client.rpc, address, config),
+                    }),
+                },
                 instructions: {
                     createAccount: input =>
                         addSelfPlanAndSendFunctions(

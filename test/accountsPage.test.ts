@@ -15,6 +15,7 @@ import {
     pdaNode,
     programNode,
     publicKeyTypeNode,
+    sizeDiscriminatorNode,
     structFieldTypeNode,
     structTypeNode,
 } from '@codama/nodes';
@@ -22,7 +23,7 @@ import { visit } from '@codama/visitors-core';
 import { test } from 'vitest';
 
 import { getRenderMapVisitor } from '../src';
-import { renderMapContains, renderMapContainsImports } from './_setup';
+import { renderMapContains, renderMapContainsImports, renderMapDoesNotContain } from './_setup';
 
 test('it renders PDA helpers for PDA with no seeds', async () => {
     // Given the following program with 1 account and 1 pda with empty seeds.
@@ -36,11 +37,12 @@ test('it renders PDA helpers for PDA with no seeds', async () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then we expect the following fetch helper functions delegating to findBarPda.
+    // Then we expect the whole config forwarded, so a `programAddress` override reaches the decode owner check.
     await renderMapContains(renderMap, 'accounts/foo.ts', [
         'export async function fetchFooFromSeeds',
         'export async function fetchMaybeFooFromSeeds',
         'await findBarPda({ programAddress })',
+        'return await fetchMaybeFoo(rpc, address, config)',
     ]);
 });
 
@@ -212,5 +214,139 @@ test('it can extracts account data and import it from another source', async () 
         'export function getCounterAccountDataEncoder',
         'export function getCounterAccountDataDecoder',
         'export function getCounterAccountDataCodec',
+    ]);
+});
+
+test('it renders an owner guard in the account decode function', async () => {
+    // Given the following program with 1 account.
+    const node = programNode({
+        accounts: [accountNode({ name: 'myAccount' })],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect the decode function to reject foreign-owned accounts, narrowing on `exists` first so
+    // non-existing accounts keep returning `{ exists: false }`; callers match the stable error name, not the message.
+    await renderMapContains(renderMap, 'accounts/myAccount.ts', [
+        'programAddress: Address = MY_PROGRAM_PROGRAM_ADDRESS',
+        "if (!('exists' in encodedAccount) || encodedAccount.exists) { " +
+            'if (encodedAccount.programAddress !== programAddress) { ' +
+            'const error = new Error( `decodeMyAccount: account ${encodedAccount.address} is owned by ' +
+            "${encodedAccount.programAddress}, expected ${programAddress}` ); error.name = 'AccountOwnerMismatchError'; " +
+            'throw error; } }',
+    ]);
+
+    // And we expect the following imports.
+    await renderMapContainsImports(renderMap, 'accounts/myAccount.ts', {
+        '../programs/index.js': ['MY_PROGRAM_PROGRAM_ADDRESS'],
+    });
+});
+
+test('it renders a discriminator guard in the account decode function', async () => {
+    // Given the following program with 1 discriminated account.
+    const node = programNode({
+        accounts: [
+            accountNode({
+                discriminators: [constantDiscriminatorNode(constantValueNodeFromBytes('base16', '1111'))],
+                name: 'myAccount',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect the decode function to reject sibling accounts of the same program, which the
+    // owner guard lets through. Callers match the stable error name, not the message.
+    await renderMapContains(renderMap, 'accounts/myAccount.ts', [
+        'if (!containsBytes(encodedAccount.data, MY_ACCOUNT_DISCRIMINATOR, 0)) { ' +
+            'const error = new Error( `decodeMyAccount: account ${encodedAccount.address} ' +
+            'does not match the MyAccount discriminator` ); ' +
+            "error.name = 'AccountDiscriminatorMismatchError'; throw error; }",
+    ]);
+
+    // And we expect the following imports.
+    await renderMapContainsImports(renderMap, 'accounts/myAccount.ts', {
+        '@solana/kit': ['containsBytes'],
+    });
+});
+
+test('it renders the account discriminator guard inside the same exists narrowing as the owner guard', async () => {
+    // Given the following program with 1 discriminated account.
+    const node = programNode({
+        accounts: [
+            accountNode({
+                discriminators: [constantDiscriminatorNode(constantValueNodeFromBytes('base16', '1111'))],
+                name: 'myAccount',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect both guards to share the `exists` narrowing, so the `{ exists: false }` variant
+    // — which carries neither a programAddress nor data — keeps returning unthrown.
+    await renderMapContains(renderMap, 'accounts/myAccount.ts', [
+        "if (!('exists' in encodedAccount) || encodedAccount.exists) { " +
+            'if (encodedAccount.programAddress !== programAddress) {',
+        "error.name = 'AccountOwnerMismatchError'; throw error; } " +
+            'if (!containsBytes(encodedAccount.data, MY_ACCOUNT_DISCRIMINATOR, 0)) {',
+    ]);
+});
+
+test('it renders the account discriminator guard at each discriminator offset', async () => {
+    // Given the following account with two constant discriminators at different offsets.
+    const node = programNode({
+        accounts: [
+            accountNode({
+                discriminators: [
+                    constantDiscriminatorNode(constantValueNodeFromBytes('base16', '1111')),
+                    constantDiscriminatorNode(constantValueNodeFromBytes('base16', '2222'), 2),
+                ],
+                name: 'myAccount',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect every discriminator to be compared at its own offset, matching identify*.
+    await renderMapContains(renderMap, 'accounts/myAccount.ts', [
+        'if ( !( containsBytes(encodedAccount.data, MY_ACCOUNT_DISCRIMINATOR, 0) && ' +
+            'containsBytes(encodedAccount.data, MY_ACCOUNT_DISCRIMINATOR2, 2) ) ) {',
+    ]);
+});
+
+test('it renders no account discriminator guard when no discriminator constant is known', async () => {
+    // Given the following program with one undiscriminated account and one account whose only
+    // discriminator is a size, which emits no constant to compare against.
+    const node = programNode({
+        accounts: [
+            accountNode({ name: 'bare' }),
+            accountNode({ discriminators: [sizeDiscriminatorNode(42)], name: 'sized' }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect no discriminator guard, so decode never turns into a length assertion.
+    await renderMapDoesNotContain(renderMap, 'accounts/bare.ts', ['AccountDiscriminatorMismatchError']);
+    await renderMapDoesNotContain(renderMap, 'accounts/sized.ts', [
+        'AccountDiscriminatorMismatchError',
+        'encodedAccount.data.length === 42',
     ]);
 });

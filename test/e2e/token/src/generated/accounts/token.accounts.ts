@@ -6,18 +6,20 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { type ReadonlyUint8Array } from '@solana/kit';
+import { type Address, type ReadonlyUint8Array } from '@solana/kit';
+import { TOKEN_PROGRAM_ADDRESS } from '../programs/index.js';
 
 /** Account kinds of the token program. */
 export type TokenAccountType = 'mint' | 'token' | 'multisig';
 
 /**
  * Identifies token account data by its discriminators.
- * Returns `null` when the data matches no known account.
+ * Returns `null` when the account belongs to another program or the data matches no known account.
  */
 export function identifyTokenAccount(
-    account: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    account: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): TokenAccountType | null {
+    if ('data' in account && account.programAddress !== TOKEN_PROGRAM_ADDRESS) return null;
     const data = 'data' in account ? account.data : account;
     if (data.length === 82) {
         return 'mint';

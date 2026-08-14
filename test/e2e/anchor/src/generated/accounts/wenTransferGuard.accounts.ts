@@ -6,7 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { containsBytes, type ReadonlyUint8Array } from '@solana/kit';
+import { containsBytes, type Address, type ReadonlyUint8Array } from '@solana/kit';
+import { WEN_TRANSFER_GUARD_PROGRAM_ADDRESS } from '../programs/index.js';
 import { GUARD_V1_DISCRIMINATOR } from './guardV1.js';
 
 /** Account kinds of the wenTransferGuard program. */
@@ -14,11 +15,12 @@ export type WenTransferGuardAccountType = 'guardV1';
 
 /**
  * Identifies wenTransferGuard account data by its discriminators.
- * Returns `null` when the data matches no known account.
+ * Returns `null` when the account belongs to another program or the data matches no known account.
  */
 export function identifyWenTransferGuardAccount(
-    account: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    account: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): WenTransferGuardAccountType | null {
+    if ('data' in account && account.programAddress !== WEN_TRANSFER_GUARD_PROGRAM_ADDRESS) return null;
     const data = 'data' in account ? account.data : account;
     if (containsBytes(data, GUARD_V1_DISCRIMINATOR, 0)) {
         return 'guardV1';

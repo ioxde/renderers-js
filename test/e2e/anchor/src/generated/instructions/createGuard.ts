@@ -10,7 +10,9 @@ import {
     addDecoderSizePrefix,
     addEncoderSizePrefix,
     address,
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getAddressEncoder,
@@ -448,6 +450,14 @@ export function parseCreateGuardInstruction<TProgram extends string, TAccountMet
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCreateGuardInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, WEN_TRANSFER_GUARD_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, CREATE_GUARD_DISCRIMINATOR, 0)) {
+        const error = new Error(
+            `parseCreateGuardInstruction: instruction data does not match the CreateGuard discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 8) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     fixDecoderSize,
     fixEncoderSize,
     getBytesDecoder,
@@ -493,6 +495,12 @@ export function parseDepositInstruction<TProgram extends string, TAccountMetas e
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedDepositInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, RAYDIUM_CP_SWAP_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, DEPOSIT_DISCRIMINATOR, 0)) {
+        const error = new Error(`parseDepositInstruction: instruction data does not match the Deposit discriminator`);
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 13) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

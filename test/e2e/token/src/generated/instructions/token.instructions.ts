@@ -10,10 +10,12 @@ import {
     assertIsInstructionWithAccounts,
     containsBytes,
     getU8Encoder,
+    type Address,
     type Instruction,
     type InstructionWithData,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { TOKEN_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     AMOUNT_TO_UI_AMOUNT_DISCRIMINATOR,
     parseAmountToUiAmountInstruction,
@@ -150,11 +152,12 @@ export type TokenInstructionType =
 
 /**
  * Identifies token instruction data by its discriminators.
- * Returns `null` when the data matches no known instruction.
+ * Returns `null` when the instruction is for another program or the data matches no known instruction.
  */
 export function identifyTokenInstruction(
-    instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    instruction: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): TokenInstructionType | null {
+    if ('data' in instruction && instruction.programAddress !== TOKEN_PROGRAM_ADDRESS) return null;
     const data = 'data' in instruction ? instruction.data : instruction;
     if (containsBytes(data, getU8Encoder().encode(INITIALIZE_MINT_DISCRIMINATOR), 0)) {
         return 'initializeMint';
@@ -264,11 +267,13 @@ export type ParsedTokenInstruction<TProgram extends string = 'TokenkegQfeZyiNwAJ
 
 /**
  * Parses a token instruction into its kind tag plus parsed accounts and data.
- * Returns `null` when no known instruction matches; throws if a matched instruction fails to parse.
+ * Returns `null` when the instruction is for another program or no known instruction matches;
+ * throws if a matched instruction fails to parse.
  */
 export function parseTokenInstruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedTokenInstruction<TProgram> | null {
+    if (instruction.programAddress !== TOKEN_PROGRAM_ADDRESS) return null;
     const instructionType = identifyTokenInstruction(instruction);
     if (instructionType === null) return null;
     switch (instructionType) {

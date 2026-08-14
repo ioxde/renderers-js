@@ -7,6 +7,7 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
     getAddressDecoder,
     getAddressEncoder,
@@ -106,6 +107,8 @@ export function parseInstruction9Instruction<TProgram extends string, TAccountMe
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInstruction9Instruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, DUMMY_PROGRAM_ADDRESS);
+
     if (instruction.accounts.length < 1) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

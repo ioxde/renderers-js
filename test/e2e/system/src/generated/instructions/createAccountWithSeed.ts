@@ -9,7 +9,9 @@
 import {
     addDecoderSizePrefix,
     addEncoderSizePrefix,
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getAddressDecoder,
     getAddressEncoder,
     getStructDecoder,
@@ -191,6 +193,14 @@ export function parseCreateAccountWithSeedInstruction<
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCreateAccountWithSeedInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, SYSTEM_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU32Encoder().encode(CREATE_ACCOUNT_WITH_SEED_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseCreateAccountWithSeedInstruction: instruction data does not match the CreateAccountWithSeed discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 3) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

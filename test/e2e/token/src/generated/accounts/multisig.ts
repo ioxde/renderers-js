@@ -34,6 +34,7 @@ import {
     type MaybeAccount,
     type MaybeEncodedAccount,
 } from '@solana/kit';
+import { TOKEN_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type Multisig = {
     /** Number of signers required. */
@@ -75,20 +76,32 @@ export function getMultisigCodec(): FixedSizeCodec<MultisigArgs, Multisig> {
 
 export function decodeMultisig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<Multisig, TAddress>;
 export function decodeMultisig<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<Multisig, TAddress>;
 export function decodeMultisig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = TOKEN_PROGRAM_ADDRESS,
 ): Account<Multisig, TAddress> | MaybeAccount<Multisig, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodeMultisig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getMultisigDecoder());
 }
 
 export async function fetchMultisig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<Multisig, TAddress>> {
     const maybeAccount = await fetchMaybeMultisig(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -98,10 +111,11 @@ export async function fetchMultisig<TAddress extends string = string>(
 export async function fetchMaybeMultisig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Multisig, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodeMultisig(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodeMultisig(maybeAccount, programAddress);
 }
 
 export async function fetchAllMultisig(

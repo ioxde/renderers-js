@@ -10,6 +10,7 @@ import {
     assertAccountExists,
     assertAccountsExist,
     combineCodec,
+    containsBytes,
     decodeAccount,
     fetchEncodedAccount,
     fetchEncodedAccounts,
@@ -42,6 +43,7 @@ import {
     type OptionOrNullable,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { WEN_TRANSFER_GUARD_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     getCpiRuleDecoder,
     getCpiRuleEncoder,
@@ -124,20 +126,39 @@ export function getGuardV1Codec(): Codec<GuardV1Args, GuardV1> {
 
 export function decodeGuardV1<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<GuardV1, TAddress>;
 export function decodeGuardV1<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<GuardV1, TAddress>;
 export function decodeGuardV1<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = WEN_TRANSFER_GUARD_PROGRAM_ADDRESS,
 ): Account<GuardV1, TAddress> | MaybeAccount<GuardV1, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodeGuardV1: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+        if (!containsBytes(encodedAccount.data, GUARD_V1_DISCRIMINATOR, 0)) {
+            const error = new Error(
+                `decodeGuardV1: account ${encodedAccount.address} does not match the GuardV1 discriminator`,
+            );
+            error.name = 'AccountDiscriminatorMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getGuardV1Decoder());
 }
 
 export async function fetchGuardV1<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<GuardV1, TAddress>> {
     const maybeAccount = await fetchMaybeGuardV1(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -147,10 +168,11 @@ export async function fetchGuardV1<TAddress extends string = string>(
 export async function fetchMaybeGuardV1<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<GuardV1, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodeGuardV1(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodeGuardV1(maybeAccount, programAddress);
 }
 
 export async function fetchAllGuardV1(

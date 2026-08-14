@@ -7,7 +7,9 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     combineCodec,
+    containsBytes,
     getStructDecoder,
     getStructEncoder,
     getU32Decoder,
@@ -137,6 +139,14 @@ export function parseTransferSolInstruction<TProgram extends string, TAccountMet
         InstructionWithAccounts<TAccountMetas> &
         InstructionWithData<ReadonlyUint8Array>,
 ): ParsedTransferSolInstruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, SYSTEM_PROGRAM_ADDRESS);
+    if (!containsBytes(instruction.data, getU32Encoder().encode(TRANSFER_SOL_DISCRIMINATOR), 0)) {
+        const error = new Error(
+            `parseTransferSolInstruction: instruction data does not match the TransferSol discriminator`,
+        );
+        error.name = 'InstructionDiscriminatorMismatchError';
+        throw error;
+    }
     if (instruction.accounts.length < 2) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

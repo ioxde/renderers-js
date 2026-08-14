@@ -33,6 +33,7 @@ import {
     type MaybeAccount,
     type MaybeEncodedAccount,
 } from '@solana/kit';
+import { SYSTEM_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     getNonceStateDecoder,
     getNonceStateEncoder,
@@ -89,20 +90,32 @@ export function getNonceCodec(): FixedSizeCodec<NonceArgs, Nonce> {
 
 export function decodeNonce<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<Nonce, TAddress>;
 export function decodeNonce<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<Nonce, TAddress>;
 export function decodeNonce<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = SYSTEM_PROGRAM_ADDRESS,
 ): Account<Nonce, TAddress> | MaybeAccount<Nonce, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodeNonce: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getNonceDecoder());
 }
 
 export async function fetchNonce<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<Nonce, TAddress>> {
     const maybeAccount = await fetchMaybeNonce(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -112,10 +125,11 @@ export async function fetchNonce<TAddress extends string = string>(
 export async function fetchMaybeNonce<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Nonce, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodeNonce(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodeNonce(maybeAccount, programAddress);
 }
 
 export async function fetchAllNonce(

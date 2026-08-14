@@ -9,10 +9,12 @@
 import {
     assertIsInstructionWithAccounts,
     containsBytes,
+    type Address,
     type Instruction,
     type InstructionWithData,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     BUY_EXACT_IN_DISCRIMINATOR,
     parseBuyExactInInstruction,
@@ -115,11 +117,12 @@ export type InstructionType =
 
 /**
  * Identifies raydiumLaunchpad instruction data by its discriminators.
- * Returns `null` when the data matches no known instruction.
+ * Returns `null` when the instruction is for another program or the data matches no known instruction.
  */
 export function identifyInstruction(
-    instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    instruction: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): InstructionType | null {
+    if ('data' in instruction && instruction.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) return null;
     const data = 'data' in instruction ? instruction.data : instruction;
     if (containsBytes(data, BUY_EXACT_IN_DISCRIMINATOR, 0)) {
         return 'buyExactIn';
@@ -193,11 +196,13 @@ export type ParsedInstruction<TProgram extends string = 'LanMV9sAd7wArD4vJFi2qDd
 
 /**
  * Parses a raydiumLaunchpad instruction into its kind tag plus parsed accounts and data.
- * Returns `null` when no known instruction matches; throws if a matched instruction fails to parse.
+ * Returns `null` when the instruction is for another program or no known instruction matches;
+ * throws if a matched instruction fails to parse.
  */
 export function parseInstruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedInstruction<TProgram> | null {
+    if (instruction.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) return null;
     const instructionType = identifyInstruction(instruction);
     if (instructionType === null) return null;
     switch (instructionType) {

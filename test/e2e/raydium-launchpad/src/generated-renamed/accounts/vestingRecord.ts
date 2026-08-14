@@ -10,6 +10,7 @@ import {
     assertAccountExists,
     assertAccountsExist,
     combineCodec,
+    containsBytes,
     decodeAccount,
     fetchEncodedAccount,
     fetchEncodedAccounts,
@@ -38,6 +39,7 @@ import {
     type MaybeEncodedAccount,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const VESTING_RECORD_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([106, 243, 221, 205, 230, 126, 85, 83]);
 
@@ -112,20 +114,39 @@ export function getVestingRecordCodec(): FixedSizeCodec<VestingRecordArgs, Vesti
 
 export function decodeVestingRecord<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<VestingRecord, TAddress>;
 export function decodeVestingRecord<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<VestingRecord, TAddress>;
 export function decodeVestingRecord<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 ): Account<VestingRecord, TAddress> | MaybeAccount<VestingRecord, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodeVestingRecord: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+        if (!containsBytes(encodedAccount.data, VESTING_RECORD_DISCRIMINATOR, 0)) {
+            const error = new Error(
+                `decodeVestingRecord: account ${encodedAccount.address} does not match the VestingRecord discriminator`,
+            );
+            error.name = 'AccountDiscriminatorMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getVestingRecordDecoder());
 }
 
 export async function fetchVestingRecord<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<VestingRecord, TAddress>> {
     const maybeAccount = await fetchMaybeVestingRecord(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -135,10 +156,11 @@ export async function fetchVestingRecord<TAddress extends string = string>(
 export async function fetchMaybeVestingRecord<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<VestingRecord, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodeVestingRecord(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodeVestingRecord(maybeAccount, programAddress);
 }
 
 export async function fetchAllVestingRecord(

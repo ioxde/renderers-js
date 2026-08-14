@@ -1,4 +1,4 @@
-import { camelCase, InstructionNode } from '@codama/nodes';
+import { camelCase, InstructionNode, structTypeNodeFromInstructionArgumentNodes } from '@codama/nodes';
 import { findProgramNodeFromPath, getLastNodeFromPath, NodePath, pipe } from '@codama/visitors-core';
 
 import {
@@ -11,9 +11,10 @@ import {
     TypeManifest,
     use,
 } from '../utils';
+import { getDiscriminatorGuardFragment } from './discriminatorCondition';
 
 export function getInstructionParseFunctionFragment(
-    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi' | 'typeManifestVisitor'> & {
         dataArgsManifest: TypeManifest;
         instructionPath: NodePath<InstructionNode>;
     },
@@ -69,7 +70,7 @@ function getTypeFragment(
 }
 
 function getFunctionFragment(
-    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi' | 'typeManifestVisitor'> & {
         dataArgsManifest: TypeManifest;
         instructionNode: InstructionNode;
         programAddressConstant: Fragment;
@@ -120,6 +121,23 @@ function getFunctionFragment(
         cs => cs.join(' & '),
     );
 
+    const programGuard = fragment`${use('assertIsInstructionForProgram', 'solanaInstructions')}(instruction, ${scope.programAddressConstant});`;
+
+    // Gated on `hasData`: without arguments the parsed type has no `data` field to compare.
+    const instructionTypeName = scope.nameApi.dataType(scope.instructionNode.name);
+    const discriminatorGuard = hasData
+        ? getDiscriminatorGuardFragment({
+              ...scope,
+              constantSource: 'generatedInstructions',
+              dataName: 'instruction.data',
+              discriminators: scope.instructionNode.discriminators ?? [],
+              errorMessage: fragment`\`${instructionParseFunction}: instruction data does not match the ${instructionTypeName} discriminator\``,
+              errorName: 'InstructionDiscriminatorMismatchError',
+              prefix: scope.instructionNode.name,
+              struct: structTypeNodeFromInstructionArgumentNodes(scope.instructionNode.arguments ?? []),
+          })
+        : undefined;
+
     let accountHelpers: Fragment | undefined;
     if (hasAccounts) {
         const solanaError = use('SolanaError', 'solanaErrors');
@@ -161,7 +179,11 @@ const getNextOptionalAccount = () => {
 
     const data = hasData ? fragment`, data: ${decoderFunction}.decode(instruction.data)` : fragment``;
 
+    // Anchor derives discriminators from names alone, so both a foreign instruction and a sibling of
+    // this program can match. Each guard precedes the account checks so the error names the real problem.
     return fragment`export function ${instructionParseFunction}<${typeParamDeclarations}>(instruction: ${instructionType}): ${instructionParsedType}<${typeParams}> {
+  ${programGuard}
+  ${discriminatorGuard}
   ${accountHelpers}
   return { programAddress: instruction.programAddress${accounts}${data} };
 }`;

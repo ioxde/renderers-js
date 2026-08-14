@@ -8,6 +8,7 @@
 
 import {
     AccountRole,
+    assertIsInstructionForProgram,
     type AccountMeta,
     type Address,
     type Instruction,
@@ -50,5 +51,7 @@ export type ParsedInstruction2Instruction<TProgram extends string = typeof DUMMY
 export function parseInstruction2Instruction<TProgram extends string>(
     instruction: Instruction<TProgram>,
 ): ParsedInstruction2Instruction<TProgram> {
+    assertIsInstructionForProgram(instruction, DUMMY_PROGRAM_ADDRESS);
+
     return { programAddress: instruction.programAddress };
 }

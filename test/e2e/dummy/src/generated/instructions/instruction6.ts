@@ -7,6 +7,7 @@
  */
 
 import {
+    assertIsInstructionForProgram,
     SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
     SolanaError,
     type AccountMeta,
@@ -68,6 +69,8 @@ export type ParsedInstruction6Instruction<
 export function parseInstruction6Instruction<TProgram extends string, TAccountMetas extends readonly AccountMeta[]>(
     instruction: Instruction<TProgram> & InstructionWithAccounts<TAccountMetas>,
 ): ParsedInstruction6Instruction<TProgram, TAccountMetas> {
+    assertIsInstructionForProgram(instruction, DUMMY_PROGRAM_ADDRESS);
+
     if (instruction.accounts.length < 1) {
         throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
             actualAccountMetas: instruction.accounts.length,

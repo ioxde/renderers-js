@@ -6,7 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { containsBytes, type ReadonlyUint8Array } from '@solana/kit';
+import { containsBytes, type Address, type ReadonlyUint8Array } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 import { GLOBAL_CONFIG_DISCRIMINATOR } from './globalConfig.js';
 import { PLATFORM_CONFIG_DISCRIMINATOR } from './platformConfig.js';
 import { POOL_STATE_DISCRIMINATOR } from './poolState.js';
@@ -17,11 +18,12 @@ export type RaydiumLaunchpadAccountType = 'globalConfig' | 'platformConfig' | 'p
 
 /**
  * Identifies raydiumLaunchpad account data by its discriminators.
- * Returns `null` when the data matches no known account.
+ * Returns `null` when the account belongs to another program or the data matches no known account.
  */
 export function identifyRaydiumLaunchpadAccount(
-    account: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    account: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): RaydiumLaunchpadAccountType | null {
+    if ('data' in account && account.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) return null;
     const data = 'data' in account ? account.data : account;
     if (containsBytes(data, GLOBAL_CONFIG_DISCRIMINATOR, 0)) {
         return 'globalConfig';

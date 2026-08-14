@@ -36,6 +36,7 @@ import {
     type Option,
     type OptionOrNullable,
 } from '@solana/kit';
+import { TOKEN_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     getAccountStateDecoder,
     getAccountStateEncoder,
@@ -133,20 +134,32 @@ export function getTokenCodec(): FixedSizeCodec<TokenArgs, Token> {
 
 export function decodeToken<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
+    programAddress?: Address,
 ): Account<Token, TAddress>;
 export function decodeToken<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
+    programAddress?: Address,
 ): MaybeAccount<Token, TAddress>;
 export function decodeToken<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
+    programAddress: Address = TOKEN_PROGRAM_ADDRESS,
 ): Account<Token, TAddress> | MaybeAccount<Token, TAddress> {
+    if (!('exists' in encodedAccount) || encodedAccount.exists) {
+        if (encodedAccount.programAddress !== programAddress) {
+            const error = new Error(
+                `decodeToken: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+            );
+            error.name = 'AccountOwnerMismatchError';
+            throw error;
+        }
+    }
     return decodeAccount(encodedAccount as MaybeEncodedAccount<TAddress>, getTokenDecoder());
 }
 
 export async function fetchToken<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<Account<Token, TAddress>> {
     const maybeAccount = await fetchMaybeToken(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -156,10 +169,11 @@ export async function fetchToken<TAddress extends string = string>(
 export async function fetchMaybeToken<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig,
+    config?: FetchAccountConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Token, TAddress>> {
-    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
-    return decodeToken(maybeAccount);
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
+    return decodeToken(maybeAccount, programAddress);
 }
 
 export async function fetchAllToken(

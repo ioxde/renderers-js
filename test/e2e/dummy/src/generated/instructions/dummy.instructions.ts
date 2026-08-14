@@ -10,10 +10,12 @@ import {
     assertIsInstructionWithAccounts,
     containsBytes,
     getU32Encoder,
+    type Address,
     type Instruction,
     type InstructionWithData,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { DUMMY_PROGRAM_ADDRESS } from '../programs/index.js';
 import { getKeyEncoder } from '../types/index.js';
 import { parseInstruction1Instruction, type ParsedInstruction1Instruction } from './instruction1.js';
 import {
@@ -49,11 +51,12 @@ export type DummyInstructionType =
 
 /**
  * Identifies dummy instruction data by its discriminators.
- * Returns `null` when the data matches no known instruction.
+ * Returns `null` when the instruction is for another program or the data matches no known instruction.
  */
 export function identifyDummyInstruction(
-    instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
+    instruction: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
 ): DummyInstructionType | null {
+    if ('data' in instruction && instruction.programAddress !== DUMMY_PROGRAM_ADDRESS) return null;
     const data = 'data' in instruction ? instruction.data : instruction;
     if (containsBytes(data, getU32Encoder().encode(INSTRUCTION3_DISCRIMINATOR), 0)) {
         return 'instruction3';
@@ -79,11 +82,13 @@ export type ParsedDummyInstruction<TProgram extends string = 'Dummy1111111111111
 
 /**
  * Parses a dummy instruction into its kind tag plus parsed accounts and data.
- * Returns `null` when no known instruction matches; throws if a matched instruction fails to parse.
+ * Returns `null` when the instruction is for another program or no known instruction matches;
+ * throws if a matched instruction fails to parse.
  */
 export function parseDummyInstruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedDummyInstruction<TProgram> | null {
+    if (instruction.programAddress !== DUMMY_PROGRAM_ADDRESS) return null;
     const instructionType = identifyDummyInstruction(instruction);
     if (instructionType === null) return null;
     switch (instructionType) {

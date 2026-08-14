@@ -8,6 +8,7 @@
 
 import {
     AccountRole,
+    assertIsInstructionForProgram,
     combineCodec,
     getStructDecoder,
     getStructEncoder,
@@ -84,6 +85,8 @@ export type ParsedAddMemoInstruction<TProgram extends string = typeof MEMO_PROGR
 export function parseAddMemoInstruction<TProgram extends string>(
     instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedAddMemoInstruction<TProgram> {
+    assertIsInstructionForProgram(instruction, MEMO_PROGRAM_ADDRESS);
+
     return {
         programAddress: instruction.programAddress,
         data: getAddMemoInstructionDataDecoder().decode(instruction.data),

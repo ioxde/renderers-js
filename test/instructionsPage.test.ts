@@ -32,6 +32,7 @@ import {
     publicKeyTypeNode,
     publicKeyValueNode,
     resolverValueNode,
+    sizeDiscriminatorNode,
     stringTypeNode,
     stringValueNode,
     variablePdaSeedNode,
@@ -1226,5 +1227,147 @@ test('it renders instructions with no arguments but with some accounts', async (
     await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
         'export type MyInstructionInput <TAccountMyAccount extends string = string> = { myAccount: Address<TAccountMyAccount>; };',
         'input: MyInstructionInput<TAccountMyAccount>',
+    ]);
+});
+
+test('it renders a program guard that throws before checking the account metas', async () => {
+    // Given the following instruction with an account.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [instructionAccountNode({ isSigner: false, isWritable: false, name: 'myAccount' })],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect the program guard to run before the account-meta count, so a foreign
+    // instruction reports the program mismatch rather than a misleading meta count.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'assertIsInstructionForProgram(instruction, MY_PROGRAM_PROGRAM_ADDRESS); ' +
+            'if (instruction.accounts.length < 1) {',
+    ]);
+});
+
+test('it renders a program guard in the parse function of instructions with no accounts and no data', async () => {
+    // Given the following bare instruction.
+    const node = programNode({
+        instructions: [instructionNode({ name: 'myInstruction' })],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we still expect the program guard to be rendered.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'assertIsInstructionForProgram(instruction, MY_PROGRAM_PROGRAM_ADDRESS);',
+    ]);
+    await renderMapContainsImports(renderMap, 'instructions/myInstruction.ts', {
+        '../programs/index.js': ['MY_PROGRAM_PROGRAM_ADDRESS'],
+        '@solana/kit': ['assertIsInstructionForProgram'],
+    });
+});
+
+test('it renders a discriminator guard between the program guard and the account metas', async () => {
+    // Given the following discriminated instruction with an account.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [instructionAccountNode({ isSigner: false, isWritable: false, name: 'myAccount' })],
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: numberValueNode(42),
+                        defaultValueStrategy: 'omitted',
+                        name: 'discriminator',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                discriminators: [fieldDiscriminatorNode('discriminator')],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect the discriminator guard to reject sibling instructions of the same program,
+    // which the program guard lets through, and to run before the account-meta count so a
+    // mis-routed instruction reports the real problem.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'assertIsInstructionForProgram(instruction, MY_PROGRAM_PROGRAM_ADDRESS); ' +
+            'if ( !containsBytes( instruction.data, ' +
+            'getU8Encoder().encode(MY_INSTRUCTION_DISCRIMINATOR), 0 ) ) { ' +
+            'const error = new Error( ' +
+            '`parseMyInstructionInstruction: instruction data does not match the MyInstruction discriminator` ); ' +
+            "error.name = 'InstructionDiscriminatorMismatchError'; throw error; } " +
+            'if (instruction.accounts.length < 1) {',
+    ]);
+
+    // And we expect the following imports.
+    await renderMapContainsImports(renderMap, 'instructions/myInstruction.ts', {
+        '@solana/kit': ['containsBytes'],
+    });
+});
+
+test('it renders no instruction discriminator guard when no discriminator constant is known', async () => {
+    // Given one undiscriminated instruction and one whose only discriminator is a size, which
+    // emits no constant to compare against.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                arguments: [instructionArgumentNode({ name: 'amount', type: numberTypeNode('u64') })],
+                name: 'bare',
+            }),
+            instructionNode({
+                arguments: [instructionArgumentNode({ name: 'amount', type: numberTypeNode('u64') })],
+                discriminators: [sizeDiscriminatorNode(8)],
+                name: 'sized',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect no discriminator guard, so parse never turns into a length assertion.
+    await renderMapDoesNotContain(renderMap, 'instructions/bare.ts', ['InstructionDiscriminatorMismatchError']);
+    await renderMapDoesNotContain(renderMap, 'instructions/sized.ts', [
+        'InstructionDiscriminatorMismatchError',
+        'instruction.data.length === 8',
+    ]);
+});
+
+test('it renders no instruction discriminator guard when the instruction carries no data', async () => {
+    // Given a discriminated instruction with no arguments, whose parsed type therefore has no data.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                discriminators: [constantDiscriminatorNode(constantValueNodeFromBytes('base16', '1111'))],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect no discriminator guard: the parsed instruction type omits `data`, so there is
+    // no typed field to compare against.
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', [
+        'InstructionDiscriminatorMismatchError',
     ]);
 });
