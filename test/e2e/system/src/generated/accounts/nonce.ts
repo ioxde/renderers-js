@@ -135,7 +135,7 @@ export async function fetchMaybeNonce<TAddress extends string = string>(
 export async function fetchAllNonce(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<Nonce>[]> {
     const maybeAccounts = await fetchAllMaybeNonce(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -145,10 +145,11 @@ export async function fetchAllNonce(
 export async function fetchAllMaybeNonce(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Nonce>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeNonce(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeNonce(maybeAccount, programAddress));
 }
 
 export function getNonceSize(): number {

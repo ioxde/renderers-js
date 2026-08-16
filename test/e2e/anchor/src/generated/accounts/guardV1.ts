@@ -178,7 +178,7 @@ export async function fetchMaybeGuardV1<TAddress extends string = string>(
 export async function fetchAllGuardV1(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<GuardV1>[]> {
     const maybeAccounts = await fetchAllMaybeGuardV1(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -188,8 +188,9 @@ export async function fetchAllGuardV1(
 export async function fetchAllMaybeGuardV1(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<GuardV1>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeGuardV1(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeGuardV1(maybeAccount, programAddress));
 }

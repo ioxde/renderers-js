@@ -170,7 +170,7 @@ export async function fetchMaybeObservationState<TAddress extends string = strin
 export async function fetchAllObservationState(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<ObservationState>[]> {
     const maybeAccounts = await fetchAllMaybeObservationState(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -180,10 +180,11 @@ export async function fetchAllObservationState(
 export async function fetchAllMaybeObservationState(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<ObservationState>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeObservationState(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeObservationState(maybeAccount, programAddress));
 }
 
 export function getObservationStateSize(): number {

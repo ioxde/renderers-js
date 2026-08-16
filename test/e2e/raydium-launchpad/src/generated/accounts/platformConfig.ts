@@ -194,7 +194,7 @@ export async function fetchMaybePlatformConfig<TAddress extends string = string>
 export async function fetchAllPlatformConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<PlatformConfig>[]> {
     const maybeAccounts = await fetchAllMaybePlatformConfig(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -204,10 +204,11 @@ export async function fetchAllPlatformConfig(
 export async function fetchAllMaybePlatformConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<PlatformConfig>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodePlatformConfig(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodePlatformConfig(maybeAccount, programAddress));
 }
 
 export function getPlatformConfigSize(): number {

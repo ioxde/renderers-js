@@ -151,7 +151,7 @@ export async function fetchMaybeMint<TAddress extends string = string>(
 export async function fetchAllMint(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<Mint>[]> {
     const maybeAccounts = await fetchAllMaybeMint(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -161,10 +161,11 @@ export async function fetchAllMint(
 export async function fetchAllMaybeMint(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Mint>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeMint(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeMint(maybeAccount, programAddress));
 }
 
 export function getMintSize(): number {

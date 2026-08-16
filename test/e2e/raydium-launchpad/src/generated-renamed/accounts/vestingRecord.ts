@@ -166,7 +166,7 @@ export async function fetchMaybeVestingRecord<TAddress extends string = string>(
 export async function fetchAllVestingRecord(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<VestingRecord>[]> {
     const maybeAccounts = await fetchAllMaybeVestingRecord(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -176,10 +176,11 @@ export async function fetchAllVestingRecord(
 export async function fetchAllMaybeVestingRecord(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<VestingRecord>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeVestingRecord(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeVestingRecord(maybeAccount, programAddress));
 }
 
 export function getVestingRecordSize(): number {

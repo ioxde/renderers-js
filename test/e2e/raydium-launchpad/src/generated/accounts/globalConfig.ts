@@ -244,7 +244,7 @@ export async function fetchMaybeGlobalConfig<TAddress extends string = string>(
 export async function fetchAllGlobalConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<GlobalConfig>[]> {
     const maybeAccounts = await fetchAllMaybeGlobalConfig(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -254,10 +254,11 @@ export async function fetchAllGlobalConfig(
 export async function fetchAllMaybeGlobalConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<GlobalConfig>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeGlobalConfig(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeGlobalConfig(maybeAccount, programAddress));
 }
 
 export function getGlobalConfigSize(): number {

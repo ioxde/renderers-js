@@ -245,6 +245,31 @@ test('it renders an owner guard in the account decode function', async () => {
     });
 });
 
+test('it forwards the program address override through the batch account fetch helpers', async () => {
+    // Given the following program with 1 account.
+    const node = programNode({
+        accounts: [accountNode({ name: 'myAccount' })],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect the batch helpers to accept the same expected-owner override as the single-account
+    // helpers and to hand it to decode, rather than checking every account against the default program.
+    // The override is kept out of the RPC config, which has no such field.
+    await renderMapContains(renderMap, 'accounts/myAccount.ts', [
+        'export async function fetchAllMyAccount( rpc: Parameters<typeof fetchEncodedAccounts>[0], ' +
+            'addresses: Array<Address>, config?: FetchAccountsConfig & { programAddress?: Address } )',
+        'export async function fetchAllMaybeMyAccount( rpc: Parameters<typeof fetchEncodedAccounts>[0], ' +
+            'addresses: Array<Address>, config?: FetchAccountsConfig & { programAddress?: Address } )',
+        'const { programAddress, ...fetchConfig } = config ?? {}; ' +
+            'const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);',
+        'return maybeAccounts.map((maybeAccount) => decodeMyAccount(maybeAccount, programAddress)',
+    ]);
+});
+
 test('it renders a discriminator guard in the account decode function', async () => {
     // Given the following program with 1 discriminated account.
     const node = programNode({

@@ -354,7 +354,7 @@ export async function fetchMaybePoolState<TAddress extends string = string>(
 export async function fetchAllPoolState(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<PoolState>[]> {
     const maybeAccounts = await fetchAllMaybePoolState(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -364,10 +364,11 @@ export async function fetchAllPoolState(
 export async function fetchAllMaybePoolState(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<PoolState>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodePoolState(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodePoolState(maybeAccount, programAddress));
 }
 
 export function getPoolStateSize(): number {

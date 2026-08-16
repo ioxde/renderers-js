@@ -196,7 +196,7 @@ export async function fetchMaybeAmmConfig<TAddress extends string = string>(
 export async function fetchAllAmmConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<AmmConfig>[]> {
     const maybeAccounts = await fetchAllMaybeAmmConfig(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -206,10 +206,11 @@ export async function fetchAllAmmConfig(
 export async function fetchAllMaybeAmmConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<AmmConfig>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeAmmConfig(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeAmmConfig(maybeAccount, programAddress));
 }
 
 export function getAmmConfigSize(): number {

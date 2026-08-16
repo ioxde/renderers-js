@@ -121,7 +121,7 @@ export async function fetchMaybeMultisig<TAddress extends string = string>(
 export async function fetchAllMultisig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<Multisig>[]> {
     const maybeAccounts = await fetchAllMaybeMultisig(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -131,10 +131,11 @@ export async function fetchAllMultisig(
 export async function fetchAllMaybeMultisig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Multisig>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeMultisig(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeMultisig(maybeAccount, programAddress));
 }
 
 export function getMultisigSize(): number {

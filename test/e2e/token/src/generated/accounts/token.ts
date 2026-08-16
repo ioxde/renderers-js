@@ -179,7 +179,7 @@ export async function fetchMaybeToken<TAddress extends string = string>(
 export async function fetchAllToken(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<Token>[]> {
     const maybeAccounts = await fetchAllMaybeToken(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -189,10 +189,11 @@ export async function fetchAllToken(
 export async function fetchAllMaybeToken(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig,
+    config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<Token>[]> {
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-    return maybeAccounts.map(maybeAccount => decodeToken(maybeAccount));
+    const { programAddress, ...fetchConfig } = config ?? {};
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+    return maybeAccounts.map(maybeAccount => decodeToken(maybeAccount, programAddress));
 }
 
 export function getTokenSize(): number {

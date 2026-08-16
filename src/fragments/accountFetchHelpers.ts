@@ -78,7 +78,7 @@ export async function ${fetchMaybeFunction}<TAddress extends string = string>(
 export async function ${fetchAllFunction}(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
   addresses: Array<Address>,
-  config?: FetchAccountsConfig,
+  config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<Account<${accountType}>[]> {
   const maybeAccounts = await ${fetchAllMaybeFunction}(rpc, addresses, config);
   assertAccountsExist(maybeAccounts);
@@ -88,10 +88,11 @@ export async function ${fetchAllFunction}(
 export async function ${fetchAllMaybeFunction}(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
   addresses: Array<Address>,
-  config?: FetchAccountsConfig,
+  config?: FetchAccountsConfig & { programAddress?: Address },
 ): Promise<MaybeAccount<${accountType}>[]> {
-  const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
-  return maybeAccounts.map((maybeAccount) => ${decodeFunction}(maybeAccount));
+  const { programAddress, ...fetchConfig } = config ?? {};
+  const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
+  return maybeAccounts.map((maybeAccount) => ${decodeFunction}(maybeAccount, programAddress));
 }`,
         f => addFragmentImports(f, 'solanaAddresses', ['type Address']),
         f =>
