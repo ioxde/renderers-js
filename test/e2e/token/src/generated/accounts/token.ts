@@ -134,20 +134,17 @@ export function getTokenCodec(): FixedSizeCodec<TokenArgs, Token> {
 
 export function decodeToken<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<Token, TAddress>;
 export function decodeToken<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<Token, TAddress>;
 export function decodeToken<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = TOKEN_PROGRAM_ADDRESS,
 ): Account<Token, TAddress> | MaybeAccount<Token, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== TOKEN_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodeToken: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodeToken: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${TOKEN_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -159,7 +156,7 @@ export function decodeToken<TAddress extends string = string>(
 export async function fetchToken<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<Token, TAddress>> {
     const maybeAccount = await fetchMaybeToken(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -169,17 +166,16 @@ export async function fetchToken<TAddress extends string = string>(
 export async function fetchMaybeToken<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<Token, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodeToken(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodeToken(maybeAccount);
 }
 
 export async function fetchAllToken(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<Token>[]> {
     const maybeAccounts = await fetchAllMaybeToken(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -189,11 +185,10 @@ export async function fetchAllToken(
 export async function fetchAllMaybeToken(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<Token>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodeToken(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodeToken(maybeAccount));
 }
 
 export function getTokenSize(): number {

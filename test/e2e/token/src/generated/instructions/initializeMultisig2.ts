@@ -90,15 +90,11 @@ export type InitializeMultisig2Input<TAccountMultisig extends string = string> =
     signers: Array<Address>;
 };
 
-export function getInitializeMultisig2Instruction<
-    TAccountMultisig extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getInitializeMultisig2Instruction<TAccountMultisig extends string>(
     input: InitializeMultisig2Input<TAccountMultisig>,
-    config?: { programAddress?: TProgramAddress },
-): InitializeMultisig2Instruction<TProgramAddress, TAccountMultisig> {
+): InitializeMultisig2Instruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMultisig> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = { multisig: { value: input.multisig ?? null, isWritable: true } };
@@ -115,7 +111,7 @@ export function getInitializeMultisig2Instruction<
         accounts: [getAccountMeta('multisig', accounts.multisig), ...remainingAccounts],
         data: getInitializeMultisig2InstructionDataEncoder().encode(args as InitializeMultisig2InstructionDataArgs),
         programAddress,
-    } as InitializeMultisig2Instruction<TProgramAddress, TAccountMultisig>);
+    } as InitializeMultisig2Instruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMultisig>);
 }
 
 export type ParsedInitializeMultisig2Instruction<

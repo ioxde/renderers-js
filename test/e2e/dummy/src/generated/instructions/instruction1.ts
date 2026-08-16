@@ -22,13 +22,11 @@ export type Instruction1Instruction<
 
 export type Instruction1Input = {};
 
-export function getInstruction1Instruction<TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS>(config?: {
-    programAddress?: TProgramAddress;
-}): Instruction1Instruction<TProgramAddress> {
+export function getInstruction1Instruction(): Instruction1Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
-    return Object.freeze({ programAddress } as Instruction1Instruction<TProgramAddress>);
+    return Object.freeze({ programAddress } as Instruction1Instruction<typeof DUMMY_PROGRAM_ADDRESS>);
 }
 
 export type ParsedInstruction1Instruction<TProgram extends string = typeof DUMMY_PROGRAM_ADDRESS> = {

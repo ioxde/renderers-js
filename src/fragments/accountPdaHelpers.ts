@@ -28,14 +28,11 @@ export function getAccountPdaHelpersFragment(
     const fetchMaybeFromSeedsFunction = nameApi.accountFetchMaybeFromSeedsFunction(accountNode.name);
     const fetchMaybeFunction = nameApi.accountFetchMaybeFunction(accountNode.name);
 
-    // The emitted fetchMaybeFromSeeds forwards `config` whole, never a destructured rest: the
-    // `programAddress` override must reach decode's owner check — the PDA account is owned by the override program.
-
     return pipe(
         fragment`export async function ${fetchFromSeedsFunction}(
   rpc: Parameters<typeof fetchEncodedAccount>[0],
   ${hasVariableSeeds ? `seeds: ${pdaSeedsType},` : ''}
-  config: FetchAccountConfig & { programAddress?: Address } = {},
+  config: FetchAccountConfig = {},
 ): Promise<Account<${accountType}>> {
   const maybeAccount = await ${fetchMaybeFromSeedsFunction}(rpc, ${hasVariableSeeds ? 'seeds, ' : ''}config);
   assertAccountExists(maybeAccount);
@@ -45,14 +42,12 @@ export function getAccountPdaHelpersFragment(
 export async function ${fetchMaybeFromSeedsFunction}(
   rpc: Parameters<typeof fetchEncodedAccount>[0],
   ${hasVariableSeeds ? `seeds: ${pdaSeedsType},` : ''}
-  config: FetchAccountConfig & { programAddress?: Address } = {},
+  config: FetchAccountConfig = {},
 ): Promise<MaybeAccount<${accountType}>> {
-  const { programAddress } = config;
-  const [address] = await ${findPdaFunction}(${hasVariableSeeds ? 'seeds, ' : ''}{ programAddress });
+  const [address] = await ${findPdaFunction}(${hasVariableSeeds ? 'seeds' : ''});
   return await ${fetchMaybeFunction}(rpc, address, config);
 }`,
         f => addFragmentImports(f, importFrom, hasVariableSeeds ? [pdaSeedsType, findPdaFunction] : [findPdaFunction]),
-        f => addFragmentImports(f, 'solanaAddresses', ['type Address']),
         f =>
             addFragmentImports(f, 'solanaAccounts', [
                 'type Account',

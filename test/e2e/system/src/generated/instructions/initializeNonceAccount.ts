@@ -106,18 +106,16 @@ export function getInitializeNonceAccountInstruction<
     TAccountNonceAccount extends string,
     TAccountRecentBlockhashesSysvar extends string,
     TAccountRentSysvar extends string,
-    TProgramAddress extends Address = typeof SYSTEM_PROGRAM_ADDRESS,
 >(
     input: InitializeNonceAccountInput<TAccountNonceAccount, TAccountRecentBlockhashesSysvar, TAccountRentSysvar>,
-    config?: { programAddress?: TProgramAddress },
 ): InitializeNonceAccountInstruction<
-    TProgramAddress,
+    typeof SYSTEM_PROGRAM_ADDRESS,
     TAccountNonceAccount,
     TAccountRecentBlockhashesSysvar,
     TAccountRentSysvar
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? SYSTEM_PROGRAM_ADDRESS;
+    const programAddress = SYSTEM_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -152,7 +150,7 @@ export function getInitializeNonceAccountInstruction<
         ),
         programAddress,
     } as InitializeNonceAccountInstruction<
-        TProgramAddress,
+        typeof SYSTEM_PROGRAM_ADDRESS,
         TAccountNonceAccount,
         TAccountRecentBlockhashesSysvar,
         TAccountRentSysvar

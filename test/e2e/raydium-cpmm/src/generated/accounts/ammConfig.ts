@@ -144,20 +144,17 @@ export function getAmmConfigCodec(): FixedSizeCodec<AmmConfigArgs, AmmConfig> {
 
 export function decodeAmmConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<AmmConfig, TAddress>;
 export function decodeAmmConfig<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<AmmConfig, TAddress>;
 export function decodeAmmConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 ): Account<AmmConfig, TAddress> | MaybeAccount<AmmConfig, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== RAYDIUM_CP_SWAP_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodeAmmConfig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodeAmmConfig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${RAYDIUM_CP_SWAP_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -176,7 +173,7 @@ export function decodeAmmConfig<TAddress extends string = string>(
 export async function fetchAmmConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<AmmConfig, TAddress>> {
     const maybeAccount = await fetchMaybeAmmConfig(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -186,17 +183,16 @@ export async function fetchAmmConfig<TAddress extends string = string>(
 export async function fetchMaybeAmmConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<AmmConfig, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodeAmmConfig(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodeAmmConfig(maybeAccount);
 }
 
 export async function fetchAllAmmConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<AmmConfig>[]> {
     const maybeAccounts = await fetchAllMaybeAmmConfig(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -206,11 +202,10 @@ export async function fetchAllAmmConfig(
 export async function fetchAllMaybeAmmConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<AmmConfig>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodeAmmConfig(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodeAmmConfig(maybeAccount));
 }
 
 export function getAmmConfigSize(): number {

@@ -57,12 +57,11 @@ export type Instruction5Input = {
     myArgument?: Instruction5InstructionDataArgs['myArgument'];
 };
 
-export function getInstruction5Instruction<TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS>(
+export function getInstruction5Instruction(
     input: Instruction5Input,
-    config?: { programAddress?: TProgramAddress },
-): Instruction5Instruction<TProgramAddress> {
+): Instruction5Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
     // Original args.
     const args = { ...input };
@@ -70,7 +69,7 @@ export function getInstruction5Instruction<TProgramAddress extends Address = typ
     return Object.freeze({
         data: getInstruction5InstructionDataEncoder().encode(args as Instruction5InstructionDataArgs),
         programAddress,
-    } as Instruction5Instruction<TProgramAddress>);
+    } as Instruction5Instruction<typeof DUMMY_PROGRAM_ADDRESS>);
 }
 
 export type ParsedInstruction5Instruction<TProgram extends string = typeof DUMMY_PROGRAM_ADDRESS> = {

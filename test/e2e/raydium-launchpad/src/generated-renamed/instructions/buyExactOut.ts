@@ -230,7 +230,6 @@ export async function getBuyExactOutInstructionAsync<
     TAccountQuoteTokenProgram extends string,
     TAccountEventAuthority extends string,
     TAccountProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: BuyExactOutAsyncInput<
         TAccountPayer,
@@ -249,10 +248,9 @@ export async function getBuyExactOutInstructionAsync<
         TAccountEventAuthority,
         TAccountProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     BuyExactOutInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountAuthority,
         TAccountGlobalConfig,
@@ -271,7 +269,7 @@ export async function getBuyExactOutInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -330,7 +328,7 @@ export async function getBuyExactOutInstructionAsync<
         data: getBuyExactOutInstructionDataEncoder().encode(args as BuyExactOutInstructionDataArgs),
         programAddress,
     } as BuyExactOutInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountAuthority,
         TAccountGlobalConfig,
@@ -445,7 +443,6 @@ export function getBuyExactOutInstruction<
     TAccountQuoteTokenProgram extends string,
     TAccountEventAuthority extends string,
     TAccountProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: BuyExactOutInput<
         TAccountPayer,
@@ -464,9 +461,8 @@ export function getBuyExactOutInstruction<
         TAccountEventAuthority,
         TAccountProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): BuyExactOutInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPayer,
     TAccountAuthority,
     TAccountGlobalConfig,
@@ -484,7 +480,7 @@ export function getBuyExactOutInstruction<
     TAccountProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -537,7 +533,7 @@ export function getBuyExactOutInstruction<
         data: getBuyExactOutInstructionDataEncoder().encode(args as BuyExactOutInstructionDataArgs),
         programAddress,
     } as BuyExactOutInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountAuthority,
         TAccountGlobalConfig,

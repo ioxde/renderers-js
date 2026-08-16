@@ -121,16 +121,11 @@ export type InitializeMintInput<TAccountMint extends string = string, TAccountRe
     freezeAuthority?: InitializeMintInstructionDataArgs['freezeAuthority'];
 };
 
-export function getInitializeMintInstruction<
-    TAccountMint extends string,
-    TAccountRent extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getInitializeMintInstruction<TAccountMint extends string, TAccountRent extends string>(
     input: InitializeMintInput<TAccountMint, TAccountRent>,
-    config?: { programAddress?: TProgramAddress },
-): InitializeMintInstruction<TProgramAddress, TAccountMint, TAccountRent> {
+): InitializeMintInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMint, TAccountRent> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -153,7 +148,7 @@ export function getInitializeMintInstruction<
         accounts: [getAccountMeta('mint', accounts.mint), getAccountMeta('rent', accounts.rent)],
         data: getInitializeMintInstructionDataEncoder().encode(args as InitializeMintInstructionDataArgs),
         programAddress,
-    } as InitializeMintInstruction<TProgramAddress, TAccountMint, TAccountRent>);
+    } as InitializeMintInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMint, TAccountRent>);
 }
 
 export type ParsedInitializeMintInstruction<

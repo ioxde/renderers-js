@@ -90,15 +90,11 @@ export type AmountToUiAmountInput<TAccountMint extends string = string> = {
     amount: AmountToUiAmountInstructionDataArgs['amount'];
 };
 
-export function getAmountToUiAmountInstruction<
-    TAccountMint extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getAmountToUiAmountInstruction<TAccountMint extends string>(
     input: AmountToUiAmountInput<TAccountMint>,
-    config?: { programAddress?: TProgramAddress },
-): AmountToUiAmountInstruction<TProgramAddress, TAccountMint> {
+): AmountToUiAmountInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMint> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = { mint: { value: input.mint ?? null, isWritable: false } };
@@ -112,7 +108,7 @@ export function getAmountToUiAmountInstruction<
         accounts: [getAccountMeta('mint', accounts.mint)],
         data: getAmountToUiAmountInstructionDataEncoder().encode(args as AmountToUiAmountInstructionDataArgs),
         programAddress,
-    } as AmountToUiAmountInstruction<TProgramAddress, TAccountMint>);
+    } as AmountToUiAmountInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMint>);
 }
 
 export type ParsedAmountToUiAmountInstruction<

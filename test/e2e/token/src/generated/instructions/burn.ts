@@ -109,12 +109,10 @@ export function getBurnInstruction<
     TAccountAccount extends string,
     TAccountMint extends string,
     TAccountAuthority extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
 >(
     input: BurnInput<TAccountAccount, TAccountMint, TAccountAuthority>,
-    config?: { programAddress?: TProgramAddress },
 ): BurnInstruction<
-    TProgramAddress,
+    typeof TOKEN_PROGRAM_ADDRESS,
     TAccountAccount,
     TAccountMint,
     (typeof input)['authority'] extends TransactionSigner<TAccountAuthority>
@@ -122,7 +120,7 @@ export function getBurnInstruction<
         : TAccountAuthority
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -153,7 +151,7 @@ export function getBurnInstruction<
         data: getBurnInstructionDataEncoder().encode(args as BurnInstructionDataArgs),
         programAddress,
     } as BurnInstruction<
-        TProgramAddress,
+        typeof TOKEN_PROGRAM_ADDRESS,
         TAccountAccount,
         TAccountMint,
         (typeof input)['authority'] extends TransactionSigner<TAccountAuthority>

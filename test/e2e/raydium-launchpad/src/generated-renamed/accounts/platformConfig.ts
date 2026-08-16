@@ -142,20 +142,17 @@ export function getPlatformConfigCodec(): FixedSizeCodec<PlatformConfigArgs, Pla
 
 export function decodePlatformConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<PlatformConfig, TAddress>;
 export function decodePlatformConfig<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<PlatformConfig, TAddress>;
 export function decodePlatformConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 ): Account<PlatformConfig, TAddress> | MaybeAccount<PlatformConfig, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodePlatformConfig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodePlatformConfig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -174,7 +171,7 @@ export function decodePlatformConfig<TAddress extends string = string>(
 export async function fetchPlatformConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<PlatformConfig, TAddress>> {
     const maybeAccount = await fetchMaybePlatformConfig(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -184,17 +181,16 @@ export async function fetchPlatformConfig<TAddress extends string = string>(
 export async function fetchMaybePlatformConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<PlatformConfig, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodePlatformConfig(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodePlatformConfig(maybeAccount);
 }
 
 export async function fetchAllPlatformConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<PlatformConfig>[]> {
     const maybeAccounts = await fetchAllMaybePlatformConfig(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -204,11 +200,10 @@ export async function fetchAllPlatformConfig(
 export async function fetchAllMaybePlatformConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<PlatformConfig>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodePlatformConfig(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodePlatformConfig(maybeAccount));
 }
 
 export function getPlatformConfigSize(): number {

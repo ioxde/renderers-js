@@ -62,16 +62,14 @@ export function getInstruction3InstructionDataCodec(): FixedSizeCodec<
 
 export type Instruction3Input = {};
 
-export function getInstruction3Instruction<TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS>(config?: {
-    programAddress?: TProgramAddress;
-}): Instruction3Instruction<TProgramAddress> {
+export function getInstruction3Instruction(): Instruction3Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
     return Object.freeze({
         data: getInstruction3InstructionDataEncoder().encode({}),
         programAddress,
-    } as Instruction3Instruction<TProgramAddress>);
+    } as Instruction3Instruction<typeof DUMMY_PROGRAM_ADDRESS>);
 }
 
 export type ParsedInstruction3Instruction<TProgram extends string = typeof DUMMY_PROGRAM_ADDRESS> = {

@@ -171,7 +171,6 @@ export async function getCreatePlatformConfigInstructionAsync<
     TAccountPlatformNftWallet extends string,
     TAccountPlatformConfig extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CreatePlatformConfigAsyncInput<
         TAccountPlatformAdmin,
@@ -180,10 +179,9 @@ export async function getCreatePlatformConfigInstructionAsync<
         TAccountPlatformConfig,
         TAccountSystemProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     CreatePlatformConfigInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformAdmin,
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,
@@ -192,7 +190,7 @@ export async function getCreatePlatformConfigInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -230,7 +228,7 @@ export async function getCreatePlatformConfigInstructionAsync<
         data: getCreatePlatformConfigInstructionDataEncoder().encode(args as CreatePlatformConfigInstructionDataArgs),
         programAddress,
     } as CreatePlatformConfigInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformAdmin,
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,
@@ -267,7 +265,6 @@ export function getCreatePlatformConfigInstruction<
     TAccountPlatformNftWallet extends string,
     TAccountPlatformConfig extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CreatePlatformConfigInput<
         TAccountPlatformAdmin,
@@ -276,9 +273,8 @@ export function getCreatePlatformConfigInstruction<
         TAccountPlatformConfig,
         TAccountSystemProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): CreatePlatformConfigInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPlatformAdmin,
     TAccountPlatformFeeWallet,
     TAccountPlatformNftWallet,
@@ -286,7 +282,7 @@ export function getCreatePlatformConfigInstruction<
     TAccountSystemProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -319,7 +315,7 @@ export function getCreatePlatformConfigInstruction<
         data: getCreatePlatformConfigInstructionDataEncoder().encode(args as CreatePlatformConfigInstructionDataArgs),
         programAddress,
     } as CreatePlatformConfigInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformAdmin,
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,

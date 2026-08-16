@@ -27,10 +27,7 @@ import {
     getInstruction9Instruction,
     identifyDummyInstruction,
     parseDummyInstruction,
-    type Instruction10Input,
-    type Instruction1Input,
     type Instruction2Input,
-    type Instruction3Input,
     type Instruction4Input,
     type Instruction5Input,
     type Instruction6Input,
@@ -46,15 +43,11 @@ export type DummyPlugin = {
 };
 
 export type DummyPluginInstructions = {
-    instruction1: (
-        input: Instruction1Input,
-    ) => ReturnType<typeof getInstruction1Instruction> & SelfPlanAndSendFunctions;
+    instruction1: () => ReturnType<typeof getInstruction1Instruction> & SelfPlanAndSendFunctions;
     instruction2: (
         input: Instruction2Input,
     ) => ReturnType<typeof getInstruction2Instruction> & SelfPlanAndSendFunctions;
-    instruction3: (
-        input: Instruction3Input,
-    ) => ReturnType<typeof getInstruction3Instruction> & SelfPlanAndSendFunctions;
+    instruction3: () => ReturnType<typeof getInstruction3Instruction> & SelfPlanAndSendFunctions;
     instruction4: (
         input: Instruction4Input,
     ) => ReturnType<typeof getInstruction4Instruction> & SelfPlanAndSendFunctions;
@@ -73,9 +66,7 @@ export type DummyPluginInstructions = {
     instruction9: (
         input: MakeOptional<Instruction9Input, 'authority' | 'authorityArg'>,
     ) => ReturnType<typeof getInstruction9Instruction> & SelfPlanAndSendFunctions;
-    instruction10: (
-        input: Instruction10Input,
-    ) => ReturnType<typeof getInstruction10Instruction> & SelfPlanAndSendFunctions;
+    instruction10: () => ReturnType<typeof getInstruction10Instruction> & SelfPlanAndSendFunctions;
 };
 
 export type DummyPluginRequirements = ClientWithPayer & ClientWithTransactionPlanning & ClientWithTransactionSending;
@@ -85,9 +76,9 @@ export function dummyProgram() {
         return extendClient(client, {
             dummy: <DummyPlugin>{
                 instructions: {
-                    instruction1: input => addSelfPlanAndSendFunctions(client, getInstruction1Instruction(input)),
+                    instruction1: () => addSelfPlanAndSendFunctions(client, getInstruction1Instruction()),
                     instruction2: input => addSelfPlanAndSendFunctions(client, getInstruction2Instruction(input)),
-                    instruction3: input => addSelfPlanAndSendFunctions(client, getInstruction3Instruction(input)),
+                    instruction3: () => addSelfPlanAndSendFunctions(client, getInstruction3Instruction()),
                     instruction4: input => addSelfPlanAndSendFunctions(client, getInstruction4Instruction(input)),
                     instruction5: input => addSelfPlanAndSendFunctions(client, getInstruction5Instruction(input)),
                     instruction6: input => addSelfPlanAndSendFunctions(client, getInstruction6Instruction(input)),
@@ -102,7 +93,7 @@ export function dummyProgram() {
                                 authorityArg: input.authorityArg ?? client.payer.address,
                             }),
                         ),
-                    instruction10: input => addSelfPlanAndSendFunctions(client, getInstruction10Instruction(input)),
+                    instruction10: () => addSelfPlanAndSendFunctions(client, getInstruction10Instruction()),
                 },
                 identifyInstruction: identifyDummyInstruction,
                 parseInstruction: parseDummyInstruction,

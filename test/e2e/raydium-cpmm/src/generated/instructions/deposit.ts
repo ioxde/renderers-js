@@ -183,7 +183,6 @@ export async function getDepositInstructionAsync<
     TAccountVault0Mint extends string,
     TAccountVault1Mint extends string,
     TAccountLpMint extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: DepositAsyncInput<
         TAccountOwner,
@@ -200,10 +199,9 @@ export async function getDepositInstructionAsync<
         TAccountVault1Mint,
         TAccountLpMint
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     DepositInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -220,7 +218,7 @@ export async function getDepositInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -276,7 +274,7 @@ export async function getDepositInstructionAsync<
         data: getDepositInstructionDataEncoder().encode(args as DepositInstructionDataArgs),
         programAddress,
     } as DepositInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -351,7 +349,6 @@ export function getDepositInstruction<
     TAccountVault0Mint extends string,
     TAccountVault1Mint extends string,
     TAccountLpMint extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: DepositInput<
         TAccountOwner,
@@ -368,9 +365,8 @@ export function getDepositInstruction<
         TAccountVault1Mint,
         TAccountLpMint
     >,
-    config?: { programAddress?: TProgramAddress },
 ): DepositInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountOwner,
     TAccountAuthority,
     TAccountPoolState,
@@ -386,7 +382,7 @@ export function getDepositInstruction<
     TAccountLpMint
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -439,7 +435,7 @@ export function getDepositInstruction<
         data: getDepositInstructionDataEncoder().encode(args as DepositInstructionDataArgs),
         programAddress,
     } as DepositInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,

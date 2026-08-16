@@ -84,22 +84,17 @@ export type RevokeInput<TAccountSource extends string = string, TAccountOwner ex
     multiSigners?: Array<TransactionSigner>;
 };
 
-export function getRevokeInstruction<
-    TAccountSource extends string,
-    TAccountOwner extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getRevokeInstruction<TAccountSource extends string, TAccountOwner extends string>(
     input: RevokeInput<TAccountSource, TAccountOwner>,
-    config?: { programAddress?: TProgramAddress },
 ): RevokeInstruction<
-    TProgramAddress,
+    typeof TOKEN_PROGRAM_ADDRESS,
     TAccountSource,
     (typeof input)['owner'] extends TransactionSigner<TAccountOwner>
         ? ReadonlySignerAccount<TAccountOwner> & AccountSignerMeta<TAccountOwner>
         : TAccountOwner
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -128,7 +123,7 @@ export function getRevokeInstruction<
         data: getRevokeInstructionDataEncoder().encode({}),
         programAddress,
     } as RevokeInstruction<
-        TProgramAddress,
+        typeof TOKEN_PROGRAM_ADDRESS,
         TAccountSource,
         (typeof input)['owner'] extends TransactionSigner<TAccountOwner>
             ? ReadonlySignerAccount<TAccountOwner> & AccountSignerMeta<TAccountOwner>

@@ -122,12 +122,10 @@ export function getBurnCheckedInstruction<
     TAccountAccount extends string,
     TAccountMint extends string,
     TAccountAuthority extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
 >(
     input: BurnCheckedInput<TAccountAccount, TAccountMint, TAccountAuthority>,
-    config?: { programAddress?: TProgramAddress },
 ): BurnCheckedInstruction<
-    TProgramAddress,
+    typeof TOKEN_PROGRAM_ADDRESS,
     TAccountAccount,
     TAccountMint,
     (typeof input)['authority'] extends TransactionSigner<TAccountAuthority>
@@ -135,7 +133,7 @@ export function getBurnCheckedInstruction<
         : TAccountAuthority
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -166,7 +164,7 @@ export function getBurnCheckedInstruction<
         data: getBurnCheckedInstructionDataEncoder().encode(args as BurnCheckedInstructionDataArgs),
         programAddress,
     } as BurnCheckedInstruction<
-        TProgramAddress,
+        typeof TOKEN_PROGRAM_ADDRESS,
         TAccountAccount,
         TAccountMint,
         (typeof input)['authority'] extends TransactionSigner<TAccountAuthority>

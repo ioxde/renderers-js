@@ -74,15 +74,11 @@ export type GetAccountDataSizeInput<TAccountMint extends string = string> = {
     mint: Address<TAccountMint>;
 };
 
-export function getGetAccountDataSizeInstruction<
-    TAccountMint extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getGetAccountDataSizeInstruction<TAccountMint extends string>(
     input: GetAccountDataSizeInput<TAccountMint>,
-    config?: { programAddress?: TProgramAddress },
-): GetAccountDataSizeInstruction<TProgramAddress, TAccountMint> {
+): GetAccountDataSizeInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMint> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = { mint: { value: input.mint ?? null, isWritable: false } };
@@ -93,7 +89,7 @@ export function getGetAccountDataSizeInstruction<
         accounts: [getAccountMeta('mint', accounts.mint)],
         data: getGetAccountDataSizeInstructionDataEncoder().encode({}),
         programAddress,
-    } as GetAccountDataSizeInstruction<TProgramAddress, TAccountMint>);
+    } as GetAccountDataSizeInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountMint>);
 }
 
 export type ParsedGetAccountDataSizeInstruction<

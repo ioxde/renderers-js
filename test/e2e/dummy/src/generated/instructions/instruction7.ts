@@ -35,15 +35,11 @@ export type Instruction7Input<TAccountMyAccount extends string = string> = {
     myAccount?: Address<TAccountMyAccount>;
 };
 
-export function getInstruction7Instruction<
-    TAccountMyAccount extends string,
-    TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS,
->(
+export function getInstruction7Instruction<TAccountMyAccount extends string>(
     input: Instruction7Input<TAccountMyAccount>,
-    config?: { programAddress?: TProgramAddress },
-): Instruction7Instruction<TProgramAddress, TAccountMyAccount> {
+): Instruction7Instruction<typeof DUMMY_PROGRAM_ADDRESS, TAccountMyAccount> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = { myAccount: { value: input.myAccount ?? null, isWritable: true } };
@@ -53,7 +49,7 @@ export function getInstruction7Instruction<
     return Object.freeze({
         accounts: [getAccountMeta('myAccount', accounts.myAccount)],
         programAddress,
-    } as Instruction7Instruction<TProgramAddress, TAccountMyAccount>);
+    } as Instruction7Instruction<typeof DUMMY_PROGRAM_ADDRESS, TAccountMyAccount>);
 }
 
 export type ParsedInstruction7Instruction<

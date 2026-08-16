@@ -25,12 +25,11 @@ export type Instruction2Input = {
     remainingAccounts?: Array<Address>;
 };
 
-export function getInstruction2Instruction<TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS>(
+export function getInstruction2Instruction(
     input: Instruction2Input,
-    config?: { programAddress?: TProgramAddress },
-): Instruction2Instruction<TProgramAddress> {
+): Instruction2Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
     // Original args.
     const args = { ...input };
@@ -41,7 +40,9 @@ export function getInstruction2Instruction<TProgramAddress extends Address = typ
         role: AccountRole.READONLY,
     }));
 
-    return Object.freeze({ accounts: remainingAccounts, programAddress } as Instruction2Instruction<TProgramAddress>);
+    return Object.freeze({ accounts: remainingAccounts, programAddress } as Instruction2Instruction<
+        typeof DUMMY_PROGRAM_ADDRESS
+    >);
 }
 
 export type ParsedInstruction2Instruction<TProgram extends string = typeof DUMMY_PROGRAM_ADDRESS> = {

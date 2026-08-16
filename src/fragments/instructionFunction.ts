@@ -1,4 +1,4 @@
-import { camelCase, InstructionArgumentNode, InstructionNode, isNode, isNodeFilter, pascalCase } from '@codama/nodes';
+import { camelCase, InstructionNode, pascalCase } from '@codama/nodes';
 import { mapFragmentContent } from '@codama/renderers-core';
 import {
     findProgramNodeFromPath,
@@ -12,9 +12,8 @@ import {
     addFragmentImports,
     Fragment,
     fragment,
-    getInstructionDependencies,
+    getInstructionInputShape,
     hasAsyncFunction,
-    isAsyncDefaultValue,
     mergeFragments,
     RenderScope,
     TypeManifest,
@@ -46,28 +45,13 @@ export function getInstructionFunctionFragment(
     if (useAsync && !hasAsyncFunction(instructionNode, resolvedInputs, asyncResolvers)) return;
 
     const customData = customInstructionData.get(instructionNode.name);
-    const instructionArguments = instructionNode.arguments ?? [];
     const hasAccounts = (instructionNode.accounts ?? []).length > 0;
-    const instructionDependencies = getInstructionDependencies(instructionNode, asyncResolvers, useAsync);
-    const argDependencies = instructionDependencies.filter(isNodeFilter('argumentValueNode')).map(node => node.name);
-    const hasData = !!customData || instructionArguments.length > 0;
-    const argIsNotOmitted = (arg: InstructionArgumentNode) =>
-        !(arg.defaultValue && arg.defaultValueStrategy === 'omitted');
-    const argIsDependent = (arg: InstructionArgumentNode) => argDependencies.includes(arg.name);
-    const argHasDefaultValue = (arg: InstructionArgumentNode) => {
-        if (!arg.defaultValue) return false;
-        if (useAsync) return true;
-        return !isAsyncDefaultValue(arg.defaultValue, asyncResolvers);
-    };
-    const hasDataArgs = !!customData || instructionArguments.filter(argIsNotOmitted).length > 0;
-    const hasExtraArgs =
-        (instructionNode.extraArguments ?? []).filter(
-            field => argIsNotOmitted(field) && (argIsDependent(field) || argHasDefaultValue(field)),
-        ).length > 0;
-    const hasRemainingAccountArgs =
-        (instructionNode.remainingAccounts ?? []).filter(({ value }) => isNode(value, 'argumentValueNode')).length > 0;
-    const hasAnyArgs = hasDataArgs || hasExtraArgs || hasRemainingAccountArgs;
-    const hasInput = hasAccounts || hasAnyArgs;
+    const hasData = !!customData || (instructionNode.arguments ?? []).length > 0;
+    const { hasAnyArgs, hasDataArgs, hasInput } = getInstructionInputShape(instructionNode, {
+        asyncResolvers,
+        hasCustomData: !!customData,
+        useAsync,
+    });
     const programAddressConstant = use(nameApi.programAddressConstant(programNode.name), 'generatedPrograms');
 
     const functionName = useAsync
@@ -84,12 +68,12 @@ export function getInstructionFunctionFragment(
     const hasRemainingAccounts = !!remainingAccountsFragment;
     const hasByteDeltas = !!byteDeltaFragment;
     const hasResolver = resolvedInputFragment.features.has('instruction:resolverScopeVariable');
-    const instructionTypeFragment = getInstructionTypeFragment(scope);
+    const instructionTypeFragment = getInstructionTypeFragment({ ...scope, programAddressConstant });
 
-    const typeParams = getTypeParamsFragment(instructionNode, programAddressConstant);
+    const typeParams = getTypeParamsFragment(instructionNode);
     const returnType = getReturnTypeFragment(instructionTypeFragment, hasByteDeltas, useAsync);
     const inputType = getInstructionInputTypeFragment(scope);
-    const inputArg = mapFragmentContent(getInputTypeCallFragment(scope), c => (hasInput ? `input: ${c}, ` : ''));
+    const inputArg = mapFragmentContent(getInputTypeCallFragment(scope), c => (hasInput ? `input: ${c}` : ''));
     const resolverScopeFragment = getResolverScopeInitializationFragment(hasResolver, hasAccounts, hasAnyArgs);
     const returnStatementFragment = getReturnStatementFragment({
         ...scope,
@@ -119,14 +103,14 @@ export function getInstructionFunctionFragment(
         cs => cs.join('\n\n'),
     );
 
-    return fragment`${inputType}\n\nexport ${useAsync ? 'async ' : ''}function ${functionName}${typeParams}(${inputArg}config?: { programAddress?: TProgramAddress } ): ${returnType} {
+    return fragment`${inputType}\n\nexport ${useAsync ? 'async ' : ''}function ${functionName}${typeParams}(${inputArg}): ${returnType} {
   ${functionBody}
 }`;
 }
 
 function getProgramAddressInitializationFragment(programAddressConstant: Fragment): Fragment {
     return fragment`// Program address.
-const programAddress = config?.programAddress ?? ${programAddressConstant};`;
+const programAddress = ${programAddressConstant};`;
 }
 
 function getAccountsInitializationFragment(instructionNode: InstructionNode): Fragment | undefined {
@@ -244,20 +228,22 @@ function getReturnTypeFragment(instructionTypeFragment: Fragment, hasByteDeltas:
     );
 }
 
-function getTypeParamsFragment(instructionNode: InstructionNode, programAddressConstant: Fragment): Fragment {
+function getTypeParamsFragment(instructionNode: InstructionNode): Fragment {
+    const accounts = instructionNode.accounts ?? [];
+    if (accounts.length === 0) return fragment``;
+
     return mergeFragments(
-        [
-            ...(instructionNode.accounts ?? []).map(
-                account => fragment`TAccount${pascalCase(account.name)} extends string`,
-            ),
-            fragment`TProgramAddress extends ${use('type Address', 'solanaAddresses')} = typeof ${programAddressConstant}`,
-        ],
+        accounts.map(account => fragment`TAccount${pascalCase(account.name)} extends string`),
         cs => `<${cs.join(', ')}>`,
     );
 }
 
-function getInstructionTypeFragment(scope: { instructionPath: NodePath<InstructionNode>; nameApi: NameApi }): Fragment {
-    const { instructionPath, nameApi } = scope;
+function getInstructionTypeFragment(scope: {
+    instructionPath: NodePath<InstructionNode>;
+    nameApi: NameApi;
+    programAddressConstant: Fragment;
+}): Fragment {
+    const { instructionPath, nameApi, programAddressConstant } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
     const instructionTypeName = nameApi.instructionType(instructionNode.name);
     const accountTypeParamsFragments = (instructionNode.accounts ?? []).map(account => {
@@ -279,7 +265,7 @@ function getInstructionTypeFragment(scope: { instructionPath: NodePath<Instructi
     });
 
     return pipe(
-        mergeFragments([fragment`TProgramAddress`, ...accountTypeParamsFragments], c => c.join(', ')),
+        mergeFragments([fragment`typeof ${programAddressConstant}`, ...accountTypeParamsFragments], c => c.join(', ')),
         f => mapFragmentContent(f, c => `${instructionTypeName}<${c}>`),
     );
 }

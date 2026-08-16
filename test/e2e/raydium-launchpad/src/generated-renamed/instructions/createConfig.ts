@@ -187,7 +187,6 @@ export async function getCreateConfigInstructionAsync<
     TAccountMigrateToAmmWallet extends string,
     TAccountMigrateToCpswapWallet extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CreateConfigAsyncInput<
         TAccountOwner,
@@ -199,10 +198,9 @@ export async function getCreateConfigInstructionAsync<
         TAccountMigrateToCpswapWallet,
         TAccountSystemProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     CreateConfigInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountGlobalConfig,
         TAccountQuoteTokenMint,
@@ -214,7 +212,7 @@ export async function getCreateConfigInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -264,7 +262,7 @@ export async function getCreateConfigInstructionAsync<
         data: getCreateConfigInstructionDataEncoder().encode(args as CreateConfigInstructionDataArgs),
         programAddress,
     } as CreateConfigInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountGlobalConfig,
         TAccountQuoteTokenMint,
@@ -328,7 +326,6 @@ export function getCreateConfigInstruction<
     TAccountMigrateToAmmWallet extends string,
     TAccountMigrateToCpswapWallet extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CreateConfigInput<
         TAccountOwner,
@@ -340,9 +337,8 @@ export function getCreateConfigInstruction<
         TAccountMigrateToCpswapWallet,
         TAccountSystemProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): CreateConfigInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountOwner,
     TAccountGlobalConfig,
     TAccountQuoteTokenMint,
@@ -353,7 +349,7 @@ export function getCreateConfigInstruction<
     TAccountSystemProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -396,7 +392,7 @@ export function getCreateConfigInstruction<
         data: getCreateConfigInstructionDataEncoder().encode(args as CreateConfigInstructionDataArgs),
         programAddress,
     } as CreateConfigInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountGlobalConfig,
         TAccountQuoteTokenMint,

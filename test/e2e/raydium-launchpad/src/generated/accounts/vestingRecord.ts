@@ -114,20 +114,17 @@ export function getVestingRecordCodec(): FixedSizeCodec<VestingRecordArgs, Vesti
 
 export function decodeVestingRecord<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<VestingRecord, TAddress>;
 export function decodeVestingRecord<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<VestingRecord, TAddress>;
 export function decodeVestingRecord<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 ): Account<VestingRecord, TAddress> | MaybeAccount<VestingRecord, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodeVestingRecord: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodeVestingRecord: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -146,7 +143,7 @@ export function decodeVestingRecord<TAddress extends string = string>(
 export async function fetchVestingRecord<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<VestingRecord, TAddress>> {
     const maybeAccount = await fetchMaybeVestingRecord(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -156,17 +153,16 @@ export async function fetchVestingRecord<TAddress extends string = string>(
 export async function fetchMaybeVestingRecord<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<VestingRecord, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodeVestingRecord(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodeVestingRecord(maybeAccount);
 }
 
 export async function fetchAllVestingRecord(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<VestingRecord>[]> {
     const maybeAccounts = await fetchAllMaybeVestingRecord(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -176,11 +172,10 @@ export async function fetchAllVestingRecord(
 export async function fetchAllMaybeVestingRecord(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<VestingRecord>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodeVestingRecord(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodeVestingRecord(maybeAccount));
 }
 
 export function getVestingRecordSize(): number {

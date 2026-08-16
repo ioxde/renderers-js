@@ -90,8 +90,8 @@ test('it renders program plugin instruction types', async () => {
     // Then we expect the following type to be rendered.
     await fragmentContains(fragment, [
         'export type SplTokenPluginInstructions = {',
-        'initializeToken: ( input: InitializeTokenInput ) => ReturnType<typeof getInitializeTokenInstruction> & SelfPlanAndSendFunctions;',
-        'initializeMint: ( input: InitializeMintInput ) => ReturnType<typeof getInitializeMintInstruction> & SelfPlanAndSendFunctions;',
+        'initializeToken: () => ReturnType<typeof getInitializeTokenInstruction> & SelfPlanAndSendFunctions;',
+        'initializeMint: () => ReturnType<typeof getInitializeMintInstruction> & SelfPlanAndSendFunctions;',
     ]);
 
     // And we expect the necessary imports to be included.
@@ -143,7 +143,7 @@ test('it renders program plugin instruction types with async builders', async ()
     await fragmentContains(fragment, [
         'export type SplTokenPluginInstructions = {',
         'initializeAssociatedToken: ( input: InitializeAssociatedTokenAsyncInput ) => ReturnType<typeof getInitializeAssociatedTokenInstructionAsync> & SelfPlanAndSendFunctions;',
-        'initializeMint: ( input: InitializeMintInput ) => ReturnType<typeof getInitializeMintInstruction> & SelfPlanAndSendFunctions;',
+        'initializeMint: () => ReturnType<typeof getInitializeMintInstruction> & SelfPlanAndSendFunctions;',
     ]);
 });
 
@@ -242,7 +242,7 @@ test('it renders the program plugin function', async () => {
             'fetchAll: ( addresses, config ) => fetchAllMint( client.rpc, addresses, config ), ' +
             'fetchAllMaybe: ( addresses, config ) => fetchAllMaybeMint( client.rpc, addresses, config ), ' +
             'fetchMaybe: ( address, config ) => fetchMaybeMint( client.rpc, address, config ) }) },',
-        'instructions: { initializeMint: ( input ) => addSelfPlanAndSendFunctions( client, getInitializeMintInstruction( input ) ) }',
+        'instructions: { initializeMint: () => addSelfPlanAndSendFunctions( client, getInitializeMintInstruction() ) }',
     ]);
 
     // And we expect the necessary imports to be included.
@@ -506,7 +506,7 @@ test('it renders the plugin function with instructions and PDAs but no accounts'
 
     // And we expect the plugin function to include both.
     await fragmentContains(fragment, [
-        'instructions: { initializeMint: ( input ) => addSelfPlanAndSendFunctions( client, getInitializeMintInstruction( input ) ) }',
+        'instructions: { initializeMint: () => addSelfPlanAndSendFunctions( client, getInitializeMintInstruction() ) }',
         'pdas: { associatedTokenAccount: findAssociatedTokenAccountPda }',
     ]);
 });

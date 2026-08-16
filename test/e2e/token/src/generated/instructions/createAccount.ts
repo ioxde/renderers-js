@@ -115,16 +115,12 @@ export type CreateAccountInput<TAccountPayer extends string = string, TAccountNe
     programAddress: CreateAccountInstructionDataArgs['programAddress'];
 };
 
-export function getCreateAccountInstruction<
-    TAccountPayer extends string,
-    TAccountNewAccount extends string,
-    TProgramAddress extends Address = typeof SYSTEM_PROGRAM_ADDRESS,
->(
+export function getCreateAccountInstruction<TAccountPayer extends string, TAccountNewAccount extends string>(
     input: CreateAccountInput<TAccountPayer, TAccountNewAccount>,
-    config?: { programAddress?: TProgramAddress },
-): CreateAccountInstruction<TProgramAddress, TAccountPayer, TAccountNewAccount> & InstructionWithByteDelta {
+): CreateAccountInstruction<typeof SYSTEM_PROGRAM_ADDRESS, TAccountPayer, TAccountNewAccount> &
+    InstructionWithByteDelta {
     // Program address.
-    const programAddress = config?.programAddress ?? SYSTEM_PROGRAM_ADDRESS;
+    const programAddress = SYSTEM_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -145,7 +141,8 @@ export function getCreateAccountInstruction<
         byteDelta,
         data: getCreateAccountInstructionDataEncoder().encode(args as CreateAccountInstructionDataArgs),
         programAddress,
-    } as CreateAccountInstruction<TProgramAddress, TAccountPayer, TAccountNewAccount> & InstructionWithByteDelta);
+    } as CreateAccountInstruction<typeof SYSTEM_PROGRAM_ADDRESS, TAccountPayer, TAccountNewAccount> &
+        InstructionWithByteDelta);
 }
 
 export type ParsedCreateAccountInstruction<

@@ -193,7 +193,6 @@ export async function getWithdrawInstructionAsync<
     TAccountVault1Mint extends string,
     TAccountLpMint extends string,
     TAccountMemoProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: WithdrawAsyncInput<
         TAccountOwner,
@@ -211,10 +210,9 @@ export async function getWithdrawInstructionAsync<
         TAccountLpMint,
         TAccountMemoProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     WithdrawInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -232,7 +230,7 @@ export async function getWithdrawInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -294,7 +292,7 @@ export async function getWithdrawInstructionAsync<
         data: getWithdrawInstructionDataEncoder().encode(args as WithdrawInstructionDataArgs),
         programAddress,
     } as WithdrawInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -375,7 +373,6 @@ export function getWithdrawInstruction<
     TAccountVault1Mint extends string,
     TAccountLpMint extends string,
     TAccountMemoProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: WithdrawInput<
         TAccountOwner,
@@ -393,9 +390,8 @@ export function getWithdrawInstruction<
         TAccountLpMint,
         TAccountMemoProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): WithdrawInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountOwner,
     TAccountAuthority,
     TAccountPoolState,
@@ -412,7 +408,7 @@ export function getWithdrawInstruction<
     TAccountMemoProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -471,7 +467,7 @@ export function getWithdrawInstruction<
         data: getWithdrawInstructionDataEncoder().encode(args as WithdrawInstructionDataArgs),
         programAddress,
     } as WithdrawInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,

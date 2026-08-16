@@ -143,13 +143,18 @@ export async function getCreateAmmConfigInstructionAsync<
     TAccountOwner extends string,
     TAccountAmmConfig extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: CreateAmmConfigAsyncInput<TAccountOwner, TAccountAmmConfig, TAccountSystemProgram>,
-    config?: { programAddress?: TProgramAddress },
-): Promise<CreateAmmConfigInstruction<TProgramAddress, TAccountOwner, TAccountAmmConfig, TAccountSystemProgram>> {
+): Promise<
+    CreateAmmConfigInstruction<
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
+        TAccountOwner,
+        TAccountAmmConfig,
+        TAccountSystemProgram
+    >
+> {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -186,7 +191,12 @@ export async function getCreateAmmConfigInstructionAsync<
         ],
         data: getCreateAmmConfigInstructionDataEncoder().encode(args as CreateAmmConfigInstructionDataArgs),
         programAddress,
-    } as CreateAmmConfigInstruction<TProgramAddress, TAccountOwner, TAccountAmmConfig, TAccountSystemProgram>);
+    } as CreateAmmConfigInstruction<
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
+        TAccountOwner,
+        TAccountAmmConfig,
+        TAccountSystemProgram
+    >);
 }
 
 export type CreateAmmConfigInput<
@@ -210,13 +220,16 @@ export function getCreateAmmConfigInstruction<
     TAccountOwner extends string,
     TAccountAmmConfig extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: CreateAmmConfigInput<TAccountOwner, TAccountAmmConfig, TAccountSystemProgram>,
-    config?: { programAddress?: TProgramAddress },
-): CreateAmmConfigInstruction<TProgramAddress, TAccountOwner, TAccountAmmConfig, TAccountSystemProgram> {
+): CreateAmmConfigInstruction<
+    typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
+    TAccountOwner,
+    TAccountAmmConfig,
+    TAccountSystemProgram
+> {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -248,7 +261,12 @@ export function getCreateAmmConfigInstruction<
         ],
         data: getCreateAmmConfigInstructionDataEncoder().encode(args as CreateAmmConfigInstructionDataArgs),
         programAddress,
-    } as CreateAmmConfigInstruction<TProgramAddress, TAccountOwner, TAccountAmmConfig, TAccountSystemProgram>);
+    } as CreateAmmConfigInstruction<
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
+        TAccountOwner,
+        TAccountAmmConfig,
+        TAccountSystemProgram
+    >);
 }
 
 export type ParsedCreateAmmConfigInstruction<

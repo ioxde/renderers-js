@@ -104,16 +104,11 @@ export type UpdateAmmConfigInput<TAccountOwner extends string = string, TAccount
     value: UpdateAmmConfigInstructionDataArgs['value'];
 };
 
-export function getUpdateAmmConfigInstruction<
-    TAccountOwner extends string,
-    TAccountAmmConfig extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
->(
+export function getUpdateAmmConfigInstruction<TAccountOwner extends string, TAccountAmmConfig extends string>(
     input: UpdateAmmConfigInput<TAccountOwner, TAccountAmmConfig>,
-    config?: { programAddress?: TProgramAddress },
-): UpdateAmmConfigInstruction<TProgramAddress, TAccountOwner, TAccountAmmConfig> {
+): UpdateAmmConfigInstruction<typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS, TAccountOwner, TAccountAmmConfig> {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -136,7 +131,7 @@ export function getUpdateAmmConfigInstruction<
         accounts: [getAccountMeta('owner', accounts.owner), getAccountMeta('ammConfig', accounts.ammConfig)],
         data: getUpdateAmmConfigInstructionDataEncoder().encode(args as UpdateAmmConfigInstructionDataArgs),
         programAddress,
-    } as UpdateAmmConfigInstruction<TProgramAddress, TAccountOwner, TAccountAmmConfig>);
+    } as UpdateAmmConfigInstruction<typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS, TAccountOwner, TAccountAmmConfig>);
 }
 
 export type ParsedUpdateAmmConfigInstruction<

@@ -110,13 +110,11 @@ export function getInitializeAccount2Instruction<
     TAccountAccount extends string,
     TAccountMint extends string,
     TAccountRent extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
 >(
     input: InitializeAccount2Input<TAccountAccount, TAccountMint, TAccountRent>,
-    config?: { programAddress?: TProgramAddress },
-): InitializeAccount2Instruction<TProgramAddress, TAccountAccount, TAccountMint, TAccountRent> {
+): InitializeAccount2Instruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount, TAccountMint, TAccountRent> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -144,7 +142,7 @@ export function getInitializeAccount2Instruction<
         ],
         data: getInitializeAccount2InstructionDataEncoder().encode(args as InitializeAccount2InstructionDataArgs),
         programAddress,
-    } as InitializeAccount2Instruction<TProgramAddress, TAccountAccount, TAccountMint, TAccountRent>);
+    } as InitializeAccount2Instruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount, TAccountMint, TAccountRent>);
 }
 
 export type ParsedInitializeAccount2Instruction<

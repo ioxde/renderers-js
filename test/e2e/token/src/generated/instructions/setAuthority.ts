@@ -120,22 +120,17 @@ export type SetAuthorityInput<TAccountOwned extends string = string, TAccountOwn
     multiSigners?: Array<TransactionSigner>;
 };
 
-export function getSetAuthorityInstruction<
-    TAccountOwned extends string,
-    TAccountOwner extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getSetAuthorityInstruction<TAccountOwned extends string, TAccountOwner extends string>(
     input: SetAuthorityInput<TAccountOwned, TAccountOwner>,
-    config?: { programAddress?: TProgramAddress },
 ): SetAuthorityInstruction<
-    TProgramAddress,
+    typeof TOKEN_PROGRAM_ADDRESS,
     TAccountOwned,
     (typeof input)['owner'] extends TransactionSigner<TAccountOwner>
         ? ReadonlySignerAccount<TAccountOwner> & AccountSignerMeta<TAccountOwner>
         : TAccountOwner
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -164,7 +159,7 @@ export function getSetAuthorityInstruction<
         data: getSetAuthorityInstructionDataEncoder().encode(args as SetAuthorityInstructionDataArgs),
         programAddress,
     } as SetAuthorityInstruction<
-        TProgramAddress,
+        typeof TOKEN_PROGRAM_ADDRESS,
         TAccountOwned,
         (typeof input)['owner'] extends TransactionSigner<TAccountOwner>
             ? ReadonlySignerAccount<TAccountOwner> & AccountSignerMeta<TAccountOwner>

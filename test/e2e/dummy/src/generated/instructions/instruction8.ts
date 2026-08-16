@@ -26,12 +26,11 @@ export type Instruction8Input = {
     remainingAccounts?: Array<TransactionSigner | Address>;
 };
 
-export function getInstruction8Instruction<TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS>(
+export function getInstruction8Instruction(
     input: Instruction8Input,
-    config?: { programAddress?: TProgramAddress },
-): Instruction8Instruction<TProgramAddress> {
+): Instruction8Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
     // Original args.
     const args = { ...input };
@@ -43,7 +42,9 @@ export function getInstruction8Instruction<TProgramAddress extends Address = typ
             : { address: addressOrSigner.address, role: AccountRole.READONLY, signer: addressOrSigner },
     );
 
-    return Object.freeze({ accounts: remainingAccounts, programAddress } as Instruction8Instruction<TProgramAddress>);
+    return Object.freeze({ accounts: remainingAccounts, programAddress } as Instruction8Instruction<
+        typeof DUMMY_PROGRAM_ADDRESS
+    >);
 }
 
 export type ParsedInstruction8Instruction<TProgram extends string = typeof DUMMY_PROGRAM_ADDRESS> = {

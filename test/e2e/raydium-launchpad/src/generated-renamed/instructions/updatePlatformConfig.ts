@@ -117,13 +117,17 @@ export type UpdatePlatformConfigAsyncInput<
 export async function getUpdatePlatformConfigInstructionAsync<
     TAccountPlatformAdmin extends string,
     TAccountPlatformConfig extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: UpdatePlatformConfigAsyncInput<TAccountPlatformAdmin, TAccountPlatformConfig>,
-    config?: { programAddress?: TProgramAddress },
-): Promise<UpdatePlatformConfigInstruction<TProgramAddress, TAccountPlatformAdmin, TAccountPlatformConfig>> {
+): Promise<
+    UpdatePlatformConfigInstruction<
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
+        TAccountPlatformAdmin,
+        TAccountPlatformConfig
+    >
+> {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -150,7 +154,11 @@ export async function getUpdatePlatformConfigInstructionAsync<
         ],
         data: getUpdatePlatformConfigInstructionDataEncoder().encode(args as UpdatePlatformConfigInstructionDataArgs),
         programAddress,
-    } as UpdatePlatformConfigInstruction<TProgramAddress, TAccountPlatformAdmin, TAccountPlatformConfig>);
+    } as UpdatePlatformConfigInstruction<
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
+        TAccountPlatformAdmin,
+        TAccountPlatformConfig
+    >);
 }
 
 export type UpdatePlatformConfigInput<
@@ -167,13 +175,15 @@ export type UpdatePlatformConfigInput<
 export function getUpdatePlatformConfigInstruction<
     TAccountPlatformAdmin extends string,
     TAccountPlatformConfig extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: UpdatePlatformConfigInput<TAccountPlatformAdmin, TAccountPlatformConfig>,
-    config?: { programAddress?: TProgramAddress },
-): UpdatePlatformConfigInstruction<TProgramAddress, TAccountPlatformAdmin, TAccountPlatformConfig> {
+): UpdatePlatformConfigInstruction<
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
+    TAccountPlatformAdmin,
+    TAccountPlatformConfig
+> {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -193,7 +203,11 @@ export function getUpdatePlatformConfigInstruction<
         ],
         data: getUpdatePlatformConfigInstructionDataEncoder().encode(args as UpdatePlatformConfigInstructionDataArgs),
         programAddress,
-    } as UpdatePlatformConfigInstruction<TProgramAddress, TAccountPlatformAdmin, TAccountPlatformConfig>);
+    } as UpdatePlatformConfigInstruction<
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
+        TAccountPlatformAdmin,
+        TAccountPlatformConfig
+    >);
 }
 
 export type ParsedUpdatePlatformConfigInstruction<

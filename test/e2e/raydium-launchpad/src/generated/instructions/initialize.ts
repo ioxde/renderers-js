@@ -274,7 +274,6 @@ export async function getInitializeInstructionAsync<
     TAccountRentProgram extends string,
     TAccountEventAuthority extends string,
     TAccountProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: InitializeAsyncInput<
         TAccountPayer,
@@ -296,10 +295,9 @@ export async function getInitializeInstructionAsync<
         TAccountEventAuthority,
         TAccountProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     InitializeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountCreator,
         TAccountGlobalConfig,
@@ -321,7 +319,7 @@ export async function getInitializeInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -420,7 +418,7 @@ export async function getInitializeInstructionAsync<
         data: getInitializeInstructionDataEncoder().encode(args as InitializeInstructionDataArgs),
         programAddress,
     } as InitializeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountCreator,
         TAccountGlobalConfig,
@@ -555,7 +553,6 @@ export function getInitializeInstruction<
     TAccountRentProgram extends string,
     TAccountEventAuthority extends string,
     TAccountProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: InitializeInput<
         TAccountPayer,
@@ -577,9 +574,8 @@ export function getInitializeInstruction<
         TAccountEventAuthority,
         TAccountProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): InitializeInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPayer,
     TAccountCreator,
     TAccountGlobalConfig,
@@ -600,7 +596,7 @@ export function getInitializeInstruction<
     TAccountProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -675,7 +671,7 @@ export function getInitializeInstruction<
         data: getInitializeInstructionDataEncoder().encode(args as InitializeInstructionDataArgs),
         programAddress,
     } as InitializeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountCreator,
         TAccountGlobalConfig,

@@ -74,15 +74,11 @@ export type SyncNativeInput<TAccountAccount extends string = string> = {
     account: Address<TAccountAccount>;
 };
 
-export function getSyncNativeInstruction<
-    TAccountAccount extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getSyncNativeInstruction<TAccountAccount extends string>(
     input: SyncNativeInput<TAccountAccount>,
-    config?: { programAddress?: TProgramAddress },
-): SyncNativeInstruction<TProgramAddress, TAccountAccount> {
+): SyncNativeInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = { account: { value: input.account ?? null, isWritable: true } };
@@ -93,7 +89,7 @@ export function getSyncNativeInstruction<
         accounts: [getAccountMeta('account', accounts.account)],
         data: getSyncNativeInstructionDataEncoder().encode({}),
         programAddress,
-    } as SyncNativeInstruction<TProgramAddress, TAccountAccount>);
+    } as SyncNativeInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount>);
 }
 
 export type ParsedSyncNativeInstruction<

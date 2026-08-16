@@ -53,12 +53,11 @@ export type Instruction4Input = {
     myArgument: Instruction4InstructionDataArgs['myArgument'];
 };
 
-export function getInstruction4Instruction<TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS>(
+export function getInstruction4Instruction(
     input: Instruction4Input,
-    config?: { programAddress?: TProgramAddress },
-): Instruction4Instruction<TProgramAddress> {
+): Instruction4Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
     // Original args.
     const args = { ...input };
@@ -66,7 +65,7 @@ export function getInstruction4Instruction<TProgramAddress extends Address = typ
     return Object.freeze({
         data: getInstruction4InstructionDataEncoder().encode(args as Instruction4InstructionDataArgs),
         programAddress,
-    } as Instruction4Instruction<TProgramAddress>);
+    } as Instruction4Instruction<typeof DUMMY_PROGRAM_ADDRESS>);
 }
 
 export type ParsedInstruction4Instruction<TProgram extends string = typeof DUMMY_PROGRAM_ADDRESS> = {

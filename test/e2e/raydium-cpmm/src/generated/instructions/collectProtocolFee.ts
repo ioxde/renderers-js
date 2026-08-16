@@ -182,7 +182,6 @@ export async function getCollectProtocolFeeInstructionAsync<
     TAccountRecipientToken1Account extends string,
     TAccountTokenProgram extends string,
     TAccountTokenProgram2022 extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: CollectProtocolFeeAsyncInput<
         TAccountOwner,
@@ -198,10 +197,9 @@ export async function getCollectProtocolFeeInstructionAsync<
         TAccountTokenProgram,
         TAccountTokenProgram2022
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     CollectProtocolFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -217,7 +215,7 @@ export async function getCollectProtocolFeeInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -271,7 +269,7 @@ export async function getCollectProtocolFeeInstructionAsync<
         data: getCollectProtocolFeeInstructionDataEncoder().encode(args as CollectProtocolFeeInstructionDataArgs),
         programAddress,
     } as CollectProtocolFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -341,7 +339,6 @@ export function getCollectProtocolFeeInstruction<
     TAccountRecipientToken1Account extends string,
     TAccountTokenProgram extends string,
     TAccountTokenProgram2022 extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: CollectProtocolFeeInput<
         TAccountOwner,
@@ -357,9 +354,8 @@ export function getCollectProtocolFeeInstruction<
         TAccountTokenProgram,
         TAccountTokenProgram2022
     >,
-    config?: { programAddress?: TProgramAddress },
 ): CollectProtocolFeeInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountOwner,
     TAccountAuthority,
     TAccountPoolState,
@@ -374,7 +370,7 @@ export function getCollectProtocolFeeInstruction<
     TAccountTokenProgram2022
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -425,7 +421,7 @@ export function getCollectProtocolFeeInstruction<
         data: getCollectProtocolFeeInstructionDataEncoder().encode(args as CollectProtocolFeeInstructionDataArgs),
         programAddress,
     } as CollectProtocolFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,

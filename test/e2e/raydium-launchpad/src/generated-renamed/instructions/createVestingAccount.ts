@@ -134,7 +134,6 @@ export async function getCreateVestingAccountInstructionAsync<
     TAccountPoolState extends string,
     TAccountVestingRecord extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CreateVestingAccountAsyncInput<
         TAccountCreator,
@@ -143,10 +142,9 @@ export async function getCreateVestingAccountInstructionAsync<
         TAccountVestingRecord,
         TAccountSystemProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     CreateVestingAccountInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountCreator,
         TAccountBeneficiary,
         TAccountPoolState,
@@ -155,7 +153,7 @@ export async function getCreateVestingAccountInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -194,7 +192,7 @@ export async function getCreateVestingAccountInstructionAsync<
         data: getCreateVestingAccountInstructionDataEncoder().encode(args as CreateVestingAccountInstructionDataArgs),
         programAddress,
     } as CreateVestingAccountInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountCreator,
         TAccountBeneficiary,
         TAccountPoolState,
@@ -231,7 +229,6 @@ export function getCreateVestingAccountInstruction<
     TAccountPoolState extends string,
     TAccountVestingRecord extends string,
     TAccountSystemProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CreateVestingAccountInput<
         TAccountCreator,
@@ -240,9 +237,8 @@ export function getCreateVestingAccountInstruction<
         TAccountVestingRecord,
         TAccountSystemProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): CreateVestingAccountInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountCreator,
     TAccountBeneficiary,
     TAccountPoolState,
@@ -250,7 +246,7 @@ export function getCreateVestingAccountInstruction<
     TAccountSystemProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -283,7 +279,7 @@ export function getCreateVestingAccountInstruction<
         data: getCreateVestingAccountInstructionDataEncoder().encode(args as CreateVestingAccountInstructionDataArgs),
         programAddress,
     } as CreateVestingAccountInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountCreator,
         TAccountBeneficiary,
         TAccountPoolState,

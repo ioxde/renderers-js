@@ -136,37 +136,6 @@ test('decodeVestingRecord throws on a foreign owner and decodes its own', (t) =>
   t.is(decoded.data.claimedAmount, 7n);
 });
 
-test('decodeVestingRecord accepts an expected-owner override for forks', (t) => {
-  const decoded = decodeVestingRecord(
-    {
-      address: SOME_ADDRESS,
-      data: vestingRecordData(),
-      executable: false,
-      lamports: lamports(1_000_000n),
-      programAddress: FOREIGN_PROGRAM_ADDRESS,
-      space: 112n,
-    },
-    FOREIGN_PROGRAM_ADDRESS,
-  );
-  t.is(decoded.data.epoch, 42n);
-
-  // The override does not disable the check: a third owner still throws.
-  const error = t.throws(() =>
-    decodeVestingRecord(
-      {
-        address: SOME_ADDRESS,
-        data: vestingRecordData(),
-        executable: false,
-        lamports: lamports(1_000_000n),
-        programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
-        space: 112n,
-      },
-      FOREIGN_PROGRAM_ADDRESS,
-    ),
-  );
-  t.is(error?.name, 'AccountOwnerMismatchError');
-});
-
 test('the plugin self-fetch goes through the owner guard', async (t) => {
   // Without this delegation to the fetch helpers, the raw codec silently decodes foreign-owned accounts.
   const rpcAccount = (owner: string) => ({

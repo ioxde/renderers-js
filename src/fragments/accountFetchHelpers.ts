@@ -41,12 +41,12 @@ export function getAccountFetchHelpersFragment(
     });
 
     return pipe(
-        fragment`export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress>, programAddress?: Address): Account<${accountType}, TAddress>;
-export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: MaybeEncodedAccount<TAddress>, programAddress?: Address): MaybeAccount<${accountType}, TAddress>;
-export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>, programAddress: Address = ${programAddressConstant}): Account<${accountType}, TAddress> | MaybeAccount<${accountType}, TAddress> {
+        fragment`export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress>): Account<${accountType}, TAddress>;
+export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: MaybeEncodedAccount<TAddress>): MaybeAccount<${accountType}, TAddress>;
+export function ${decodeFunction}<TAddress extends string = string>(encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>): Account<${accountType}, TAddress> | MaybeAccount<${accountType}, TAddress> {
   if (!('exists' in encodedAccount) || encodedAccount.exists) {
-    if (encodedAccount.programAddress !== programAddress) {
-      const error = new Error(\`${decodeFunction}: account \${encodedAccount.address} is owned by \${encodedAccount.programAddress}, expected \${programAddress}\`);
+    if (encodedAccount.programAddress !== ${programAddressConstant}) {
+      const error = new Error(\`${decodeFunction}: account \${encodedAccount.address} is owned by \${encodedAccount.programAddress}, expected \${${programAddressConstant}}\`);
       error.name = 'AccountOwnerMismatchError';
       throw error;
     }
@@ -58,7 +58,7 @@ export function ${decodeFunction}<TAddress extends string = string>(encodedAccou
 export async function ${fetchFunction}<TAddress extends string = string>(
   rpc: Parameters<typeof fetchEncodedAccount>[0],
   address: Address<TAddress>,
-  config?: FetchAccountConfig & { programAddress?: Address },
+  config?: FetchAccountConfig,
 ): Promise<Account<${accountType}, TAddress>> {
   const maybeAccount = await ${fetchMaybeFunction}(rpc, address, config);
   assertAccountExists(maybeAccount);
@@ -68,17 +68,16 @@ export async function ${fetchFunction}<TAddress extends string = string>(
 export async function ${fetchMaybeFunction}<TAddress extends string = string>(
   rpc: Parameters<typeof fetchEncodedAccount>[0],
   address: Address<TAddress>,
-  config?: FetchAccountConfig & { programAddress?: Address },
+  config?: FetchAccountConfig,
 ): Promise<MaybeAccount<${accountType}, TAddress>> {
-  const { programAddress, ...fetchConfig } = config ?? {};
-  const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-  return ${decodeFunction}(maybeAccount, programAddress);
+  const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+  return ${decodeFunction}(maybeAccount);
 }
 
 export async function ${fetchAllFunction}(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
   addresses: Array<Address>,
-  config?: FetchAccountsConfig & { programAddress?: Address },
+  config?: FetchAccountsConfig,
 ): Promise<Account<${accountType}>[]> {
   const maybeAccounts = await ${fetchAllMaybeFunction}(rpc, addresses, config);
   assertAccountsExist(maybeAccounts);
@@ -88,11 +87,10 @@ export async function ${fetchAllFunction}(
 export async function ${fetchAllMaybeFunction}(
   rpc: Parameters<typeof fetchEncodedAccounts>[0],
   addresses: Array<Address>,
-  config?: FetchAccountsConfig & { programAddress?: Address },
+  config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<${accountType}>[]> {
-  const { programAddress, ...fetchConfig } = config ?? {};
-  const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-  return maybeAccounts.map((maybeAccount) => ${decodeFunction}(maybeAccount, programAddress));
+  const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+  return maybeAccounts.map((maybeAccount) => ${decodeFunction}(maybeAccount));
 }`,
         f => addFragmentImports(f, 'solanaAddresses', ['type Address']),
         f =>

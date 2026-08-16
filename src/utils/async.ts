@@ -11,9 +11,71 @@ import {
     InstructionInputValueNode,
     InstructionNode,
     isNode,
+    isNodeFilter,
     PayerValueNode,
 } from '@codama/nodes';
 import { deduplicateInstructionDependencies, ResolvedInstructionInput } from '@codama/visitors-core';
+
+/**
+ * The argument shape of an instruction's generated builder.
+ *
+ * @see {@link getInstructionInputShape}
+ */
+export type InstructionInputShape = {
+    /** Whether any caller-supplied argument reaches the builder's `args` object. */
+    hasAnyArgs: boolean;
+    /** Whether the instruction's data encoder receives caller-supplied arguments. */
+    hasDataArgs: boolean;
+    /** Whether the builder takes an `input` parameter at all. */
+    hasInput: boolean;
+};
+
+/**
+ * Computes whether an instruction's generated builder takes an `input` parameter and what
+ * that input carries. An instruction with no accounts and no caller-supplied arguments
+ * renders a zero-parameter builder, so callers must not pass one.
+ *
+ * @param instructionNode - The instruction whose builder is being rendered.
+ * @param options - The resolver names, whether the instruction has custom data, and whether
+ * the async variant is being rendered — all of which can change the argument shape.
+ * @return The flags describing the builder's argument shape.
+ *
+ * @example
+ * ```ts
+ * const { hasInput } = getInstructionInputShape(instructionNode, {
+ *     asyncResolvers,
+ *     hasCustomData: customInstructionData.has(instructionNode.name),
+ *     useAsync: false,
+ * });
+ * ```
+ */
+export function getInstructionInputShape(
+    instructionNode: InstructionNode,
+    options: { asyncResolvers: CamelCaseString[]; hasCustomData: boolean; useAsync: boolean },
+): InstructionInputShape {
+    const { asyncResolvers, hasCustomData, useAsync } = options;
+    const dependencies = getInstructionDependencies(instructionNode, asyncResolvers, useAsync);
+    const argDependencies = dependencies.filter(isNodeFilter('argumentValueNode')).map(node => node.name);
+    const argIsNotOmitted = (arg: InstructionArgumentNode) =>
+        !(arg.defaultValue && arg.defaultValueStrategy === 'omitted');
+    const argIsDependent = (arg: InstructionArgumentNode) => argDependencies.includes(arg.name);
+    const argHasDefaultValue = (arg: InstructionArgumentNode) => {
+        if (!arg.defaultValue) return false;
+        if (useAsync) return true;
+        return !isAsyncDefaultValue(arg.defaultValue, asyncResolvers);
+    };
+
+    const hasDataArgs = hasCustomData || (instructionNode.arguments ?? []).filter(argIsNotOmitted).length > 0;
+    const hasExtraArgs =
+        (instructionNode.extraArguments ?? []).filter(
+            field => argIsNotOmitted(field) && (argIsDependent(field) || argHasDefaultValue(field)),
+        ).length > 0;
+    const hasRemainingAccountArgs =
+        (instructionNode.remainingAccounts ?? []).filter(({ value }) => isNode(value, 'argumentValueNode')).length > 0;
+    const hasAnyArgs = hasDataArgs || hasExtraArgs || hasRemainingAccountArgs;
+
+    return { hasAnyArgs, hasDataArgs, hasInput: (instructionNode.accounts ?? []).length > 0 || hasAnyArgs };
+}
 
 export function hasAsyncFunction(
     instructionNode: InstructionNode,

@@ -169,7 +169,6 @@ export async function getClaimVestedTokenInstructionAsync<
     TAccountBaseTokenProgram extends string,
     TAccountSystemProgram extends string,
     TAccountAssociatedTokenProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: ClaimVestedTokenAsyncInput<
         TAccountBeneficiary,
@@ -183,10 +182,9 @@ export async function getClaimVestedTokenInstructionAsync<
         TAccountSystemProgram,
         TAccountAssociatedTokenProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     ClaimVestedTokenInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountBeneficiary,
         TAccountAuthority,
         TAccountPoolState,
@@ -200,7 +198,7 @@ export async function getClaimVestedTokenInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -257,7 +255,7 @@ export async function getClaimVestedTokenInstructionAsync<
         data: getClaimVestedTokenInstructionDataEncoder().encode({}),
         programAddress,
     } as ClaimVestedTokenInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountBeneficiary,
         TAccountAuthority,
         TAccountPoolState,
@@ -330,7 +328,6 @@ export function getClaimVestedTokenInstruction<
     TAccountBaseTokenProgram extends string,
     TAccountSystemProgram extends string,
     TAccountAssociatedTokenProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: ClaimVestedTokenInput<
         TAccountBeneficiary,
@@ -344,9 +341,8 @@ export function getClaimVestedTokenInstruction<
         TAccountSystemProgram,
         TAccountAssociatedTokenProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): ClaimVestedTokenInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountBeneficiary,
     TAccountAuthority,
     TAccountPoolState,
@@ -359,7 +355,7 @@ export function getClaimVestedTokenInstruction<
     TAccountAssociatedTokenProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -407,7 +403,7 @@ export function getClaimVestedTokenInstruction<
         data: getClaimVestedTokenInstructionDataEncoder().encode({}),
         programAddress,
     } as ClaimVestedTokenInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountBeneficiary,
         TAccountAuthority,
         TAccountPoolState,

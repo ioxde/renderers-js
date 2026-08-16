@@ -133,7 +133,6 @@ export async function getCollectFeeInstructionAsync<
     TAccountQuoteMint extends string,
     TAccountRecipientTokenAccount extends string,
     TAccountTokenProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CollectFeeAsyncInput<
         TAccountOwner,
@@ -145,10 +144,9 @@ export async function getCollectFeeInstructionAsync<
         TAccountRecipientTokenAccount,
         TAccountTokenProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     CollectFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -160,7 +158,7 @@ export async function getCollectFeeInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -199,7 +197,7 @@ export async function getCollectFeeInstructionAsync<
         data: getCollectFeeInstructionDataEncoder().encode({}),
         programAddress,
     } as CollectFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,
@@ -247,7 +245,6 @@ export function getCollectFeeInstruction<
     TAccountQuoteMint extends string,
     TAccountRecipientTokenAccount extends string,
     TAccountTokenProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: CollectFeeInput<
         TAccountOwner,
@@ -259,9 +256,8 @@ export function getCollectFeeInstruction<
         TAccountRecipientTokenAccount,
         TAccountTokenProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): CollectFeeInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountOwner,
     TAccountAuthority,
     TAccountPoolState,
@@ -272,7 +268,7 @@ export function getCollectFeeInstruction<
     TAccountTokenProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -308,7 +304,7 @@ export function getCollectFeeInstruction<
         data: getCollectFeeInstructionDataEncoder().encode({}),
         programAddress,
     } as CollectFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAuthority,
         TAccountPoolState,

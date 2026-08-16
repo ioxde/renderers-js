@@ -102,16 +102,11 @@ export type UpdateConfigInput<TAccountOwner extends string = string, TAccountGlo
     value: UpdateConfigInstructionDataArgs['value'];
 };
 
-export function getUpdateConfigInstruction<
-    TAccountOwner extends string,
-    TAccountGlobalConfig extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
->(
+export function getUpdateConfigInstruction<TAccountOwner extends string, TAccountGlobalConfig extends string>(
     input: UpdateConfigInput<TAccountOwner, TAccountGlobalConfig>,
-    config?: { programAddress?: TProgramAddress },
-): UpdateConfigInstruction<TProgramAddress, TAccountOwner, TAccountGlobalConfig> {
+): UpdateConfigInstruction<typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS, TAccountOwner, TAccountGlobalConfig> {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -134,7 +129,7 @@ export function getUpdateConfigInstruction<
         accounts: [getAccountMeta('owner', accounts.owner), getAccountMeta('globalConfig', accounts.globalConfig)],
         data: getUpdateConfigInstructionDataEncoder().encode(args as UpdateConfigInstructionDataArgs),
         programAddress,
-    } as UpdateConfigInstruction<TProgramAddress, TAccountOwner, TAccountGlobalConfig>);
+    } as UpdateConfigInstruction<typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS, TAccountOwner, TAccountGlobalConfig>);
 }
 
 export type ParsedUpdateConfigInstruction<

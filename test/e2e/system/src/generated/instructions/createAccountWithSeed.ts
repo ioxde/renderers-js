@@ -141,13 +141,16 @@ export function getCreateAccountWithSeedInstruction<
     TAccountPayer extends string,
     TAccountNewAccount extends string,
     TAccountBaseAccount extends string,
-    TProgramAddress extends Address = typeof SYSTEM_PROGRAM_ADDRESS,
 >(
     input: CreateAccountWithSeedInput<TAccountPayer, TAccountNewAccount, TAccountBaseAccount>,
-    config?: { programAddress?: TProgramAddress },
-): CreateAccountWithSeedInstruction<TProgramAddress, TAccountPayer, TAccountNewAccount, TAccountBaseAccount> {
+): CreateAccountWithSeedInstruction<
+    typeof SYSTEM_PROGRAM_ADDRESS,
+    TAccountPayer,
+    TAccountNewAccount,
+    TAccountBaseAccount
+> {
     // Program address.
-    const programAddress = config?.programAddress ?? SYSTEM_PROGRAM_ADDRESS;
+    const programAddress = SYSTEM_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -169,7 +172,12 @@ export function getCreateAccountWithSeedInstruction<
         ],
         data: getCreateAccountWithSeedInstructionDataEncoder().encode(args as CreateAccountWithSeedInstructionDataArgs),
         programAddress,
-    } as CreateAccountWithSeedInstruction<TProgramAddress, TAccountPayer, TAccountNewAccount, TAccountBaseAccount>);
+    } as CreateAccountWithSeedInstruction<
+        typeof SYSTEM_PROGRAM_ADDRESS,
+        TAccountPayer,
+        TAccountNewAccount,
+        TAccountBaseAccount
+    >);
 }
 
 export type ParsedCreateAccountWithSeedInstruction<

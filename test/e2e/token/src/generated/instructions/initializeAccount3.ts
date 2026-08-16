@@ -98,16 +98,11 @@ export type InitializeAccount3Input<TAccountAccount extends string = string, TAc
     owner: InitializeAccount3InstructionDataArgs['owner'];
 };
 
-export function getInitializeAccount3Instruction<
-    TAccountAccount extends string,
-    TAccountMint extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getInitializeAccount3Instruction<TAccountAccount extends string, TAccountMint extends string>(
     input: InitializeAccount3Input<TAccountAccount, TAccountMint>,
-    config?: { programAddress?: TProgramAddress },
-): InitializeAccount3Instruction<TProgramAddress, TAccountAccount, TAccountMint> {
+): InitializeAccount3Instruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount, TAccountMint> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -124,7 +119,7 @@ export function getInitializeAccount3Instruction<
         accounts: [getAccountMeta('account', accounts.account), getAccountMeta('mint', accounts.mint)],
         data: getInitializeAccount3InstructionDataEncoder().encode(args as InitializeAccount3InstructionDataArgs),
         programAddress,
-    } as InitializeAccount3Instruction<TProgramAddress, TAccountAccount, TAccountMint>);
+    } as InitializeAccount3Instruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount, TAccountMint>);
 }
 
 export type ParsedInitializeAccount3Instruction<

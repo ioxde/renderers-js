@@ -162,7 +162,6 @@ export async function getClaimPlatformFeeInstructionAsync<
     TAccountTokenProgram extends string,
     TAccountSystemProgram extends string,
     TAccountAssociatedTokenProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: ClaimPlatformFeeAsyncInput<
         TAccountPlatformFeeWallet,
@@ -176,10 +175,9 @@ export async function getClaimPlatformFeeInstructionAsync<
         TAccountSystemProgram,
         TAccountAssociatedTokenProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     ClaimPlatformFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformFeeWallet,
         TAccountAuthority,
         TAccountPoolState,
@@ -193,7 +191,7 @@ export async function getClaimPlatformFeeInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -264,7 +262,7 @@ export async function getClaimPlatformFeeInstructionAsync<
         data: getClaimPlatformFeeInstructionDataEncoder().encode({}),
         programAddress,
     } as ClaimPlatformFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformFeeWallet,
         TAccountAuthority,
         TAccountPoolState,
@@ -328,7 +326,6 @@ export function getClaimPlatformFeeInstruction<
     TAccountTokenProgram extends string,
     TAccountSystemProgram extends string,
     TAccountAssociatedTokenProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: ClaimPlatformFeeInput<
         TAccountPlatformFeeWallet,
@@ -342,9 +339,8 @@ export function getClaimPlatformFeeInstruction<
         TAccountSystemProgram,
         TAccountAssociatedTokenProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): ClaimPlatformFeeInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPlatformFeeWallet,
     TAccountAuthority,
     TAccountPoolState,
@@ -357,7 +353,7 @@ export function getClaimPlatformFeeInstruction<
     TAccountAssociatedTokenProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -405,7 +401,7 @@ export function getClaimPlatformFeeInstruction<
         data: getClaimPlatformFeeInstructionDataEncoder().encode({}),
         programAddress,
     } as ClaimPlatformFeeInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformFeeWallet,
         TAccountAuthority,
         TAccountPoolState,

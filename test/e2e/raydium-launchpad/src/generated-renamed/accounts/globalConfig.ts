@@ -192,20 +192,17 @@ export function getGlobalConfigCodec(): FixedSizeCodec<GlobalConfigArgs, GlobalC
 
 export function decodeGlobalConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<GlobalConfig, TAddress>;
 export function decodeGlobalConfig<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<GlobalConfig, TAddress>;
 export function decodeGlobalConfig<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 ): Account<GlobalConfig, TAddress> | MaybeAccount<GlobalConfig, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodeGlobalConfig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodeGlobalConfig: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -224,7 +221,7 @@ export function decodeGlobalConfig<TAddress extends string = string>(
 export async function fetchGlobalConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<GlobalConfig, TAddress>> {
     const maybeAccount = await fetchMaybeGlobalConfig(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -234,17 +231,16 @@ export async function fetchGlobalConfig<TAddress extends string = string>(
 export async function fetchMaybeGlobalConfig<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<GlobalConfig, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodeGlobalConfig(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodeGlobalConfig(maybeAccount);
 }
 
 export async function fetchAllGlobalConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<GlobalConfig>[]> {
     const maybeAccounts = await fetchAllMaybeGlobalConfig(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -254,11 +250,10 @@ export async function fetchAllGlobalConfig(
 export async function fetchAllMaybeGlobalConfig(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<GlobalConfig>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodeGlobalConfig(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodeGlobalConfig(maybeAccount));
 }
 
 export function getGlobalConfigSize(): number {

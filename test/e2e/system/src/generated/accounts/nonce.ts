@@ -90,20 +90,17 @@ export function getNonceCodec(): FixedSizeCodec<NonceArgs, Nonce> {
 
 export function decodeNonce<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<Nonce, TAddress>;
 export function decodeNonce<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<Nonce, TAddress>;
 export function decodeNonce<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = SYSTEM_PROGRAM_ADDRESS,
 ): Account<Nonce, TAddress> | MaybeAccount<Nonce, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== SYSTEM_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodeNonce: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodeNonce: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${SYSTEM_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -115,7 +112,7 @@ export function decodeNonce<TAddress extends string = string>(
 export async function fetchNonce<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<Nonce, TAddress>> {
     const maybeAccount = await fetchMaybeNonce(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -125,17 +122,16 @@ export async function fetchNonce<TAddress extends string = string>(
 export async function fetchMaybeNonce<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<Nonce, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodeNonce(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodeNonce(maybeAccount);
 }
 
 export async function fetchAllNonce(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<Nonce>[]> {
     const maybeAccounts = await fetchAllMaybeNonce(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -145,11 +141,10 @@ export async function fetchAllNonce(
 export async function fetchAllMaybeNonce(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<Nonce>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodeNonce(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodeNonce(maybeAccount));
 }
 
 export function getNonceSize(): number {

@@ -77,15 +77,11 @@ export type InitializeImmutableOwnerInput<TAccountAccount extends string = strin
     account: Address<TAccountAccount>;
 };
 
-export function getInitializeImmutableOwnerInstruction<
-    TAccountAccount extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
->(
+export function getInitializeImmutableOwnerInstruction<TAccountAccount extends string>(
     input: InitializeImmutableOwnerInput<TAccountAccount>,
-    config?: { programAddress?: TProgramAddress },
-): InitializeImmutableOwnerInstruction<TProgramAddress, TAccountAccount> {
+): InitializeImmutableOwnerInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount> {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = { account: { value: input.account ?? null, isWritable: true } };
@@ -96,7 +92,7 @@ export function getInitializeImmutableOwnerInstruction<
         accounts: [getAccountMeta('account', accounts.account)],
         data: getInitializeImmutableOwnerInstructionDataEncoder().encode({}),
         programAddress,
-    } as InitializeImmutableOwnerInstruction<TProgramAddress, TAccountAccount>);
+    } as InitializeImmutableOwnerInstruction<typeof TOKEN_PROGRAM_ADDRESS, TAccountAccount>);
 }
 
 export type ParsedInitializeImmutableOwnerInstruction<

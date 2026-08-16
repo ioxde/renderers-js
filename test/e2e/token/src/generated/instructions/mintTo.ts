@@ -112,12 +112,10 @@ export function getMintToInstruction<
     TAccountMint extends string,
     TAccountToken extends string,
     TAccountMintAuthority extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
 >(
     input: MintToInput<TAccountMint, TAccountToken, TAccountMintAuthority>,
-    config?: { programAddress?: TProgramAddress },
 ): MintToInstruction<
-    TProgramAddress,
+    typeof TOKEN_PROGRAM_ADDRESS,
     TAccountMint,
     TAccountToken,
     (typeof input)['mintAuthority'] extends TransactionSigner<TAccountMintAuthority>
@@ -125,7 +123,7 @@ export function getMintToInstruction<
         : TAccountMintAuthority
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -156,7 +154,7 @@ export function getMintToInstruction<
         data: getMintToInstructionDataEncoder().encode(args as MintToInstructionDataArgs),
         programAddress,
     } as MintToInstruction<
-        TProgramAddress,
+        typeof TOKEN_PROGRAM_ADDRESS,
         TAccountMint,
         TAccountToken,
         (typeof input)['mintAuthority'] extends TransactionSigner<TAccountMintAuthority>

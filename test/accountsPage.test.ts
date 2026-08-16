@@ -37,11 +37,12 @@ test('it renders PDA helpers for PDA with no seeds', async () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then we expect the whole config forwarded, so a `programAddress` override reaches the decode owner check.
+    // Then we expect the PDA to be derived against the program the client was generated for, and the
+    // fetch config forwarded whole — it carries no program address of its own.
     await renderMapContains(renderMap, 'accounts/foo.ts', [
         'export async function fetchFooFromSeeds',
         'export async function fetchMaybeFooFromSeeds',
-        'await findBarPda({ programAddress })',
+        'await findBarPda()',
         'return await fetchMaybeFoo(rpc, address, config)',
     ]);
 });
@@ -231,12 +232,11 @@ test('it renders an owner guard in the account decode function', async () => {
     // Then we expect the decode function to reject foreign-owned accounts, narrowing on `exists` first so
     // non-existing accounts keep returning `{ exists: false }`; callers match the stable error name, not the message.
     await renderMapContains(renderMap, 'accounts/myAccount.ts', [
-        'programAddress: Address = MY_PROGRAM_PROGRAM_ADDRESS',
         "if (!('exists' in encodedAccount) || encodedAccount.exists) { " +
-            'if (encodedAccount.programAddress !== programAddress) { ' +
+            'if (encodedAccount.programAddress !== MY_PROGRAM_PROGRAM_ADDRESS) { ' +
             'const error = new Error( `decodeMyAccount: account ${encodedAccount.address} is owned by ' +
-            "${encodedAccount.programAddress}, expected ${programAddress}` ); error.name = 'AccountOwnerMismatchError'; " +
-            'throw error; } }',
+            '${encodedAccount.programAddress}, expected ${MY_PROGRAM_PROGRAM_ADDRESS}` ); ' +
+            "error.name = 'AccountOwnerMismatchError'; throw error; } }",
     ]);
 
     // And we expect the following imports.
@@ -245,7 +245,7 @@ test('it renders an owner guard in the account decode function', async () => {
     });
 });
 
-test('it forwards the program address override through the batch account fetch helpers', async () => {
+test('it renders batch account fetch helpers that take no program address', async () => {
     // Given the following program with 1 account.
     const node = programNode({
         accounts: [accountNode({ name: 'myAccount' })],
@@ -256,17 +256,15 @@ test('it forwards the program address override through the batch account fetch h
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then we expect the batch helpers to accept the same expected-owner override as the single-account
-    // helpers and to hand it to decode, rather than checking every account against the default program.
-    // The override is kept out of the RPC config, which has no such field.
+    // Then we expect the batch helpers to take kit's fetch config unmodified and forward it whole to the
+    // RPC, with the expected owner coming from the program constant inside decode rather than from a caller.
     await renderMapContains(renderMap, 'accounts/myAccount.ts', [
         'export async function fetchAllMyAccount( rpc: Parameters<typeof fetchEncodedAccounts>[0], ' +
-            'addresses: Array<Address>, config?: FetchAccountsConfig & { programAddress?: Address } )',
+            'addresses: Array<Address>, config?: FetchAccountsConfig )',
         'export async function fetchAllMaybeMyAccount( rpc: Parameters<typeof fetchEncodedAccounts>[0], ' +
-            'addresses: Array<Address>, config?: FetchAccountsConfig & { programAddress?: Address } )',
-        'const { programAddress, ...fetchConfig } = config ?? {}; ' +
-            'const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);',
-        'return maybeAccounts.map((maybeAccount) => decodeMyAccount(maybeAccount, programAddress)',
+            'addresses: Array<Address>, config?: FetchAccountsConfig )',
+        'const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);',
+        'return maybeAccounts.map((maybeAccount) => decodeMyAccount(maybeAccount)',
     ]);
 });
 
@@ -321,7 +319,7 @@ test('it renders the account discriminator guard inside the same exists narrowin
     // — which carries neither a programAddress nor data — keeps returning unthrown.
     await renderMapContains(renderMap, 'accounts/myAccount.ts', [
         "if (!('exists' in encodedAccount) || encodedAccount.exists) { " +
-            'if (encodedAccount.programAddress !== programAddress) {',
+            'if (encodedAccount.programAddress !== MY_PROGRAM_PROGRAM_ADDRESS) {',
         "error.name = 'AccountOwnerMismatchError'; throw error; } " +
             'if (!containsBytes(encodedAccount.data, MY_ACCOUNT_DISCRIMINATOR, 0)) {',
     ]);

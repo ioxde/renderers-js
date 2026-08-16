@@ -331,7 +331,6 @@ export async function getMigrateToAmmInstructionAsync<
     TAccountAssociatedTokenProgram extends string,
     TAccountSystemProgram extends string,
     TAccountRentProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: MigrateToAmmAsyncInput<
         TAccountPayer,
@@ -367,10 +366,9 @@ export async function getMigrateToAmmInstructionAsync<
         TAccountSystemProgram,
         TAccountRentProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     MigrateToAmmInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,
@@ -406,7 +404,7 @@ export async function getMigrateToAmmInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -568,7 +566,7 @@ export async function getMigrateToAmmInstructionAsync<
         data: getMigrateToAmmInstructionDataEncoder().encode(args as MigrateToAmmInstructionDataArgs),
         programAddress,
     } as MigrateToAmmInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,
@@ -745,7 +743,6 @@ export function getMigrateToAmmInstruction<
     TAccountAssociatedTokenProgram extends string,
     TAccountSystemProgram extends string,
     TAccountRentProgram extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
 >(
     input: MigrateToAmmInput<
         TAccountPayer,
@@ -781,9 +778,8 @@ export function getMigrateToAmmInstruction<
         TAccountSystemProgram,
         TAccountRentProgram
     >,
-    config?: { programAddress?: TProgramAddress },
 ): MigrateToAmmInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPayer,
     TAccountBaseMint,
     TAccountQuoteMint,
@@ -818,7 +814,7 @@ export function getMigrateToAmmInstruction<
     TAccountRentProgram
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -925,7 +921,7 @@ export function getMigrateToAmmInstruction<
         data: getMigrateToAmmInstructionDataEncoder().encode(args as MigrateToAmmInstructionDataArgs),
         programAddress,
     } as MigrateToAmmInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,

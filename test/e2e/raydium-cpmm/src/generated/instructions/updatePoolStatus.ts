@@ -100,16 +100,11 @@ export type UpdatePoolStatusInput<
     status: UpdatePoolStatusInstructionDataArgs['status'];
 };
 
-export function getUpdatePoolStatusInstruction<
-    TAccountAuthority extends string,
-    TAccountPoolState extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
->(
+export function getUpdatePoolStatusInstruction<TAccountAuthority extends string, TAccountPoolState extends string>(
     input: UpdatePoolStatusInput<TAccountAuthority, TAccountPoolState>,
-    config?: { programAddress?: TProgramAddress },
-): UpdatePoolStatusInstruction<TProgramAddress, TAccountAuthority, TAccountPoolState> {
+): UpdatePoolStatusInstruction<typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS, TAccountAuthority, TAccountPoolState> {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -132,7 +127,7 @@ export function getUpdatePoolStatusInstruction<
         accounts: [getAccountMeta('authority', accounts.authority), getAccountMeta('poolState', accounts.poolState)],
         data: getUpdatePoolStatusInstructionDataEncoder().encode(args as UpdatePoolStatusInstructionDataArgs),
         programAddress,
-    } as UpdatePoolStatusInstruction<TProgramAddress, TAccountAuthority, TAccountPoolState>);
+    } as UpdatePoolStatusInstruction<typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS, TAccountAuthority, TAccountPoolState>);
 }
 
 export type ParsedUpdatePoolStatusInstruction<

@@ -93,16 +93,11 @@ export type TransferSolInput<TAccountSource extends string = string, TAccountDes
     amount: TransferSolInstructionDataArgs['amount'];
 };
 
-export function getTransferSolInstruction<
-    TAccountSource extends string,
-    TAccountDestination extends string,
-    TProgramAddress extends Address = typeof SYSTEM_PROGRAM_ADDRESS,
->(
+export function getTransferSolInstruction<TAccountSource extends string, TAccountDestination extends string>(
     input: TransferSolInput<TAccountSource, TAccountDestination>,
-    config?: { programAddress?: TProgramAddress },
-): TransferSolInstruction<TProgramAddress, TAccountSource, TAccountDestination> {
+): TransferSolInstruction<typeof SYSTEM_PROGRAM_ADDRESS, TAccountSource, TAccountDestination> {
     // Program address.
-    const programAddress = config?.programAddress ?? SYSTEM_PROGRAM_ADDRESS;
+    const programAddress = SYSTEM_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -119,7 +114,7 @@ export function getTransferSolInstruction<
         accounts: [getAccountMeta('source', accounts.source), getAccountMeta('destination', accounts.destination)],
         data: getTransferSolInstructionDataEncoder().encode(args as TransferSolInstructionDataArgs),
         programAddress,
-    } as TransferSolInstruction<TProgramAddress, TAccountSource, TAccountDestination>);
+    } as TransferSolInstruction<typeof SYSTEM_PROGRAM_ADDRESS, TAccountSource, TAccountDestination>);
 }
 
 export type ParsedTransferSolInstruction<

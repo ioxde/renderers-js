@@ -66,15 +66,11 @@ export type Instruction9Input<TAccountAuthority extends string = string> = {
     authorityArg: Instruction9InstructionDataArgs['authority'];
 };
 
-export function getInstruction9Instruction<
-    TAccountAuthority extends string,
-    TProgramAddress extends Address = typeof DUMMY_PROGRAM_ADDRESS,
->(
+export function getInstruction9Instruction<TAccountAuthority extends string>(
     input: Instruction9Input<TAccountAuthority>,
-    config?: { programAddress?: TProgramAddress },
-): Instruction9Instruction<TProgramAddress, TAccountAuthority> {
+): Instruction9Instruction<typeof DUMMY_PROGRAM_ADDRESS, TAccountAuthority> {
     // Program address.
-    const programAddress = config?.programAddress ?? DUMMY_PROGRAM_ADDRESS;
+    const programAddress = DUMMY_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = { authority: { value: input.authority ?? null, isWritable: false } };
@@ -88,7 +84,7 @@ export function getInstruction9Instruction<
         accounts: [getAccountMeta('authority', accounts.authority)],
         data: getInstruction9InstructionDataEncoder().encode(args as Instruction9InstructionDataArgs),
         programAddress,
-    } as Instruction9Instruction<TProgramAddress, TAccountAuthority>);
+    } as Instruction9Instruction<typeof DUMMY_PROGRAM_ADDRESS, TAccountAuthority>);
 }
 
 export type ParsedInstruction9Instruction<

@@ -99,12 +99,10 @@ export function getCloseAccountInstruction<
     TAccountAccount extends string,
     TAccountDestination extends string,
     TAccountOwner extends string,
-    TProgramAddress extends Address = typeof TOKEN_PROGRAM_ADDRESS,
 >(
     input: CloseAccountInput<TAccountAccount, TAccountDestination, TAccountOwner>,
-    config?: { programAddress?: TProgramAddress },
 ): CloseAccountInstruction<
-    TProgramAddress,
+    typeof TOKEN_PROGRAM_ADDRESS,
     TAccountAccount,
     TAccountDestination,
     (typeof input)['owner'] extends TransactionSigner<TAccountOwner>
@@ -112,7 +110,7 @@ export function getCloseAccountInstruction<
         : TAccountOwner
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? TOKEN_PROGRAM_ADDRESS;
+    const programAddress = TOKEN_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -143,7 +141,7 @@ export function getCloseAccountInstruction<
         data: getCloseAccountInstructionDataEncoder().encode({}),
         programAddress,
     } as CloseAccountInstruction<
-        TProgramAddress,
+        typeof TOKEN_PROGRAM_ADDRESS,
         TAccountAccount,
         TAccountDestination,
         (typeof input)['owner'] extends TransactionSigner<TAccountOwner>

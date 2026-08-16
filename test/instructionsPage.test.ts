@@ -1109,7 +1109,7 @@ test('it can override the import of a resolver value node', async () => {
     });
 });
 
-test('it renders optional config that can override the program address', async () => {
+test('it pins the builder to the program address the client was generated for', async () => {
     // Given the following instruction
     const node = programNode({
         instructions: [
@@ -1125,11 +1125,16 @@ test('it renders optional config that can override the program address', async (
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then we expect an optional config parameter with an optional programAddress field
-    // And we expect this to be used to override programAddress if it is set
+    // Then we expect no config parameter and no program type parameter: the builder resolves the program
+    // from the generated constant, which keeps it in step with the PDA finders and decoders, none of which
+    // can be retargeted at runtime either. To target another deployment, regenerate with a different address.
     await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
-        'config?: { programAddress?: TProgramAddress; }',
-        'programAddress = config?.programAddress ?? MY_PROGRAM_PROGRAM_ADDRESS',
+        'export function getMyInstructionInstruction(): MyInstructionInstruction< typeof MY_PROGRAM_PROGRAM_ADDRESS >',
+        'const programAddress = MY_PROGRAM_PROGRAM_ADDRESS;',
+    ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', [
+        'TProgramAddress',
+        'config?: { programAddress',
     ]);
 });
 

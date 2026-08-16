@@ -106,20 +106,17 @@ export function getMintCodec(): FixedSizeCodec<MintArgs, Mint> {
 
 export function decodeMint<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<Mint, TAddress>;
 export function decodeMint<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<Mint, TAddress>;
 export function decodeMint<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = TOKEN_PROGRAM_ADDRESS,
 ): Account<Mint, TAddress> | MaybeAccount<Mint, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== TOKEN_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodeMint: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodeMint: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${TOKEN_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -131,7 +128,7 @@ export function decodeMint<TAddress extends string = string>(
 export async function fetchMint<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<Mint, TAddress>> {
     const maybeAccount = await fetchMaybeMint(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -141,17 +138,16 @@ export async function fetchMint<TAddress extends string = string>(
 export async function fetchMaybeMint<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<Mint, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodeMint(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodeMint(maybeAccount);
 }
 
 export async function fetchAllMint(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<Mint>[]> {
     const maybeAccounts = await fetchAllMaybeMint(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -161,11 +157,10 @@ export async function fetchAllMint(
 export async function fetchAllMaybeMint(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<Mint>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodeMint(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodeMint(maybeAccount));
 }
 
 export function getMintSize(): number {

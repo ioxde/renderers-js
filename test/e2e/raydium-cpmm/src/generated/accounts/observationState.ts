@@ -118,20 +118,17 @@ export function getObservationStateCodec(): FixedSizeCodec<ObservationStateArgs,
 
 export function decodeObservationState<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress>,
-    programAddress?: Address,
 ): Account<ObservationState, TAddress>;
 export function decodeObservationState<TAddress extends string = string>(
     encodedAccount: MaybeEncodedAccount<TAddress>,
-    programAddress?: Address,
 ): MaybeAccount<ObservationState, TAddress>;
 export function decodeObservationState<TAddress extends string = string>(
     encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>,
-    programAddress: Address = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 ): Account<ObservationState, TAddress> | MaybeAccount<ObservationState, TAddress> {
     if (!('exists' in encodedAccount) || encodedAccount.exists) {
-        if (encodedAccount.programAddress !== programAddress) {
+        if (encodedAccount.programAddress !== RAYDIUM_CP_SWAP_PROGRAM_ADDRESS) {
             const error = new Error(
-                `decodeObservationState: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${programAddress}`,
+                `decodeObservationState: account ${encodedAccount.address} is owned by ${encodedAccount.programAddress}, expected ${RAYDIUM_CP_SWAP_PROGRAM_ADDRESS}`,
             );
             error.name = 'AccountOwnerMismatchError';
             throw error;
@@ -150,7 +147,7 @@ export function decodeObservationState<TAddress extends string = string>(
 export async function fetchObservationState<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<Account<ObservationState, TAddress>> {
     const maybeAccount = await fetchMaybeObservationState(rpc, address, config);
     assertAccountExists(maybeAccount);
@@ -160,17 +157,16 @@ export async function fetchObservationState<TAddress extends string = string>(
 export async function fetchMaybeObservationState<TAddress extends string = string>(
     rpc: Parameters<typeof fetchEncodedAccount>[0],
     address: Address<TAddress>,
-    config?: FetchAccountConfig & { programAddress?: Address },
+    config?: FetchAccountConfig,
 ): Promise<MaybeAccount<ObservationState, TAddress>> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccount = await fetchEncodedAccount(rpc, address, fetchConfig);
-    return decodeObservationState(maybeAccount, programAddress);
+    const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+    return decodeObservationState(maybeAccount);
 }
 
 export async function fetchAllObservationState(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<Account<ObservationState>[]> {
     const maybeAccounts = await fetchAllMaybeObservationState(rpc, addresses, config);
     assertAccountsExist(maybeAccounts);
@@ -180,11 +176,10 @@ export async function fetchAllObservationState(
 export async function fetchAllMaybeObservationState(
     rpc: Parameters<typeof fetchEncodedAccounts>[0],
     addresses: Array<Address>,
-    config?: FetchAccountsConfig & { programAddress?: Address },
+    config?: FetchAccountsConfig,
 ): Promise<MaybeAccount<ObservationState>[]> {
-    const { programAddress, ...fetchConfig } = config ?? {};
-    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, fetchConfig);
-    return maybeAccounts.map(maybeAccount => decodeObservationState(maybeAccount, programAddress));
+    const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
+    return maybeAccounts.map(maybeAccount => decodeObservationState(maybeAccount));
 }
 
 export function getObservationStateSize(): number {

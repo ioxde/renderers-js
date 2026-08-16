@@ -187,7 +187,6 @@ export async function getSwapBaseInputInstructionAsync<
     TAccountInputTokenMint extends string,
     TAccountOutputTokenMint extends string,
     TAccountObservationState extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: SwapBaseInputAsyncInput<
         TAccountPayer,
@@ -204,10 +203,9 @@ export async function getSwapBaseInputInstructionAsync<
         TAccountOutputTokenMint,
         TAccountObservationState
     >,
-    config?: { programAddress?: TProgramAddress },
 ): Promise<
     SwapBaseInputInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountAuthority,
         TAccountAmmConfig,
@@ -224,7 +222,7 @@ export async function getSwapBaseInputInstructionAsync<
     >
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -272,7 +270,7 @@ export async function getSwapBaseInputInstructionAsync<
         data: getSwapBaseInputInstructionDataEncoder().encode(args as SwapBaseInputInstructionDataArgs),
         programAddress,
     } as SwapBaseInputInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountAuthority,
         TAccountAmmConfig,
@@ -347,7 +345,6 @@ export function getSwapBaseInputInstruction<
     TAccountInputTokenMint extends string,
     TAccountOutputTokenMint extends string,
     TAccountObservationState extends string,
-    TProgramAddress extends Address = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
 >(
     input: SwapBaseInputInput<
         TAccountPayer,
@@ -364,9 +361,8 @@ export function getSwapBaseInputInstruction<
         TAccountOutputTokenMint,
         TAccountObservationState
     >,
-    config?: { programAddress?: TProgramAddress },
 ): SwapBaseInputInstruction<
-    TProgramAddress,
+    typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountPayer,
     TAccountAuthority,
     TAccountAmmConfig,
@@ -382,7 +378,7 @@ export function getSwapBaseInputInstruction<
     TAccountObservationState
 > {
     // Program address.
-    const programAddress = config?.programAddress ?? RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
+    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
 
     // Original accounts.
     const originalAccounts = {
@@ -425,7 +421,7 @@ export function getSwapBaseInputInstruction<
         data: getSwapBaseInputInstructionDataEncoder().encode(args as SwapBaseInputInstructionDataArgs),
         programAddress,
     } as SwapBaseInputInstruction<
-        TProgramAddress,
+        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountPayer,
         TAccountAuthority,
         TAccountAmmConfig,
