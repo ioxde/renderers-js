@@ -12,6 +12,7 @@ import {
     type ClientWithRpc,
     type ClientWithTransactionPlanning,
     type ClientWithTransactionSending,
+    type ExtendedClient,
     type GetAccountInfoApi,
     type GetMultipleAccountsApi,
 } from '@solana/kit';
@@ -226,7 +227,7 @@ export type RaydiumLaunchpadPluginRequirements = ClientWithRpc<GetAccountInfoApi
 export function raydiumLaunchpadProgram() {
     return <T extends RaydiumLaunchpadPluginRequirements>(
         client: T,
-    ): Omit<T, 'raydiumLaunchpad'> & { raydiumLaunchpad: RaydiumLaunchpadPlugin } => {
+    ): ExtendedClient<T, { raydiumLaunchpad: RaydiumLaunchpadPlugin }> => {
         return extendClient(client, {
             raydiumLaunchpad: <RaydiumLaunchpadPlugin>{
                 accounts: {

@@ -12,6 +12,7 @@ import {
     type ClientWithRpc,
     type ClientWithTransactionPlanning,
     type ClientWithTransactionSending,
+    type ExtendedClient,
     type GetAccountInfoApi,
     type GetMultipleAccountsApi,
 } from '@solana/kit';
@@ -111,7 +112,7 @@ export type SystemPluginRequirements = ClientWithRpc<GetAccountInfoApi & GetMult
     ClientWithTransactionSending;
 
 export function systemProgram() {
-    return <T extends SystemPluginRequirements>(client: T): Omit<T, 'system'> & { system: SystemPlugin } => {
+    return <T extends SystemPluginRequirements>(client: T): ExtendedClient<T, { system: SystemPlugin }> => {
         return extendClient(client, {
             system: <SystemPlugin>{
                 accounts: {

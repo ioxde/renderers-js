@@ -236,7 +236,7 @@ test('it renders the program plugin function', async () => {
 
     // Then we expect the following plugin function.
     await fragmentContains(fragment, [
-        "export function splTokenProgram() { return <T extends SplTokenPluginRequirements>( client: T ): Omit < T, 'splToken' > & { splToken: SplTokenPlugin } => { return extendClient(client, { splToken: < SplTokenPlugin > {",
+        'export function splTokenProgram() { return <T extends SplTokenPluginRequirements>( client: T ): ExtendedClient< T, { splToken: SplTokenPlugin } > => { return extendClient(client, { splToken: < SplTokenPlugin > {',
         'accounts: { mint: Object.freeze({ ...getMintCodec(), ' +
             'fetch: ( address, config ) => fetchMint( client.rpc, address, config ), ' +
             'fetchAll: ( addresses, config ) => fetchAllMint( client.rpc, addresses, config ), ' +
@@ -248,7 +248,7 @@ test('it renders the program plugin function', async () => {
     // And we expect the necessary imports to be included.
     await fragmentContainsImports(fragment, {
         '../accounts/index.js': ['fetchAllMaybeMint', 'fetchAllMint', 'fetchMaybeMint', 'fetchMint', 'getMintCodec'],
-        '@solana/kit': ['extendClient'],
+        '@solana/kit': ['ExtendedClient', 'extendClient'],
         '@solana/program-client-core': ['addSelfPlanAndSendFunctions'],
     });
 });

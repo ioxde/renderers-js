@@ -265,6 +265,7 @@ function getProgramPluginFunctionFragment(
     const programPluginRequirementsType = nameApi.programPluginRequirementsType(programNode.name);
     const programPluginKey = nameApi.programPluginKey(programNode.name);
     const extendClient = use('extendClient', 'solanaPluginCore');
+    const extendedClient = use('type ExtendedClient', 'solanaPluginCore');
 
     // Imported as values here: the plugin object calls these helpers at runtime.
     const accountsIdentifierFunction = use(
@@ -295,7 +296,7 @@ function getProgramPluginFunctionFragment(
     );
 
     return fragment`export function ${programPluginFunction}() {
-    return <T extends ${programPluginRequirementsType}>(client: T): Omit<T, "${programPluginKey}"> & { ${programPluginKey}: ${programPluginType} } => {
+    return <T extends ${programPluginRequirementsType}>(client: T): ${extendedClient}<T, { ${programPluginKey}: ${programPluginType} }> => {
         return ${extendClient}(client, { ${programPluginKey}: <${programPluginType}>{ ${fields} } });
     };
 }`;

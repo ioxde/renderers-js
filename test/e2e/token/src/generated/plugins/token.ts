@@ -11,6 +11,7 @@ import {
     type ClientWithRpc,
     type ClientWithTransactionPlanning,
     type ClientWithTransactionSending,
+    type ExtendedClient,
     type GetAccountInfoApi,
     type GetMultipleAccountsApi,
 } from '@solana/kit';
@@ -179,7 +180,7 @@ export type TokenPluginRequirements = ClientWithRpc<GetAccountInfoApi & GetMulti
     ClientWithTransactionSending;
 
 export function tokenProgram() {
-    return <T extends TokenPluginRequirements>(client: T): Omit<T, 'token'> & { token: TokenPlugin } => {
+    return <T extends TokenPluginRequirements>(client: T): ExtendedClient<T, { token: TokenPlugin }> => {
         return extendClient(client, {
             token: <TokenPlugin>{
                 accounts: {

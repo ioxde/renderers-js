@@ -258,6 +258,11 @@ export function getInstructionInputDefaultFragment(
                 `if (${condition}) {\n${ifTrueRenderer ? ifTrueRenderer.content : ifFalseRenderer?.content}\n}`,
             );
 
+        case 'injectedValueNode':
+            // Injected values are not yet supported as instruction input defaults by this renderer.
+            // Account-field values never reach this switch: isDefaultValueAppliedByBuilder excludes them.
+            throw new Error(`Unsupported instruction input default value node: [${defaultValue.kind}]`);
+
         default:
             const valueManifest = visit(defaultValue, typeManifestVisitor).value;
             return defaultFragment(valueManifest);

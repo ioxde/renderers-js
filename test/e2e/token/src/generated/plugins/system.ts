@@ -11,6 +11,7 @@ import {
     type ClientWithPayer,
     type ClientWithTransactionPlanning,
     type ClientWithTransactionSending,
+    type ExtendedClient,
 } from '@solana/kit';
 import { addSelfPlanAndSendFunctions, type SelfPlanAndSendFunctions } from '@solana/kit/program-client-core';
 import {
@@ -35,7 +36,7 @@ export type SystemPluginInstructions = {
 export type SystemPluginRequirements = ClientWithPayer & ClientWithTransactionPlanning & ClientWithTransactionSending;
 
 export function systemProgram() {
-    return <T extends SystemPluginRequirements>(client: T): Omit<T, 'system'> & { system: SystemPlugin } => {
+    return <T extends SystemPluginRequirements>(client: T): ExtendedClient<T, { system: SystemPlugin }> => {
         return extendClient(client, {
             system: <SystemPlugin>{
                 instructions: {

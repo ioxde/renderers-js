@@ -11,6 +11,7 @@ import {
     type ClientWithPayer,
     type ClientWithTransactionPlanning,
     type ClientWithTransactionSending,
+    type ExtendedClient,
 } from '@solana/kit';
 import { addSelfPlanAndSendFunctions, type SelfPlanAndSendFunctions } from '@solana/kit/program-client-core';
 import {
@@ -80,7 +81,7 @@ export type DummyPluginInstructions = {
 export type DummyPluginRequirements = ClientWithPayer & ClientWithTransactionPlanning & ClientWithTransactionSending;
 
 export function dummyProgram() {
-    return <T extends DummyPluginRequirements>(client: T): Omit<T, 'dummy'> & { dummy: DummyPlugin } => {
+    return <T extends DummyPluginRequirements>(client: T): ExtendedClient<T, { dummy: DummyPlugin }> => {
         return extendClient(client, {
             dummy: <DummyPlugin>{
                 instructions: {

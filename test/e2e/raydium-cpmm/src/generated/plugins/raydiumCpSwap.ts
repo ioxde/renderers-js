@@ -12,6 +12,7 @@ import {
     type ClientWithRpc,
     type ClientWithTransactionPlanning,
     type ClientWithTransactionSending,
+    type ExtendedClient,
     type GetAccountInfoApi,
     type GetMultipleAccountsApi,
 } from '@solana/kit';
@@ -146,7 +147,7 @@ export type RaydiumCpSwapPluginRequirements = ClientWithRpc<GetAccountInfoApi & 
 export function raydiumCpSwapProgram() {
     return <T extends RaydiumCpSwapPluginRequirements>(
         client: T,
-    ): Omit<T, 'raydiumCpSwap'> & { raydiumCpSwap: RaydiumCpSwapPlugin } => {
+    ): ExtendedClient<T, { raydiumCpSwap: RaydiumCpSwapPlugin }> => {
         return extendClient(client, {
             raydiumCpSwap: <RaydiumCpSwapPlugin>{
                 accounts: {

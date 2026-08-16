@@ -12,6 +12,7 @@ import {
     type ClientWithRpc,
     type ClientWithTransactionPlanning,
     type ClientWithTransactionSending,
+    type ExtendedClient,
     type GetAccountInfoApi,
     type GetMultipleAccountsApi,
 } from '@solana/kit';
@@ -83,7 +84,7 @@ export type WenTransferGuardPluginRequirements = ClientWithRpc<GetAccountInfoApi
 export function wenTransferGuardProgram() {
     return <T extends WenTransferGuardPluginRequirements>(
         client: T,
-    ): Omit<T, 'wenTransferGuard'> & { wenTransferGuard: WenTransferGuardPlugin } => {
+    ): ExtendedClient<T, { wenTransferGuard: WenTransferGuardPlugin }> => {
         return extendClient(client, {
             wenTransferGuard: <WenTransferGuardPlugin>{
                 accounts: {
