@@ -1,12 +1,12 @@
-# Codama fork (ioxde/codama@c8c4954) published as pkg.pr.new tarballs, wired in as
+# Codama fork (ioxde/codama@04f304b) published as pkg.pr.new tarballs, wired in as
 # install-time overrides only — not dependencies of the published @codama/renderers-js.
 overrides:
-  '@codama/errors': 'https://pkg.pr.new/ioxde/codama/@codama/errors@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/fragments': 'https://pkg.pr.new/ioxde/codama/@codama/fragments@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/node-types': 'https://pkg.pr.new/ioxde/codama/@codama/node-types@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/nodes': 'https://pkg.pr.new/ioxde/codama/@codama/nodes@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/nodes-from-anchor': 'https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/renderers-core': 'https://pkg.pr.new/ioxde/codama/@codama/renderers-core@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/visitors': 'https://pkg.pr.new/ioxde/codama/@codama/visitors@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/visitors-core': 'https://pkg.pr.new/ioxde/codama/@codama/visitors-core@c8c4954ff716d41c81c9aad5d306470b83715b27'
-  '@codama/validators': 'https://pkg.pr.new/ioxde/codama/@codama/validators@c8c4954ff716d41c81c9aad5d306470b83715b27'
+  '@codama/errors': 'https://pkg.pr.new/ioxde/codama/@codama/errors@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/fragments': 'https://pkg.pr.new/ioxde/codama/@codama/fragments@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/node-types': 'https://pkg.pr.new/ioxde/codama/@codama/node-types@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/nodes': 'https://pkg.pr.new/ioxde/codama/@codama/nodes@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/nodes-from-anchor': 'https://pkg.pr.new/ioxde/codama/@codama/nodes-from-anchor@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/renderers-core': 'https://pkg.pr.new/ioxde/codama/@codama/renderers-core@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/visitors': 'https://pkg.pr.new/ioxde/codama/@codama/visitors@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/visitors-core': 'https://pkg.pr.new/ioxde/codama/@codama/visitors-core@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'
+  '@codama/validators': 'https://pkg.pr.new/ioxde/codama/@codama/validators@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607'

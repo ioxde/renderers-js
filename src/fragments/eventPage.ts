@@ -37,7 +37,7 @@ export function getEventPageFragment(
     const cpiFraming = getEventCpiFraming(node, scope.programEventFraming);
     // Drop the hoisted framing discriminator so generated constants match the IDL `events[].discriminator` bytes.
     const discriminatorNodes = getEventOwnDiscriminators(node, scope.programEventFraming);
-    const fields = isNode(innerType, 'structTypeNode') ? innerType.fields : [];
+    const fields = isNode(innerType, 'structTypeNode') ? (innerType.fields ?? []) : [];
     const shouldGenerateParse = isEventIdentifiable(node, scope.programEventFraming);
     if (!shouldGenerateParse && cpiFraming) {
         logWarn(

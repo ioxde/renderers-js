@@ -128,7 +128,7 @@ function getFieldConditionFragment(
 ): Fragment {
     const { constantSource, dataName, nameApi, prefix, struct, typeManifestVisitor } = scope;
 
-    const field = struct.fields.find(f => f.name === discriminator.name);
+    const field = (struct.fields ?? []).find(f => f.name === discriminator.name);
     if (!field || !field.defaultValue || !isNode(field.defaultValue, VALUE_NODES)) {
         throw new Error(
             `Field discriminator "${discriminator.name}" does not have a matching argument with default value.`,
@@ -139,9 +139,8 @@ function getFieldConditionFragment(
     const constant = use(nameApi.constant(name), constantSource);
     const containsBytes = use('containsBytes', 'solanaCodecsCore');
 
-    // For byte-sequence field discriminators (e.g. Anchor's fixed-size byte arrays), the generated
-    // constant is already a ReadonlyUint8Array, so it can be passed directly to containsBytes.
-    // This covers both u8[N] arrays and fixed-size bytes fields.
+    // Byte-sequence discriminators (u8[N] arrays, fixed-size bytes) already generate a
+    // ReadonlyUint8Array constant, so it goes straight to containsBytes.
     const isFixedSizeBytes = isNode(field.type, 'fixedSizeTypeNode') && isNode(field.type.type, 'bytesTypeNode');
     const isU8Array =
         isNode(field.type, 'arrayTypeNode') &&

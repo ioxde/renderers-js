@@ -17,17 +17,12 @@ import { getConstantValueConstantFragment, getDiscriminatorConstantName } from '
 /** Resolved program-level framing: the hoisted prefix constant + its source `EventFraming`. */
 export type ResolvedProgramEventFraming = { constant: ConstantValueNode; framing: EventFraming };
 
-/**
- * Extracts an event's own framing candidate, requiring the structural shape the CPI-framed
- * renderers rely on: a hidden-prefix data node whose leading constant is also the event's
- * first discriminator, at offset 0. Returns `undefined` when the shape does not hold so
- * callers fall back to unframed rendering.
- */
+/** An event's own framing candidate, or `undefined` when the shape the CPI-framed renderers need does not hold and callers must render unframed. */
 function getEventOwnFraming(event: EventNode): ResolvedProgramEventFraming | undefined {
     if (!event.framing) return undefined;
     if (!isNode(event.data, 'hiddenPrefixTypeNode')) return undefined;
-    if (event.data.prefix.length === 0) return undefined;
-    const [firstPrefix] = event.data.prefix;
+    const [firstPrefix] = event.data.prefix ?? [];
+    if (!firstPrefix) return undefined;
     const [firstDiscriminator] = event.discriminators ?? [];
     if (!isNode(firstDiscriminator, 'constantDiscriminatorNode')) return undefined;
     if ((firstDiscriminator.offset ?? 0) !== 0) return undefined;
@@ -40,9 +35,8 @@ function constantValueNodesMatch(a: ConstantValueNode, b: ConstantValueNode): bo
 }
 
 /**
- * Resolves the program's shared event framing by hoisting the first framed event's leading
- * hidden-prefix constant. Conflicting framing names or diverging constant values warn and
- * the first one wins; diverging events fall back to unframed rendering.
+ * Hoists the first framed event's leading hidden-prefix constant as the program's shared framing.
+ * Conflicting framing names or constant values warn and the first wins; the diverging events render unframed.
  */
 export function getProgramEventFraming(programNode: ProgramNode): ResolvedProgramEventFraming | undefined {
     let resolved: ResolvedProgramEventFraming | undefined;

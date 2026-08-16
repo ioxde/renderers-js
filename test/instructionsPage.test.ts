@@ -1,4 +1,5 @@
 import {
+    accountFieldValueNode,
     accountValueNode,
     argumentValueNode,
     booleanTypeNode,
@@ -601,6 +602,38 @@ test('it keeps data arguments with identity or payer defaults required in the in
         /funder:\s*CreateInstructionDataArgs\[['"]funder['"]\];/,
     ]);
     await renderMapDoesNotContain(renderMap, 'instructions/create.ts', [/authority\?:/, /funder\?:/]);
+});
+
+test('it keeps data arguments with account field defaults required in the input type', async () => {
+    // Given an instruction with a data argument defaulting to a field of
+    // another account's data, which only resolves at display time.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [instructionAccountNode({ isSigner: false, isWritable: false, name: 'mint' })],
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: accountFieldValueNode({ account: 'mint', path: 'decimals' }),
+                        name: 'decimals',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect the argument to be required in the input type since no
+    // builder can fetch the account state the default refers to.
+    await renderMapContains(renderMap, 'instructions/create.ts', [
+        /decimals:\s*CreateInstructionDataArgs\[['"]decimals['"]\];/,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/create.ts', [/decimals\?:/]);
 });
 
 test('it renders instruction accounts with linked PDAs as default value', async () => {

@@ -22,7 +22,7 @@ export function getRootIndexPageFragment(scope: {
         return fragment`export default {};`;
     }
 
-    const programsWithErrorsToExport = scope.programsToExport.filter(p => p.errors.length > 0);
+    const programsWithErrorsToExport = scope.programsToExport.filter(p => (p.errors ?? []).length > 0);
 
     return mergeFragments(
         [

@@ -10,7 +10,7 @@ export function getProgramAccountsFileName(programNode: ProgramNode): `${string}
 
 /** Whether the aggregate accounts page renders for this program. */
 export function hasProgramAccountsPage(programNode: ProgramNode): boolean {
-    return programNode.accounts.length > 0;
+    return (programNode.accounts ?? []).length > 0;
 }
 
 /** Import path of an account's page, relative to the accounts folder. */
@@ -41,7 +41,7 @@ function getProgramAccountsTypeUnionFragment(
 ): Fragment {
     const { programNode, nameApi } = scope;
     const programAccountsTypeUnion = nameApi.programAccountsTypeUnion(programNode.name);
-    const programAccountsTypeVariants = programNode.accounts.map(
+    const programAccountsTypeVariants = (programNode.accounts ?? []).map(
         account => `'${nameApi.programAccountsTypeVariant(account.name)}'`,
     );
     return fragment`/** Account kinds of the ${programNode.name} program. */
@@ -54,7 +54,7 @@ function getProgramAccountsIdentifierFunctionFragment(
     },
 ): Fragment | undefined {
     const { programNode, nameApi } = scope;
-    const accountsWithDiscriminators = programNode.accounts.filter(
+    const accountsWithDiscriminators = (programNode.accounts ?? []).filter(
         account => (account.discriminators ?? []).length > 0,
     );
     if (accountsWithDiscriminators.length === 0) return;

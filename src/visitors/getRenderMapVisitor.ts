@@ -185,8 +185,8 @@ export function getRenderMapVisitor(
 
                 visitProgram(node, { self }) {
                     const customDataDefinedType = [
-                        ...getDefinedTypeNodesToExtract(node.accounts, customAccountData),
-                        ...getDefinedTypeNodesToExtract(node.instructions, customInstructionData),
+                        ...getDefinedTypeNodesToExtract(node.accounts ?? [], customAccountData),
+                        ...getDefinedTypeNodesToExtract(node.instructions ?? [], customInstructionData),
                     ];
                     const scope = { ...renderScope, programNode: node };
 
@@ -203,8 +203,7 @@ export function getRenderMapVisitor(
                     return mergeRenderMaps([
                         createRenderMap({
                             ...eventFramingPage,
-                            // Aggregate identify*/parse* helpers render inside their domain folder
-                            // so they can import the per-node pages as siblings.
+                            // Aggregate identify*/parse* helpers live in their domain folder so per-node pages are sibling imports.
                             [`accounts/${getProgramAccountsFileName(node)}.ts`]: asPage(
                                 getProgramAccountsPageFragment(scope),
                             ),
@@ -217,11 +216,11 @@ export function getRenderMapVisitor(
                             [`plugins/${camelCase(node.name)}.ts`]: asPage(getProgramPluginPageFragment(scope)),
                             [`programs/${camelCase(node.name)}.ts`]: asPage(getProgramPageFragment(scope)),
                             [`errors/${camelCase(node.name)}.ts`]:
-                                node.errors.length > 0 ? asPage(getErrorPageFragment(scope)) : undefined,
+                                (node.errors ?? []).length > 0 ? asPage(getErrorPageFragment(scope)) : undefined,
                         }),
-                        ...node.pdas.map(p => visit(p, self)),
-                        ...node.accounts.map(a => visit(a, self)),
-                        ...node.definedTypes.map(t => visit(t, self)),
+                        ...(node.pdas ?? []).map(p => visit(p, self)),
+                        ...(node.accounts ?? []).map(a => visit(a, self)),
+                        ...(node.definedTypes ?? []).map(t => visit(t, self)),
                         ...(node.events ?? []).map(event => visit(event, self)),
                         ...customDataDefinedType.map(t => visit(t, self)),
                         ...getAllInstructionsWithSubs(node, { leavesOnly: !renderScope.renderParentInstructions }).map(
@@ -233,7 +232,7 @@ export function getRenderMapVisitor(
                 visitRoot(node, { self }) {
                     const isNotInternal = (n: { name: CamelCaseString }) => !internalNodes.includes(n.name);
                     const programsToExport = getAllPrograms(node).filter(isNotInternal);
-                    const programsWithErrorsToExport = programsToExport.filter(p => p.errors.length > 0);
+                    const programsWithErrorsToExport = programsToExport.filter(p => (p.errors ?? []).length > 0);
                     const pdasToExport = getAllPdas(node);
                     const accountsToExport = getAllAccounts(node).filter(isNotInternal);
                     const instructionsToExport = getAllInstructionsWithSubs(node, {

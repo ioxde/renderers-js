@@ -16,7 +16,7 @@ export function getProgramInstructionsFileName(programNode: ProgramNode): `${str
 
 /** Whether the aggregate instructions page renders for this program. */
 export function hasProgramInstructionsPage(programNode: ProgramNode): boolean {
-    return programNode.instructions.length > 0;
+    return (programNode.instructions ?? []).length > 0;
 }
 
 /** Import path of an instruction's page, relative to the instructions folder. */
@@ -98,7 +98,7 @@ function getProgramInstructionsIdentifierFunctionFragment(
                 discriminators: instruction.discriminators ?? [],
                 ifTrue: `return '${variant}';`,
                 prefix: instruction.name,
-                struct: structTypeNodeFromInstructionArgumentNodes(instruction.arguments),
+                struct: structTypeNodeFromInstructionArgumentNodes(instruction.arguments ?? []),
             });
         }),
         c => c.join('\n'),
@@ -177,7 +177,7 @@ function getProgramInstructionsParseFunctionFragment(
             );
             const assertIsInstructionWithAccounts = use('assertIsInstructionWithAccounts', 'solanaInstructions');
             // Only need accounts assertion since data is guaranteed by the input type
-            const hasAccounts = instruction.accounts.length > 0;
+            const hasAccounts = (instruction.accounts ?? []).length > 0;
             const assertionsCode = hasAccounts
                 ? fragment`${assertIsInstructionWithAccounts}(instruction);\n`
                 : fragment``;

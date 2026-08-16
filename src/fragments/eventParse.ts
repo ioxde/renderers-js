@@ -96,14 +96,12 @@ function getDecodeSkipExpr(
         });
     }
     if (!isNode(eventNode.data, 'hiddenPrefixTypeNode')) return undefined;
-    if (eventNode.data.prefix.length === 1) {
+    const prefix = eventNode.data.prefix ?? [];
+    if (prefix.length === 1) {
         const firstDiscConstant = nameApi.constant(camelCase(`${eventNode.name}_discriminator`));
         return fragment`${firstDiscConstant}.length`;
     }
-    const totalSize = eventNode.data.prefix.reduce(
-        (sum, p) => sum + (isNode(p.type, 'fixedSizeTypeNode') ? p.type.size : 0),
-        0,
-    );
+    const totalSize = prefix.reduce((sum, p) => sum + (isNode(p.type, 'fixedSizeTypeNode') ? p.type.size : 0), 0);
     return fragment`${String(totalSize)}`;
 }
 

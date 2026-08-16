@@ -299,7 +299,7 @@ function getHiddenPrefixSkipExpr(
             programEventFraming: cpiFraming,
         });
     }
-    const prefixes = event.data.prefix;
+    const prefixes = event.data.prefix ?? [];
     if (prefixes.length === 1) {
         const discConstant = use(nameApi.constant(camelCase(`${event.name}_discriminator`)), getEventModule(event));
         return fragment`${discConstant}.length`;

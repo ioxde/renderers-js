@@ -14,15 +14,16 @@ export function getInstructionTypeFragment(
     const { instructionPath, nameApi, customInstructionData } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
     const programNode = findProgramNodeFromPath(instructionPath)!;
-    const hasAccounts = instructionNode.accounts.length > 0;
+    const instructionAccounts = instructionNode.accounts ?? [];
+    const hasAccounts = instructionAccounts.length > 0;
     const customData = customInstructionData.get(instructionNode.name);
-    const hasData = !!customData || instructionNode.arguments.length > 0;
+    const hasData = !!customData || (instructionNode.arguments ?? []).length > 0;
 
     const instructionType = nameApi.instructionType(instructionNode.name);
     const programAddressConstant = use(nameApi.programAddressConstant(programNode.name), 'generatedPrograms');
 
     const accountTypeParams = mergeFragments(
-        instructionNode.accounts.map(account =>
+        instructionAccounts.map(account =>
             getInstructionAccountTypeParamFragment({
                 ...scope,
                 allowAccountMeta: true,
@@ -38,7 +39,7 @@ export function getInstructionTypeFragment(
 
     const usesLegacyOptionalAccounts = instructionNode.optionalAccountStrategy === 'omitted';
     const accountMetasFragment = mergeFragments(
-        instructionNode.accounts.map(account =>
+        instructionAccounts.map(account =>
             mapFragmentContent(getInstructionAccountMetaFragment(account), c => {
                 const typeParam = `TAccount${pascalCase(account.name)}`;
                 const isLegacyOptional = account.isOptional && usesLegacyOptionalAccounts;

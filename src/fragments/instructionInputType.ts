@@ -44,9 +44,10 @@ export function getInstructionInputTypeFragment(
         : nameApi.instructionSyncInputType(instructionNode.name);
     const [dataArgumentsFragment, customDataArgumentsFragment] = getDataArgumentsFragments(scope);
 
+    const instructionAccounts = instructionNode.accounts ?? [];
     let accountTypeParams = '';
-    if (instructionNode.accounts.length > 0) {
-        accountTypeParams = instructionNode.accounts
+    if (instructionAccounts.length > 0) {
+        accountTypeParams = instructionAccounts
             .map(account => `TAccount${pascalCase(account.name)} extends string = string`)
             .join(', ');
         accountTypeParams = `<${accountTypeParams}>`;
@@ -77,7 +78,7 @@ function getAccountsFragment(
     const { instructionPath, resolvedInputs, useAsync, asyncResolvers } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
 
-    const fragments = instructionNode.accounts.map(account => {
+    const fragments = (instructionNode.accounts ?? []).map(account => {
         const resolvedAccount = resolvedInputs.find(
             input => input.kind === 'instructionAccountNode' && input.name === account.name,
         ) as ResolvedInstructionAccount;
@@ -129,7 +130,7 @@ function getDataArgumentsFragments(
     const instructionDataName = nameApi.instructionDataType(instructionNode.name);
     const dataArgsType = nameApi.dataArgsType(instructionDataName);
 
-    const fragments = instructionNode.arguments.flatMap(arg => {
+    const fragments = (instructionNode.arguments ?? []).flatMap(arg => {
         const argFragment = getArgumentFragment(arg, dataArgsType, scope);
         return argFragment ? [argFragment] : [];
     });

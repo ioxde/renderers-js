@@ -37,8 +37,9 @@ function getTypeFragment(
     const instructionParsedType = scope.nameApi.instructionParsedType(scope.instructionNode.name);
     const instructionDataName = scope.nameApi.instructionDataType(scope.instructionNode.name);
 
-    const hasData = !!customData || scope.instructionNode.arguments.length > 0;
-    const hasAccounts = scope.instructionNode.accounts.length > 0;
+    const instructionAccounts = scope.instructionNode.accounts ?? [];
+    const hasData = !!customData || (scope.instructionNode.arguments ?? []).length > 0;
+    const hasAccounts = instructionAccounts.length > 0;
 
     const typeParamDeclarations = mergeFragments(
         [
@@ -51,7 +52,7 @@ function getTypeFragment(
     );
 
     const accounts = mergeFragments(
-        scope.instructionNode.accounts.map((account, i) => {
+        instructionAccounts.map((account, i) => {
             const docs = getDocblockFragment(account.docs ?? [], true);
             const name = camelCase(account.name);
             return fragment`${docs}${name}${account.isOptional ? '?' : ''}: TAccountMetas[${i}]${account.isOptional ? ' | undefined' : ''};`;
@@ -82,13 +83,14 @@ function getFunctionFragment(
         ? scope.dataArgsManifest.decoder
         : fragment`${scope.nameApi.decoderFunction(instructionDataName)}()`;
 
-    const hasData = !!customData || scope.instructionNode.arguments.length > 0;
-    const hasAccounts = scope.instructionNode.accounts.length > 0;
-    const hasOptionalAccounts = scope.instructionNode.accounts.some(account => account.isOptional);
+    const instructionAccounts = scope.instructionNode.accounts ?? [];
+    const hasData = !!customData || (scope.instructionNode.arguments ?? []).length > 0;
+    const hasAccounts = instructionAccounts.length > 0;
+    const hasOptionalAccounts = instructionAccounts.some(account => account.isOptional);
     const minimumNumberOfAccounts =
         scope.instructionNode.optionalAccountStrategy === 'omitted'
-            ? scope.instructionNode.accounts.filter(account => !account.isOptional).length
-            : scope.instructionNode.accounts.length;
+            ? instructionAccounts.filter(account => !account.isOptional).length
+            : instructionAccounts.length;
 
     const typeParams = ['TProgram', hasAccounts ? 'TAccountMetas' : undefined].filter(Boolean).join(', ');
     const typeParamDeclarations = mergeFragments(
@@ -149,7 +151,7 @@ const getNextOptionalAccount = () => {
     }
 
     const accounts = mergeFragments(
-        scope.instructionNode.accounts.map(account =>
+        instructionAccounts.map(account =>
             account.isOptional
                 ? fragment`${camelCase(account.name)}: getNextOptionalAccount()`
                 : fragment`${camelCase(account.name)}: getNextAccount()`,

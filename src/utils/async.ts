@@ -1,4 +1,5 @@
 import {
+    AccountFieldValueNode,
     AccountValueNode,
     accountValueNode,
     ArgumentValueNode,
@@ -65,16 +66,17 @@ export function isDefaultValueSkippedOnSyncPath(
 }
 
 /**
- * Whether the rendered builder applies this default: false for identity/payer values, which no builder resolves, and for async-only defaults on the sync path.
+ * Whether the rendered builder applies this default. No builder resolves identity or payer values;
+ * account-field values only resolve at display time by fetching the account; async-only defaults never run on the sync path.
  * Default rendering and input optionality both gate on this — route new consumers through it so types never promise a default the builder skips.
  */
 export function isDefaultValueAppliedByBuilder(
     defaultValue: InstructionInputValueNode | undefined,
     asyncResolvers: string[],
     useAsync: boolean,
-): defaultValue is Exclude<InstructionInputValueNode, IdentityValueNode | PayerValueNode> {
+): defaultValue is Exclude<InstructionInputValueNode, AccountFieldValueNode | IdentityValueNode | PayerValueNode> {
     if (!defaultValue) return false;
-    if (isNode(defaultValue, ['identityValueNode', 'payerValueNode'])) return false;
+    if (isNode(defaultValue, ['accountFieldValueNode', 'identityValueNode', 'payerValueNode'])) return false;
     return !isDefaultValueSkippedOnSyncPath(defaultValue, asyncResolvers, useAsync);
 }
 
@@ -85,8 +87,8 @@ export function getInstructionDependencies(
 ): (AccountValueNode | ArgumentValueNode)[] {
     if (isNode(input, 'instructionNode')) {
         return deduplicateInstructionDependencies([
-            ...input.accounts.flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
-            ...input.arguments.flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
+            ...(input.accounts ?? []).flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
+            ...(input.arguments ?? []).flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
             ...(input.extraArguments ?? []).flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
         ]);
     }
@@ -110,7 +112,7 @@ export function getInstructionDependencies(
 
     if (isNode(input.defaultValue, 'pdaValueNode')) {
         const dependencies = new Map<CamelCaseString, AccountValueNode | ArgumentValueNode>();
-        input.defaultValue.seeds.forEach(seed => {
+        (input.defaultValue.seeds ?? []).forEach(seed => {
             if (isNode(seed.value, ['accountValueNode', 'argumentValueNode'])) {
                 dependencies.set(seed.value.name, { ...seed.value });
             }

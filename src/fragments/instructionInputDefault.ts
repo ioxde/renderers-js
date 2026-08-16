@@ -89,7 +89,6 @@ export function getInstructionInputDefaultFragment(
                 pdaProgramValue = fragment`${getAddressFromResolvedInstructionAccount}("${name}", args.${name})`;
             }
 
-            // Inlined PDA value.
             if (isNode(defaultValue.pda, 'pdaNode')) {
                 let pdaProgram = fragment`programAddress`;
                 if (pdaProgramValue) {
@@ -97,7 +96,7 @@ export function getInstructionInputDefaultFragment(
                 } else if (defaultValue.pda.programId) {
                     pdaProgram = fragment`'${defaultValue.pda.programId}' as ${addressType}<'${defaultValue.pda.programId}'>`;
                 }
-                const pdaSeeds = defaultValue.pda.seeds.flatMap((seed): Fragment[] => {
+                const pdaSeeds = (defaultValue.pda.seeds ?? []).flatMap((seed): Fragment[] => {
                     if (isNode(seed, 'constantPdaSeedNode') && isNode(seed.value, 'programIdValueNode')) {
                         return [fragment`${use('getAddressEncoder', 'solanaAddresses')}().encode(${pdaProgram})`];
                     }
@@ -108,7 +107,7 @@ export function getInstructionInputDefaultFragment(
                     }
                     if (isNode(seed, 'variablePdaSeedNode')) {
                         const typeManifest = visit(seed.type, typeManifestVisitor);
-                        const valueSeed = defaultValue.seeds.find(s => s.name === seed.name)?.value;
+                        const valueSeed = (defaultValue.seeds ?? []).find(s => s.name === seed.name)?.value;
                         if (!valueSeed) return [];
                         if (isNode(valueSeed, 'accountValueNode')) {
                             const name = camelCase(valueSeed.name);
@@ -136,10 +135,9 @@ export function getInstructionInputDefaultFragment(
                 );
             }
 
-            // Linked PDA value.
             const pdaFunction = use(nameApi.pdaFindFunction(defaultValue.pda.name), getImportFrom(defaultValue.pda));
             const pdaArgs: Fragment[] = [];
-            const pdaSeeds = defaultValue.seeds.map((seed): Fragment => {
+            const pdaSeeds = (defaultValue.seeds ?? []).map((seed): Fragment => {
                 if (isNode(seed.value, 'accountValueNode')) {
                     const name = camelCase(seed.value.name);
                     return fragment`${seed.name}: ${getAddressFromResolvedInstructionAccount}("${name}", accounts.${name}.value)`;
