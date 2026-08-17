@@ -194,7 +194,6 @@ export type MigrateToAmmAsyncInput<
     TAccountPayer extends string = string,
     TAccountBaseMint extends string = string,
     TAccountQuoteMint extends string = string,
-    TAccountOpenbookProgram extends string = string,
     TAccountMarket extends string = string,
     TAccountRequestQueue extends string = string,
     TAccountEventQueue extends string = string,
@@ -205,24 +204,17 @@ export type MigrateToAmmAsyncInput<
     TAccountMarketQuoteVault extends string = string,
     TAccountAmmProgram extends string = string,
     TAccountAmmPool extends string = string,
-    TAccountAmmAuthority extends string = string,
     TAccountAmmOpenOrders extends string = string,
     TAccountAmmLpMint extends string = string,
     TAccountAmmBaseVault extends string = string,
     TAccountAmmQuoteVault extends string = string,
     TAccountAmmTargetOrders extends string = string,
-    TAccountAmmConfig extends string = string,
     TAccountAmmCreateFeeDestination extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountGlobalConfig extends string = string,
     TAccountBaseVault extends string = string,
     TAccountQuoteVault extends string = string,
     TAccountPoolLpToken extends string = string,
-    TAccountSplTokenProgram extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountRentProgram extends string = string,
 > = {
     /**
      * Only migrate_to_amm_wallet can migrate to cpswap pool
@@ -233,7 +225,6 @@ export type MigrateToAmmAsyncInput<
     baseMint: Address<TAccountBaseMint>;
     /** The mint for the quote token (token used to buy) */
     quoteMint: Address<TAccountQuoteMint>;
-    openbookProgram?: Address<TAccountOpenbookProgram>;
     /** Account created and asigned to openbook_program but not been initialized */
     market: Address<TAccountMarket>;
     /** Account created and asigned to openbook_program but not been initialized */
@@ -251,19 +242,12 @@ export type MigrateToAmmAsyncInput<
     marketQuoteVault: Address<TAccountMarketQuoteVault>;
     ammProgram?: Address<TAccountAmmProgram>;
     ammPool?: Address<TAccountAmmPool>;
-    ammAuthority?: Address<TAccountAmmAuthority>;
     ammOpenOrders?: Address<TAccountAmmOpenOrders>;
     ammLpMint?: Address<TAccountAmmLpMint>;
     ammBaseVault?: Address<TAccountAmmBaseVault>;
     ammQuoteVault?: Address<TAccountAmmQuoteVault>;
     ammTargetOrders?: Address<TAccountAmmTargetOrders>;
-    ammConfig?: Address<TAccountAmmConfig>;
     ammCreateFeeDestination: Address<TAccountAmmCreateFeeDestination>;
-    /**
-     * PDA that acts as the authority for pool vault operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -282,17 +266,6 @@ export type MigrateToAmmAsyncInput<
      */
     quoteVault: Address<TAccountQuoteVault>;
     poolLpToken: Address<TAccountPoolLpToken>;
-    /**
-     * SPL Token program for the base token
-     * Must be the standard Token program
-     */
-    splTokenProgram?: Address<TAccountSplTokenProgram>;
-    /** Program to create an ATA for receiving fee NFT */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for rent exempt calculations */
-    rentProgram?: Address<TAccountRentProgram>;
     baseLotSize: MigrateToAmmInstructionDataArgs['baseLotSize'];
     quoteLotSize: MigrateToAmmInstructionDataArgs['quoteLotSize'];
     marketVaultSignerNonce: MigrateToAmmInstructionDataArgs['marketVaultSignerNonce'];
@@ -302,7 +275,6 @@ export async function getMigrateToAmmInstructionAsync<
     TAccountPayer extends string,
     TAccountBaseMint extends string,
     TAccountQuoteMint extends string,
-    TAccountOpenbookProgram extends string,
     TAccountMarket extends string,
     TAccountRequestQueue extends string,
     TAccountEventQueue extends string,
@@ -313,30 +285,22 @@ export async function getMigrateToAmmInstructionAsync<
     TAccountMarketQuoteVault extends string,
     TAccountAmmProgram extends string,
     TAccountAmmPool extends string,
-    TAccountAmmAuthority extends string,
     TAccountAmmOpenOrders extends string,
     TAccountAmmLpMint extends string,
     TAccountAmmBaseVault extends string,
     TAccountAmmQuoteVault extends string,
     TAccountAmmTargetOrders extends string,
-    TAccountAmmConfig extends string,
     TAccountAmmCreateFeeDestination extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountGlobalConfig extends string,
     TAccountBaseVault extends string,
     TAccountQuoteVault extends string,
     TAccountPoolLpToken extends string,
-    TAccountSplTokenProgram extends string,
-    TAccountAssociatedTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountRentProgram extends string,
 >(
     input: MigrateToAmmAsyncInput<
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,
-        TAccountOpenbookProgram,
         TAccountMarket,
         TAccountRequestQueue,
         TAccountEventQueue,
@@ -347,24 +311,17 @@ export async function getMigrateToAmmInstructionAsync<
         TAccountMarketQuoteVault,
         TAccountAmmProgram,
         TAccountAmmPool,
-        TAccountAmmAuthority,
         TAccountAmmOpenOrders,
         TAccountAmmLpMint,
         TAccountAmmBaseVault,
         TAccountAmmQuoteVault,
         TAccountAmmTargetOrders,
-        TAccountAmmConfig,
         TAccountAmmCreateFeeDestination,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountGlobalConfig,
         TAccountBaseVault,
         TAccountQuoteVault,
-        TAccountPoolLpToken,
-        TAccountSplTokenProgram,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram
+        TAccountPoolLpToken
     >,
 ): Promise<
     MigrateToAmmInstruction<
@@ -372,7 +329,7 @@ export async function getMigrateToAmmInstructionAsync<
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,
-        TAccountOpenbookProgram,
+        'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX',
         TAccountMarket,
         TAccountRequestQueue,
         TAccountEventQueue,
@@ -383,24 +340,24 @@ export async function getMigrateToAmmInstructionAsync<
         TAccountMarketQuoteVault,
         TAccountAmmProgram,
         TAccountAmmPool,
-        TAccountAmmAuthority,
+        '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1',
         TAccountAmmOpenOrders,
         TAccountAmmLpMint,
         TAccountAmmBaseVault,
         TAccountAmmQuoteVault,
         TAccountAmmTargetOrders,
-        TAccountAmmConfig,
+        '9DCxsMizn3H1hprZ7xWe6LDzeUeZBksYFpBWBtSf1PQX',
         TAccountAmmCreateFeeDestination,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountGlobalConfig,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountPoolLpToken,
-        TAccountSplTokenProgram,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -411,7 +368,7 @@ export async function getMigrateToAmmInstructionAsync<
         payer: { value: input.payer ?? null, isWritable: true },
         baseMint: { value: input.baseMint ?? null, isWritable: false },
         quoteMint: { value: input.quoteMint ?? null, isWritable: false },
-        openbookProgram: { value: input.openbookProgram ?? null, isWritable: false },
+        openbookProgram: { value: null, isWritable: false },
         market: { value: input.market ?? null, isWritable: true },
         requestQueue: { value: input.requestQueue ?? null, isWritable: true },
         eventQueue: { value: input.eventQueue ?? null, isWritable: true },
@@ -422,24 +379,24 @@ export async function getMigrateToAmmInstructionAsync<
         marketQuoteVault: { value: input.marketQuoteVault ?? null, isWritable: true },
         ammProgram: { value: input.ammProgram ?? null, isWritable: false },
         ammPool: { value: input.ammPool ?? null, isWritable: true },
-        ammAuthority: { value: input.ammAuthority ?? null, isWritable: false },
+        ammAuthority: { value: null, isWritable: false },
         ammOpenOrders: { value: input.ammOpenOrders ?? null, isWritable: true },
         ammLpMint: { value: input.ammLpMint ?? null, isWritable: true },
         ammBaseVault: { value: input.ammBaseVault ?? null, isWritable: true },
         ammQuoteVault: { value: input.ammQuoteVault ?? null, isWritable: true },
         ammTargetOrders: { value: input.ammTargetOrders ?? null, isWritable: true },
-        ammConfig: { value: input.ammConfig ?? null, isWritable: false },
+        ammConfig: { value: null, isWritable: false },
         ammCreateFeeDestination: { value: input.ammCreateFeeDestination ?? null, isWritable: true },
-        authority: { value: input.authority ?? null, isWritable: true },
+        authority: { value: null, isWritable: true },
         poolState: { value: input.poolState ?? null, isWritable: true },
         globalConfig: { value: input.globalConfig ?? null, isWritable: false },
         baseVault: { value: input.baseVault ?? null, isWritable: true },
         quoteVault: { value: input.quoteVault ?? null, isWritable: true },
         poolLpToken: { value: input.poolLpToken ?? null, isWritable: true },
-        splTokenProgram: { value: input.splTokenProgram ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        rentProgram: { value: input.rentProgram ?? null, isWritable: false },
+        splTokenProgram: { value: null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        rentProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -560,7 +517,7 @@ export async function getMigrateToAmmInstructionAsync<
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,
-        TAccountOpenbookProgram,
+        'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX',
         TAccountMarket,
         TAccountRequestQueue,
         TAccountEventQueue,
@@ -571,24 +528,24 @@ export async function getMigrateToAmmInstructionAsync<
         TAccountMarketQuoteVault,
         TAccountAmmProgram,
         TAccountAmmPool,
-        TAccountAmmAuthority,
+        '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1',
         TAccountAmmOpenOrders,
         TAccountAmmLpMint,
         TAccountAmmBaseVault,
         TAccountAmmQuoteVault,
         TAccountAmmTargetOrders,
-        TAccountAmmConfig,
+        '9DCxsMizn3H1hprZ7xWe6LDzeUeZBksYFpBWBtSf1PQX',
         TAccountAmmCreateFeeDestination,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountGlobalConfig,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountPoolLpToken,
-        TAccountSplTokenProgram,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111'
     >);
 }
 
@@ -596,7 +553,6 @@ export type MigrateToAmmInput<
     TAccountPayer extends string = string,
     TAccountBaseMint extends string = string,
     TAccountQuoteMint extends string = string,
-    TAccountOpenbookProgram extends string = string,
     TAccountMarket extends string = string,
     TAccountRequestQueue extends string = string,
     TAccountEventQueue extends string = string,
@@ -607,24 +563,17 @@ export type MigrateToAmmInput<
     TAccountMarketQuoteVault extends string = string,
     TAccountAmmProgram extends string = string,
     TAccountAmmPool extends string = string,
-    TAccountAmmAuthority extends string = string,
     TAccountAmmOpenOrders extends string = string,
     TAccountAmmLpMint extends string = string,
     TAccountAmmBaseVault extends string = string,
     TAccountAmmQuoteVault extends string = string,
     TAccountAmmTargetOrders extends string = string,
-    TAccountAmmConfig extends string = string,
     TAccountAmmCreateFeeDestination extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountGlobalConfig extends string = string,
     TAccountBaseVault extends string = string,
     TAccountQuoteVault extends string = string,
     TAccountPoolLpToken extends string = string,
-    TAccountSplTokenProgram extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountRentProgram extends string = string,
 > = {
     /**
      * Only migrate_to_amm_wallet can migrate to cpswap pool
@@ -635,7 +584,6 @@ export type MigrateToAmmInput<
     baseMint: Address<TAccountBaseMint>;
     /** The mint for the quote token (token used to buy) */
     quoteMint: Address<TAccountQuoteMint>;
-    openbookProgram?: Address<TAccountOpenbookProgram>;
     /** Account created and asigned to openbook_program but not been initialized */
     market: Address<TAccountMarket>;
     /** Account created and asigned to openbook_program but not been initialized */
@@ -653,19 +601,12 @@ export type MigrateToAmmInput<
     marketQuoteVault: Address<TAccountMarketQuoteVault>;
     ammProgram?: Address<TAccountAmmProgram>;
     ammPool: Address<TAccountAmmPool>;
-    ammAuthority?: Address<TAccountAmmAuthority>;
     ammOpenOrders: Address<TAccountAmmOpenOrders>;
     ammLpMint: Address<TAccountAmmLpMint>;
     ammBaseVault: Address<TAccountAmmBaseVault>;
     ammQuoteVault: Address<TAccountAmmQuoteVault>;
     ammTargetOrders: Address<TAccountAmmTargetOrders>;
-    ammConfig?: Address<TAccountAmmConfig>;
     ammCreateFeeDestination: Address<TAccountAmmCreateFeeDestination>;
-    /**
-     * PDA that acts as the authority for pool vault operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -684,17 +625,6 @@ export type MigrateToAmmInput<
      */
     quoteVault: Address<TAccountQuoteVault>;
     poolLpToken: Address<TAccountPoolLpToken>;
-    /**
-     * SPL Token program for the base token
-     * Must be the standard Token program
-     */
-    splTokenProgram?: Address<TAccountSplTokenProgram>;
-    /** Program to create an ATA for receiving fee NFT */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for rent exempt calculations */
-    rentProgram?: Address<TAccountRentProgram>;
     baseLotSize: MigrateToAmmInstructionDataArgs['baseLotSize'];
     quoteLotSize: MigrateToAmmInstructionDataArgs['quoteLotSize'];
     marketVaultSignerNonce: MigrateToAmmInstructionDataArgs['marketVaultSignerNonce'];
@@ -704,7 +634,6 @@ export function getMigrateToAmmInstruction<
     TAccountPayer extends string,
     TAccountBaseMint extends string,
     TAccountQuoteMint extends string,
-    TAccountOpenbookProgram extends string,
     TAccountMarket extends string,
     TAccountRequestQueue extends string,
     TAccountEventQueue extends string,
@@ -715,30 +644,22 @@ export function getMigrateToAmmInstruction<
     TAccountMarketQuoteVault extends string,
     TAccountAmmProgram extends string,
     TAccountAmmPool extends string,
-    TAccountAmmAuthority extends string,
     TAccountAmmOpenOrders extends string,
     TAccountAmmLpMint extends string,
     TAccountAmmBaseVault extends string,
     TAccountAmmQuoteVault extends string,
     TAccountAmmTargetOrders extends string,
-    TAccountAmmConfig extends string,
     TAccountAmmCreateFeeDestination extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountGlobalConfig extends string,
     TAccountBaseVault extends string,
     TAccountQuoteVault extends string,
     TAccountPoolLpToken extends string,
-    TAccountSplTokenProgram extends string,
-    TAccountAssociatedTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountRentProgram extends string,
 >(
     input: MigrateToAmmInput<
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,
-        TAccountOpenbookProgram,
         TAccountMarket,
         TAccountRequestQueue,
         TAccountEventQueue,
@@ -749,31 +670,24 @@ export function getMigrateToAmmInstruction<
         TAccountMarketQuoteVault,
         TAccountAmmProgram,
         TAccountAmmPool,
-        TAccountAmmAuthority,
         TAccountAmmOpenOrders,
         TAccountAmmLpMint,
         TAccountAmmBaseVault,
         TAccountAmmQuoteVault,
         TAccountAmmTargetOrders,
-        TAccountAmmConfig,
         TAccountAmmCreateFeeDestination,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountGlobalConfig,
         TAccountBaseVault,
         TAccountQuoteVault,
-        TAccountPoolLpToken,
-        TAccountSplTokenProgram,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram
+        TAccountPoolLpToken
     >,
 ): MigrateToAmmInstruction<
     typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPayer,
     TAccountBaseMint,
     TAccountQuoteMint,
-    TAccountOpenbookProgram,
+    'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX',
     TAccountMarket,
     TAccountRequestQueue,
     TAccountEventQueue,
@@ -784,24 +698,24 @@ export function getMigrateToAmmInstruction<
     TAccountMarketQuoteVault,
     TAccountAmmProgram,
     TAccountAmmPool,
-    TAccountAmmAuthority,
+    '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1',
     TAccountAmmOpenOrders,
     TAccountAmmLpMint,
     TAccountAmmBaseVault,
     TAccountAmmQuoteVault,
     TAccountAmmTargetOrders,
-    TAccountAmmConfig,
+    '9DCxsMizn3H1hprZ7xWe6LDzeUeZBksYFpBWBtSf1PQX',
     TAccountAmmCreateFeeDestination,
-    TAccountAuthority,
+    'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState,
     TAccountGlobalConfig,
     TAccountBaseVault,
     TAccountQuoteVault,
     TAccountPoolLpToken,
-    TAccountSplTokenProgram,
-    TAccountAssociatedTokenProgram,
-    TAccountSystemProgram,
-    TAccountRentProgram
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+    '11111111111111111111111111111111',
+    'SysvarRent111111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
@@ -811,7 +725,7 @@ export function getMigrateToAmmInstruction<
         payer: { value: input.payer ?? null, isWritable: true },
         baseMint: { value: input.baseMint ?? null, isWritable: false },
         quoteMint: { value: input.quoteMint ?? null, isWritable: false },
-        openbookProgram: { value: input.openbookProgram ?? null, isWritable: false },
+        openbookProgram: { value: null, isWritable: false },
         market: { value: input.market ?? null, isWritable: true },
         requestQueue: { value: input.requestQueue ?? null, isWritable: true },
         eventQueue: { value: input.eventQueue ?? null, isWritable: true },
@@ -822,24 +736,24 @@ export function getMigrateToAmmInstruction<
         marketQuoteVault: { value: input.marketQuoteVault ?? null, isWritable: true },
         ammProgram: { value: input.ammProgram ?? null, isWritable: false },
         ammPool: { value: input.ammPool ?? null, isWritable: true },
-        ammAuthority: { value: input.ammAuthority ?? null, isWritable: false },
+        ammAuthority: { value: null, isWritable: false },
         ammOpenOrders: { value: input.ammOpenOrders ?? null, isWritable: true },
         ammLpMint: { value: input.ammLpMint ?? null, isWritable: true },
         ammBaseVault: { value: input.ammBaseVault ?? null, isWritable: true },
         ammQuoteVault: { value: input.ammQuoteVault ?? null, isWritable: true },
         ammTargetOrders: { value: input.ammTargetOrders ?? null, isWritable: true },
-        ammConfig: { value: input.ammConfig ?? null, isWritable: false },
+        ammConfig: { value: null, isWritable: false },
         ammCreateFeeDestination: { value: input.ammCreateFeeDestination ?? null, isWritable: true },
-        authority: { value: input.authority ?? null, isWritable: true },
+        authority: { value: null, isWritable: true },
         poolState: { value: input.poolState ?? null, isWritable: true },
         globalConfig: { value: input.globalConfig ?? null, isWritable: false },
         baseVault: { value: input.baseVault ?? null, isWritable: true },
         quoteVault: { value: input.quoteVault ?? null, isWritable: true },
         poolLpToken: { value: input.poolLpToken ?? null, isWritable: true },
-        splTokenProgram: { value: input.splTokenProgram ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        rentProgram: { value: input.rentProgram ?? null, isWritable: false },
+        splTokenProgram: { value: null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        rentProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -924,7 +838,7 @@ export function getMigrateToAmmInstruction<
         TAccountPayer,
         TAccountBaseMint,
         TAccountQuoteMint,
-        TAccountOpenbookProgram,
+        'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX',
         TAccountMarket,
         TAccountRequestQueue,
         TAccountEventQueue,
@@ -935,24 +849,24 @@ export function getMigrateToAmmInstruction<
         TAccountMarketQuoteVault,
         TAccountAmmProgram,
         TAccountAmmPool,
-        TAccountAmmAuthority,
+        '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1',
         TAccountAmmOpenOrders,
         TAccountAmmLpMint,
         TAccountAmmBaseVault,
         TAccountAmmQuoteVault,
         TAccountAmmTargetOrders,
-        TAccountAmmConfig,
+        '9DCxsMizn3H1hprZ7xWe6LDzeUeZBksYFpBWBtSf1PQX',
         TAccountAmmCreateFeeDestination,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountGlobalConfig,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountPoolLpToken,
-        TAccountSplTokenProgram,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111'
     >);
 }
 

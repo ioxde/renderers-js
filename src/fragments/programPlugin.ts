@@ -14,6 +14,7 @@ import {
     Fragment,
     fragment,
     getAsyncScope,
+    getFixedInstructionAccounts,
     getInstructionInputShape,
     hasAsyncFunction,
     mergeFragments,
@@ -70,7 +71,20 @@ export function getProgramPluginPageFragment(
         )
         .map(i => i.name);
 
-    const extendedScope = { ...scope, asyncInstructions, asyncScopes };
+    // Same policy the instruction pages use, so the plugin's input types match the builders'.
+    const fixedAccounts = new Map<CamelCaseString, ReadonlyMap<CamelCaseString, string>>(
+        (scope.programNode.instructions ?? []).map(instruction => [
+            instruction.name,
+            getFixedInstructionAccounts({
+                asyncScope: asyncScopes.get(instruction.name)!,
+                instructionPath: [...scope.programPath, instruction],
+                linkables: scope.linkables,
+                useAsync: asyncInstructions.includes(instruction.name),
+            }),
+        ]),
+    );
+
+    const extendedScope = { ...scope, asyncInstructions, asyncScopes, fixedAccounts };
     return mergeFragments(
         [
             getProgramPluginTypeFragment(extendedScope),
@@ -191,10 +205,11 @@ function getProgramPluginInstructionsTypeFragment(
     scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
         asyncInstructions: CamelCaseString[];
         asyncScopes: Map<CamelCaseString, AsyncScope>;
+        fixedAccounts: Map<CamelCaseString, ReadonlyMap<CamelCaseString, string>>;
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
-    const { programNode, asyncInstructions, asyncScopes, customInstructionData, nameApi } = scope;
+    const { programNode, asyncInstructions, asyncScopes, customInstructionData, fixedAccounts, nameApi } = scope;
     if ((programNode.instructions ?? []).length === 0) return;
     const programPluginInstructionsType = nameApi.programPluginInstructionsType(programNode.name);
     const selfPlanAndSendFunctions = use('type SelfPlanAndSendFunctions', 'solanaProgramClientCore');
@@ -214,6 +229,7 @@ function getProgramPluginInstructionsTypeFragment(
             // renders a zero-parameter builder, so the plugin method takes nothing either.
             const { hasInput } = getInstructionInputShape(instruction, {
                 asyncScope: asyncScopes.get(instruction.name)!,
+                fixedAccounts: fixedAccounts.get(instruction.name)!,
                 hasCustomData: customInstructionData.has(instruction.name),
                 useAsync: isAsync,
             });
@@ -304,6 +320,7 @@ function getProgramPluginFunctionFragment(
     scope: Pick<RenderScope, 'customInstructionData' | 'nameApi' | 'renderParentInstructions'> & {
         asyncInstructions: CamelCaseString[];
         asyncScopes: Map<CamelCaseString, AsyncScope>;
+        fixedAccounts: Map<CamelCaseString, ReadonlyMap<CamelCaseString, string>>;
         programNode: ProgramNode;
     },
 ): Fragment {
@@ -398,10 +415,11 @@ function getProgramPluginInstructionsObjectFragment(
     scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
         asyncInstructions: CamelCaseString[];
         asyncScopes: Map<CamelCaseString, AsyncScope>;
+        fixedAccounts: Map<CamelCaseString, ReadonlyMap<CamelCaseString, string>>;
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
-    const { programNode, nameApi, asyncInstructions, asyncScopes, customInstructionData } = scope;
+    const { programNode, nameApi, asyncInstructions, asyncScopes, customInstructionData, fixedAccounts } = scope;
     if ((programNode.instructions ?? []).length === 0) return;
 
     const fields = mergeFragments(
@@ -418,6 +436,7 @@ function getProgramPluginInstructionsObjectFragment(
             // zero-parameter builder, so the plugin must not hand it an input object.
             const { hasInput } = getInstructionInputShape(instruction, {
                 asyncScope: asyncScopes.get(instruction.name)!,
+                fixedAccounts: fixedAccounts.get(instruction.name)!,
                 hasCustomData: customInstructionData.has(instruction.name),
                 useAsync: isAsync,
             });

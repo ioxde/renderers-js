@@ -752,12 +752,13 @@ test('it renders no async builder when a resolved PDA was the only asynchronous 
         'MyInstructionAsyncInput',
     ]);
 
-    // And the sync builder applies the default, so the input type marks the account optional.
+    // And the sync builder assigns the constant itself; the account is not a caller-facing input at all.
     await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
-        'export type MyInstructionInput',
-        'foo?: Address<TAccountFoo>;',
+        'export function getMyInstructionInstruction()',
+        'const originalAccounts = { foo: { value: null, isWritable: false } }',
         'accounts.foo.value = FOO_PDA_ADDRESS;',
     ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', ['export type MyInstructionInput']);
 });
 
 test('it still renders an async builder when another default remains asynchronous', async () => {

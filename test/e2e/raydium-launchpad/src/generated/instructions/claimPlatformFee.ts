@@ -114,23 +114,14 @@ export function getClaimPlatformFeeInstructionDataCodec(): FixedSizeCodec<
 
 export type ClaimPlatformFeeAsyncInput<
     TAccountPlatformFeeWallet extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountPlatformConfig extends string = string,
     TAccountQuoteVault extends string = string,
     TAccountRecipientTokenAccount extends string = string,
     TAccountQuoteMint extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
 > = {
     /** Only the wallet stored in platform_config can collect platform fees */
     platformFeeWallet: TransactionSigner<TAccountPlatformFeeWallet>;
-    /**
-     * PDA that acts as the authority for pool vault and mint operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -143,51 +134,37 @@ export type ClaimPlatformFeeAsyncInput<
     recipientTokenAccount?: Address<TAccountRecipientTokenAccount>;
     /** The mint of quote token vault */
     quoteMint: Address<TAccountQuoteMint>;
-    /** SPL program for input token transfers */
-    tokenProgram?: Address<TAccountTokenProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for associated token program */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
 };
 
 export async function getClaimPlatformFeeInstructionAsync<
     TAccountPlatformFeeWallet extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountPlatformConfig extends string,
     TAccountQuoteVault extends string,
     TAccountRecipientTokenAccount extends string,
     TAccountQuoteMint extends string,
-    TAccountTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountAssociatedTokenProgram extends string,
 >(
     input: ClaimPlatformFeeAsyncInput<
         TAccountPlatformFeeWallet,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountPlatformConfig,
         TAccountQuoteVault,
         TAccountRecipientTokenAccount,
-        TAccountQuoteMint,
-        TAccountTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        TAccountQuoteMint
     >,
 ): Promise<
     ClaimPlatformFeeInstruction<
         typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformFeeWallet,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountPlatformConfig,
         TAccountQuoteVault,
         TAccountRecipientTokenAccount,
         TAccountQuoteMint,
-        TAccountTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        '11111111111111111111111111111111',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     >
 > {
     // Program address.
@@ -196,15 +173,15 @@ export async function getClaimPlatformFeeInstructionAsync<
     // Original accounts.
     const originalAccounts = {
         platformFeeWallet: { value: input.platformFeeWallet ?? null, isWritable: true },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         platformConfig: { value: input.platformConfig ?? null, isWritable: false },
         quoteVault: { value: input.quoteVault ?? null, isWritable: true },
         recipientTokenAccount: { value: input.recipientTokenAccount ?? null, isWritable: true },
         quoteMint: { value: input.quoteMint ?? null, isWritable: false },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -264,37 +241,28 @@ export async function getClaimPlatformFeeInstructionAsync<
     } as ClaimPlatformFeeInstruction<
         typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformFeeWallet,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountPlatformConfig,
         TAccountQuoteVault,
         TAccountRecipientTokenAccount,
         TAccountQuoteMint,
-        TAccountTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        '11111111111111111111111111111111',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     >);
 }
 
 export type ClaimPlatformFeeInput<
     TAccountPlatformFeeWallet extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountPlatformConfig extends string = string,
     TAccountQuoteVault extends string = string,
     TAccountRecipientTokenAccount extends string = string,
     TAccountQuoteMint extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
 > = {
     /** Only the wallet stored in platform_config can collect platform fees */
     platformFeeWallet: TransactionSigner<TAccountPlatformFeeWallet>;
-    /**
-     * PDA that acts as the authority for pool vault and mint operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -307,50 +275,36 @@ export type ClaimPlatformFeeInput<
     recipientTokenAccount: Address<TAccountRecipientTokenAccount>;
     /** The mint of quote token vault */
     quoteMint: Address<TAccountQuoteMint>;
-    /** SPL program for input token transfers */
-    tokenProgram?: Address<TAccountTokenProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for associated token program */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
 };
 
 export function getClaimPlatformFeeInstruction<
     TAccountPlatformFeeWallet extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountPlatformConfig extends string,
     TAccountQuoteVault extends string,
     TAccountRecipientTokenAccount extends string,
     TAccountQuoteMint extends string,
-    TAccountTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountAssociatedTokenProgram extends string,
 >(
     input: ClaimPlatformFeeInput<
         TAccountPlatformFeeWallet,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountPlatformConfig,
         TAccountQuoteVault,
         TAccountRecipientTokenAccount,
-        TAccountQuoteMint,
-        TAccountTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        TAccountQuoteMint
     >,
 ): ClaimPlatformFeeInstruction<
     typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPlatformFeeWallet,
-    TAccountAuthority,
+    'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState,
     TAccountPlatformConfig,
     TAccountQuoteVault,
     TAccountRecipientTokenAccount,
     TAccountQuoteMint,
-    TAccountTokenProgram,
-    TAccountSystemProgram,
-    TAccountAssociatedTokenProgram
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    '11111111111111111111111111111111',
+    'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
 > {
     // Program address.
     const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
@@ -358,15 +312,15 @@ export function getClaimPlatformFeeInstruction<
     // Original accounts.
     const originalAccounts = {
         platformFeeWallet: { value: input.platformFeeWallet ?? null, isWritable: true },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         platformConfig: { value: input.platformConfig ?? null, isWritable: false },
         quoteVault: { value: input.quoteVault ?? null, isWritable: true },
         recipientTokenAccount: { value: input.recipientTokenAccount ?? null, isWritable: true },
         quoteMint: { value: input.quoteMint ?? null, isWritable: false },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -406,15 +360,15 @@ export function getClaimPlatformFeeInstruction<
     } as ClaimPlatformFeeInstruction<
         typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPlatformFeeWallet,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountPlatformConfig,
         TAccountQuoteVault,
         TAccountRecipientTokenAccount,
         TAccountQuoteMint,
-        TAccountTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        '11111111111111111111111111111111',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     >);
 }
 

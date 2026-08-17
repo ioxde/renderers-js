@@ -111,7 +111,6 @@ export type CreateVestingAccountAsyncInput<
     TAccountBeneficiary extends string = string,
     TAccountPoolState extends string = string,
     TAccountVestingRecord extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     /**
      * The account paying for the initialization costs
@@ -123,8 +122,6 @@ export type CreateVestingAccountAsyncInput<
     poolState: Address<TAccountPoolState>;
     /** The vesting record account */
     vestingRecord?: Address<TAccountVestingRecord>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
     shareAmount: CreateVestingAccountInstructionDataArgs['shareAmount'];
 };
 
@@ -133,14 +130,12 @@ export async function getCreateVestingAccountInstructionAsync<
     TAccountBeneficiary extends string,
     TAccountPoolState extends string,
     TAccountVestingRecord extends string,
-    TAccountSystemProgram extends string,
 >(
     input: CreateVestingAccountAsyncInput<
         TAccountCreator,
         TAccountBeneficiary,
         TAccountPoolState,
-        TAccountVestingRecord,
-        TAccountSystemProgram
+        TAccountVestingRecord
     >,
 ): Promise<
     CreateVestingAccountInstruction<
@@ -149,7 +144,7 @@ export async function getCreateVestingAccountInstructionAsync<
         TAccountBeneficiary,
         TAccountPoolState,
         TAccountVestingRecord,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -161,7 +156,7 @@ export async function getCreateVestingAccountInstructionAsync<
         beneficiary: { value: input.beneficiary ?? null, isWritable: true },
         poolState: { value: input.poolState ?? null, isWritable: true },
         vestingRecord: { value: input.vestingRecord ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -197,7 +192,7 @@ export async function getCreateVestingAccountInstructionAsync<
         TAccountBeneficiary,
         TAccountPoolState,
         TAccountVestingRecord,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 
@@ -206,7 +201,6 @@ export type CreateVestingAccountInput<
     TAccountBeneficiary extends string = string,
     TAccountPoolState extends string = string,
     TAccountVestingRecord extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     /**
      * The account paying for the initialization costs
@@ -218,8 +212,6 @@ export type CreateVestingAccountInput<
     poolState: Address<TAccountPoolState>;
     /** The vesting record account */
     vestingRecord: Address<TAccountVestingRecord>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
     shareAmount: CreateVestingAccountInstructionDataArgs['shareAmount'];
 };
 
@@ -228,22 +220,15 @@ export function getCreateVestingAccountInstruction<
     TAccountBeneficiary extends string,
     TAccountPoolState extends string,
     TAccountVestingRecord extends string,
-    TAccountSystemProgram extends string,
 >(
-    input: CreateVestingAccountInput<
-        TAccountCreator,
-        TAccountBeneficiary,
-        TAccountPoolState,
-        TAccountVestingRecord,
-        TAccountSystemProgram
-    >,
+    input: CreateVestingAccountInput<TAccountCreator, TAccountBeneficiary, TAccountPoolState, TAccountVestingRecord>,
 ): CreateVestingAccountInstruction<
     typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountCreator,
     TAccountBeneficiary,
     TAccountPoolState,
     TAccountVestingRecord,
-    TAccountSystemProgram
+    '11111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
@@ -254,7 +239,7 @@ export function getCreateVestingAccountInstruction<
         beneficiary: { value: input.beneficiary ?? null, isWritable: true },
         poolState: { value: input.poolState ?? null, isWritable: true },
         vestingRecord: { value: input.vestingRecord ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -284,7 +269,7 @@ export function getCreateVestingAccountInstruction<
         TAccountBeneficiary,
         TAccountPoolState,
         TAccountVestingRecord,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 

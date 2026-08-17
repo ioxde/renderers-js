@@ -166,19 +166,12 @@ export type InitializeAsyncInput<
     TAccountCreator extends string = string,
     TAccountGlobalConfig extends string = string,
     TAccountPlatformConfig extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountBaseMint extends string = string,
     TAccountQuoteMint extends string = string,
     TAccountBaseVault extends string = string,
     TAccountQuoteVault extends string = string,
     TAccountMetadataAccount extends string = string,
-    TAccountBaseTokenProgram extends string = string,
-    TAccountQuoteTokenProgram extends string = string,
-    TAccountMetadataProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountRentProgram extends string = string,
-    TAccountEventAuthority extends string = string,
     TAccountProgram extends string = string,
 > = {
     /**
@@ -197,11 +190,6 @@ export type InitializeAsyncInput<
      * Includes settings like the fee_rate, name, web, img of the platform
      */
     platformConfig: Address<TAccountPlatformConfig>;
-    /**
-     * PDA that acts as the authority for pool vault and mint operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -232,23 +220,6 @@ export type InitializeAsyncInput<
      * Created using Metaplex metadata program
      */
     metadataAccount: Address<TAccountMetadataAccount>;
-    /**
-     * SPL Token program for the base token
-     * Must be the standard Token program
-     */
-    baseTokenProgram?: Address<TAccountBaseTokenProgram>;
-    /** SPL Token program for the quote token */
-    quoteTokenProgram?: Address<TAccountQuoteTokenProgram>;
-    /**
-     * Metaplex Token Metadata program
-     * Used to create metadata for the base token
-     */
-    metadataProgram?: Address<TAccountMetadataProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for rent exempt calculations */
-    rentProgram?: Address<TAccountRentProgram>;
-    eventAuthority?: Address<TAccountEventAuthority>;
     program: Address<TAccountProgram>;
     baseMintParam: InitializeInstructionDataArgs['baseMintParam'];
     curveParam: InitializeInstructionDataArgs['curveParam'];
@@ -260,19 +231,12 @@ export async function getInitializeInstructionAsync<
     TAccountCreator extends string,
     TAccountGlobalConfig extends string,
     TAccountPlatformConfig extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountBaseMint extends string,
     TAccountQuoteMint extends string,
     TAccountBaseVault extends string,
     TAccountQuoteVault extends string,
     TAccountMetadataAccount extends string,
-    TAccountBaseTokenProgram extends string,
-    TAccountQuoteTokenProgram extends string,
-    TAccountMetadataProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountRentProgram extends string,
-    TAccountEventAuthority extends string,
     TAccountProgram extends string,
 >(
     input: InitializeAsyncInput<
@@ -280,19 +244,12 @@ export async function getInitializeInstructionAsync<
         TAccountCreator,
         TAccountGlobalConfig,
         TAccountPlatformConfig,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountBaseMint,
         TAccountQuoteMint,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountMetadataAccount,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountMetadataProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram,
-        TAccountEventAuthority,
         TAccountProgram
     >,
 ): Promise<
@@ -302,19 +259,19 @@ export async function getInitializeInstructionAsync<
         TAccountCreator,
         TAccountGlobalConfig,
         TAccountPlatformConfig,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountBaseMint,
         TAccountQuoteMint,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountMetadataAccount,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountMetadataProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram,
-        TAccountEventAuthority,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111',
+        '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
         TAccountProgram
     >
 > {
@@ -327,19 +284,19 @@ export async function getInitializeInstructionAsync<
         creator: { value: input.creator ?? null, isWritable: false },
         globalConfig: { value: input.globalConfig ?? null, isWritable: false },
         platformConfig: { value: input.platformConfig ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         baseMint: { value: input.baseMint ?? null, isWritable: true },
         quoteMint: { value: input.quoteMint ?? null, isWritable: false },
         baseVault: { value: input.baseVault ?? null, isWritable: true },
         quoteVault: { value: input.quoteVault ?? null, isWritable: true },
         metadataAccount: { value: input.metadataAccount ?? null, isWritable: true },
-        baseTokenProgram: { value: input.baseTokenProgram ?? null, isWritable: false },
-        quoteTokenProgram: { value: input.quoteTokenProgram ?? null, isWritable: false },
-        metadataProgram: { value: input.metadataProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        rentProgram: { value: input.rentProgram ?? null, isWritable: false },
-        eventAuthority: { value: input.eventAuthority ?? null, isWritable: false },
+        baseTokenProgram: { value: null, isWritable: false },
+        quoteTokenProgram: { value: null, isWritable: false },
+        metadataProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        rentProgram: { value: null, isWritable: false },
+        eventAuthority: { value: null, isWritable: false },
         program: { value: input.program ?? null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
@@ -423,19 +380,19 @@ export async function getInitializeInstructionAsync<
         TAccountCreator,
         TAccountGlobalConfig,
         TAccountPlatformConfig,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountBaseMint,
         TAccountQuoteMint,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountMetadataAccount,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountMetadataProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram,
-        TAccountEventAuthority,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111',
+        '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
         TAccountProgram
     >);
 }
@@ -445,19 +402,12 @@ export type InitializeInput<
     TAccountCreator extends string = string,
     TAccountGlobalConfig extends string = string,
     TAccountPlatformConfig extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountBaseMint extends string = string,
     TAccountQuoteMint extends string = string,
     TAccountBaseVault extends string = string,
     TAccountQuoteVault extends string = string,
     TAccountMetadataAccount extends string = string,
-    TAccountBaseTokenProgram extends string = string,
-    TAccountQuoteTokenProgram extends string = string,
-    TAccountMetadataProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountRentProgram extends string = string,
-    TAccountEventAuthority extends string = string,
     TAccountProgram extends string = string,
 > = {
     /**
@@ -476,11 +426,6 @@ export type InitializeInput<
      * Includes settings like the fee_rate, name, web, img of the platform
      */
     platformConfig: Address<TAccountPlatformConfig>;
-    /**
-     * PDA that acts as the authority for pool vault and mint operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -511,23 +456,6 @@ export type InitializeInput<
      * Created using Metaplex metadata program
      */
     metadataAccount: Address<TAccountMetadataAccount>;
-    /**
-     * SPL Token program for the base token
-     * Must be the standard Token program
-     */
-    baseTokenProgram?: Address<TAccountBaseTokenProgram>;
-    /** SPL Token program for the quote token */
-    quoteTokenProgram?: Address<TAccountQuoteTokenProgram>;
-    /**
-     * Metaplex Token Metadata program
-     * Used to create metadata for the base token
-     */
-    metadataProgram?: Address<TAccountMetadataProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for rent exempt calculations */
-    rentProgram?: Address<TAccountRentProgram>;
-    eventAuthority?: Address<TAccountEventAuthority>;
     program: Address<TAccountProgram>;
     baseMintParam: InitializeInstructionDataArgs['baseMintParam'];
     curveParam: InitializeInstructionDataArgs['curveParam'];
@@ -539,19 +467,12 @@ export function getInitializeInstruction<
     TAccountCreator extends string,
     TAccountGlobalConfig extends string,
     TAccountPlatformConfig extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountBaseMint extends string,
     TAccountQuoteMint extends string,
     TAccountBaseVault extends string,
     TAccountQuoteVault extends string,
     TAccountMetadataAccount extends string,
-    TAccountBaseTokenProgram extends string,
-    TAccountQuoteTokenProgram extends string,
-    TAccountMetadataProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountRentProgram extends string,
-    TAccountEventAuthority extends string,
     TAccountProgram extends string,
 >(
     input: InitializeInput<
@@ -559,19 +480,12 @@ export function getInitializeInstruction<
         TAccountCreator,
         TAccountGlobalConfig,
         TAccountPlatformConfig,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountBaseMint,
         TAccountQuoteMint,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountMetadataAccount,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountMetadataProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram,
-        TAccountEventAuthority,
         TAccountProgram
     >,
 ): InitializeInstruction<
@@ -580,19 +494,19 @@ export function getInitializeInstruction<
     TAccountCreator,
     TAccountGlobalConfig,
     TAccountPlatformConfig,
-    TAccountAuthority,
+    'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState,
     TAccountBaseMint,
     TAccountQuoteMint,
     TAccountBaseVault,
     TAccountQuoteVault,
     TAccountMetadataAccount,
-    TAccountBaseTokenProgram,
-    TAccountQuoteTokenProgram,
-    TAccountMetadataProgram,
-    TAccountSystemProgram,
-    TAccountRentProgram,
-    TAccountEventAuthority,
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
+    '11111111111111111111111111111111',
+    'SysvarRent111111111111111111111111111111111',
+    '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
     TAccountProgram
 > {
     // Program address.
@@ -604,19 +518,19 @@ export function getInitializeInstruction<
         creator: { value: input.creator ?? null, isWritable: false },
         globalConfig: { value: input.globalConfig ?? null, isWritable: false },
         platformConfig: { value: input.platformConfig ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         baseMint: { value: input.baseMint ?? null, isWritable: true },
         quoteMint: { value: input.quoteMint ?? null, isWritable: false },
         baseVault: { value: input.baseVault ?? null, isWritable: true },
         quoteVault: { value: input.quoteVault ?? null, isWritable: true },
         metadataAccount: { value: input.metadataAccount ?? null, isWritable: true },
-        baseTokenProgram: { value: input.baseTokenProgram ?? null, isWritable: false },
-        quoteTokenProgram: { value: input.quoteTokenProgram ?? null, isWritable: false },
-        metadataProgram: { value: input.metadataProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        rentProgram: { value: input.rentProgram ?? null, isWritable: false },
-        eventAuthority: { value: input.eventAuthority ?? null, isWritable: false },
+        baseTokenProgram: { value: null, isWritable: false },
+        quoteTokenProgram: { value: null, isWritable: false },
+        metadataProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        rentProgram: { value: null, isWritable: false },
+        eventAuthority: { value: null, isWritable: false },
         program: { value: input.program ?? null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
@@ -682,19 +596,19 @@ export function getInitializeInstruction<
         TAccountCreator,
         TAccountGlobalConfig,
         TAccountPlatformConfig,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountBaseMint,
         TAccountQuoteMint,
         TAccountBaseVault,
         TAccountQuoteVault,
         TAccountMetadataAccount,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountMetadataProgram,
-        TAccountSystemProgram,
-        TAccountRentProgram,
-        TAccountEventAuthority,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111',
+        '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
         TAccountProgram
     >);
 }

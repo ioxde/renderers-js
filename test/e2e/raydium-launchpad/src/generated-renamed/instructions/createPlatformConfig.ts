@@ -148,7 +148,6 @@ export type CreatePlatformConfigAsyncInput<
     TAccountPlatformFeeWallet extends string = string,
     TAccountPlatformNftWallet extends string = string,
     TAccountPlatformConfig extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     /** The account paying for the initialization costs */
     platformAdmin: TransactionSigner<TAccountPlatformAdmin>;
@@ -156,8 +155,6 @@ export type CreatePlatformConfigAsyncInput<
     platformNftWallet: Address<TAccountPlatformNftWallet>;
     /** The platform config account */
     platformConfig?: Address<TAccountPlatformConfig>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
     migrateNftInfo: CreatePlatformConfigInstructionDataArgs['migrateNftInfo'];
     feeRate: CreatePlatformConfigInstructionDataArgs['feeRate'];
     name: CreatePlatformConfigInstructionDataArgs['name'];
@@ -170,14 +167,12 @@ export async function getCreatePlatformConfigInstructionAsync<
     TAccountPlatformFeeWallet extends string,
     TAccountPlatformNftWallet extends string,
     TAccountPlatformConfig extends string,
-    TAccountSystemProgram extends string,
 >(
     input: CreatePlatformConfigAsyncInput<
         TAccountPlatformAdmin,
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,
-        TAccountPlatformConfig,
-        TAccountSystemProgram
+        TAccountPlatformConfig
     >,
 ): Promise<
     CreatePlatformConfigInstruction<
@@ -186,7 +181,7 @@ export async function getCreatePlatformConfigInstructionAsync<
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,
         TAccountPlatformConfig,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -198,7 +193,7 @@ export async function getCreatePlatformConfigInstructionAsync<
         platformFeeWallet: { value: input.platformFeeWallet ?? null, isWritable: false },
         platformNftWallet: { value: input.platformNftWallet ?? null, isWritable: false },
         platformConfig: { value: input.platformConfig ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -233,7 +228,7 @@ export async function getCreatePlatformConfigInstructionAsync<
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,
         TAccountPlatformConfig,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 
@@ -242,7 +237,6 @@ export type CreatePlatformConfigInput<
     TAccountPlatformFeeWallet extends string = string,
     TAccountPlatformNftWallet extends string = string,
     TAccountPlatformConfig extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     /** The account paying for the initialization costs */
     platformAdmin: TransactionSigner<TAccountPlatformAdmin>;
@@ -250,8 +244,6 @@ export type CreatePlatformConfigInput<
     platformNftWallet: Address<TAccountPlatformNftWallet>;
     /** The platform config account */
     platformConfig: Address<TAccountPlatformConfig>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
     migrateNftInfo: CreatePlatformConfigInstructionDataArgs['migrateNftInfo'];
     feeRate: CreatePlatformConfigInstructionDataArgs['feeRate'];
     name: CreatePlatformConfigInstructionDataArgs['name'];
@@ -264,14 +256,12 @@ export function getCreatePlatformConfigInstruction<
     TAccountPlatformFeeWallet extends string,
     TAccountPlatformNftWallet extends string,
     TAccountPlatformConfig extends string,
-    TAccountSystemProgram extends string,
 >(
     input: CreatePlatformConfigInput<
         TAccountPlatformAdmin,
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,
-        TAccountPlatformConfig,
-        TAccountSystemProgram
+        TAccountPlatformConfig
     >,
 ): CreatePlatformConfigInstruction<
     typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
@@ -279,7 +269,7 @@ export function getCreatePlatformConfigInstruction<
     TAccountPlatformFeeWallet,
     TAccountPlatformNftWallet,
     TAccountPlatformConfig,
-    TAccountSystemProgram
+    '11111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
@@ -290,7 +280,7 @@ export function getCreatePlatformConfigInstruction<
         platformFeeWallet: { value: input.platformFeeWallet ?? null, isWritable: false },
         platformNftWallet: { value: input.platformNftWallet ?? null, isWritable: false },
         platformConfig: { value: input.platformConfig ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -320,7 +310,7 @@ export function getCreatePlatformConfigInstruction<
         TAccountPlatformFeeWallet,
         TAccountPlatformNftWallet,
         TAccountPlatformConfig,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 

@@ -1,14 +1,7 @@
 /* eslint-disable no-case-declarations */
-import {
-    camelCase,
-    InstructionInputValueNode,
-    InstructionNode,
-    isNode,
-    OptionalAccountStrategy,
-    PdaNode,
-} from '@codama/nodes';
+import { camelCase, InstructionInputValueNode, InstructionNode, isNode, PdaNode } from '@codama/nodes';
 import { mapFragmentContent, setFragmentContent } from '@codama/renderers-core';
-import { NodePath, pipe, ResolvedInstructionInput, visit } from '@codama/visitors-core';
+import { getLastNodeFromPath, NodePath, pipe, ResolvedInstructionInput, visit } from '@codama/visitors-core';
 
 import {
     addFragmentFeatures,
@@ -17,6 +10,8 @@ import {
     Fragment,
     fragment,
     getPdasWithProgramIdOverride,
+    getResolvedPdaValue,
+    isDefaultSkippedForOptionalAccount,
     isDefaultValueAppliedByBuilder,
     isPdaValueFoldedToAddress,
     isPdaValueResolvedAtGenerationTime,
@@ -30,7 +25,6 @@ export function getInstructionInputDefaultFragment(
         asyncScope: AsyncScope;
         input: ResolvedInstructionInput;
         instructionPath: NodePath<InstructionNode>;
-        optionalAccountStrategy: OptionalAccountStrategy;
         useAsync: boolean;
     },
 ): Fragment {
@@ -38,7 +32,6 @@ export function getInstructionInputDefaultFragment(
         input,
         instructionPath,
         linkables,
-        optionalAccountStrategy,
         asyncResolvers,
         asyncScope,
         useAsync,
@@ -51,6 +44,12 @@ export function getInstructionInputDefaultFragment(
     }
 
     if (!isDefaultValueAppliedByBuilder(input.defaultValue, asyncScope, useAsync)) {
+        return fragment``;
+    }
+
+    // An IDL-optional account nothing else reads gets no builder-applied default, for any default
+    // kind, so omitting it stays expressible.
+    if (isDefaultSkippedForOptionalAccount(input, getLastNodeFromPath(instructionPath))) {
         return fragment``;
     }
 
@@ -113,6 +112,19 @@ export function getInstructionInputDefaultFragment(
             }
 
             if (isNode(defaultValue.pda, 'pdaNode')) {
+                // All-constant seeds mean one address; deriving it at runtime would await for a
+                // value already known here. Bump readers keep the tuple.
+                const resolvedInlinePda = getResolvedPdaValue(defaultValue, instructionPath, linkables);
+                if (resolvedInlinePda) {
+                    const { address, bump } = resolvedInlinePda;
+                    const inlineAddress = fragment`'${address}' as ${addressType}<'${address}'>`;
+                    if (isPdaValueFoldedToAddress(defaultValue, input, instructionPath, linkables)) {
+                        return defaultFragment(inlineAddress);
+                    }
+                    const bumpType = use('type ProgramDerivedAddressBump', 'solanaAddresses');
+                    return defaultFragment(fragment`[${inlineAddress}, ${bump} as ${bumpType}]`);
+                }
+
                 // Codama only sets `pda.programId` by resolving this very reference, so the pin takes priority.
                 let pdaProgram = fragment`programAddress`;
                 if (defaultValue.pda.programId) {
@@ -213,13 +225,7 @@ export function getInstructionInputDefaultFragment(
             return defaultFragment(programAddress, false);
 
         case 'programIdValueNode':
-            if (
-                optionalAccountStrategy === 'programId' &&
-                input.kind === 'instructionAccountNode' &&
-                input.isOptional
-            ) {
-                return fragment``;
-            }
+            // No optional-account branch here: one is either skipped above or read by another input.
             return defaultFragment(fragment`programAddress`, false);
 
         case 'accountBumpValueNode':

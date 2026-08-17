@@ -15,22 +15,30 @@ const MAX_SEEDS_WITH_BUMP = MAX_SEEDS - 1;
 
 const PDA_MARKER = 'ProgramDerivedAddress';
 
+/** `find_program_address` counts down from 255 and stops here; bump 0 is never one of its results. */
+const LOWEST_BUMP = 1;
+
 /** A PDA resolved at generation time. `address` is base58. */
 export type ComputedPda = Readonly<{
     address: string;
     bump: number;
 }>;
 
-function isOnCurve(bytes: Uint8Array): boolean {
-    return ed25519.utils.isValidPublicKey(bytes);
+/** Exported only so the regression test can pin it against dalek's semantics. */
+export function isOnCurve(bytes: Uint8Array): boolean {
+    // Solana decompresses with curve25519_dalek's `CompressedEdwardsY::decompress()`, which accepts
+    // non-canonical y encodings (y >= p); `@noble/curves` calls that `zip215` and merely defaults it to
+    // true — a library default, not a contract, so pin it or a bump silently flips on-curve semantics.
+    return ed25519.utils.isValidPublicKey(bytes, true);
 }
 
 /**
- * Mirrors Solana's `Pubkey::find_program_address` and must not diverge from it: seeds in derivation
- * order, `programId` as 32 raw bytes, highest bump first.
+ * Must not diverge from Solana's `Pubkey::find_program_address`: seeds in derivation order, `programId`
+ * as 32 raw bytes, highest bump first. Returns `null` rather than folding a bump-0 address, which would
+ * be a constant no caller could re-derive.
  */
 export function findProgramAddress(seeds: readonly Uint8Array[], programId: Uint8Array): ComputedPda | null {
-    for (let bump = 255; bump >= 0; bump--) {
+    for (let bump = 255; bump >= LOWEST_BUMP; bump--) {
         const hash = sha256.create();
         for (const seed of seeds) {
             hash.update(seed);

@@ -112,23 +112,14 @@ export function getClaimVestedTokenInstructionDataCodec(): FixedSizeCodec<
 
 export type ClaimVestedTokenAsyncInput<
     TAccountBeneficiary extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountVestingRecord extends string = string,
     TAccountBaseVault extends string = string,
     TAccountUserBaseToken extends string = string,
     TAccountBaseTokenMint extends string = string,
-    TAccountBaseTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
 > = {
     /** The beneficiary of the vesting account */
     beneficiary: TransactionSigner<TAccountBeneficiary>;
-    /**
-     * PDA that acts as the authority for pool vault and mint operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -147,54 +138,37 @@ export type ClaimVestedTokenAsyncInput<
      * Created in this instruction with specified decimals
      */
     baseTokenMint: Address<TAccountBaseTokenMint>;
-    /**
-     * SPL Token program for the base token
-     * Must be the standard Token program
-     */
-    baseTokenProgram?: Address<TAccountBaseTokenProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for associated token program */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
 };
 
 export async function getClaimVestedTokenInstructionAsync<
     TAccountBeneficiary extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountVestingRecord extends string,
     TAccountBaseVault extends string,
     TAccountUserBaseToken extends string,
     TAccountBaseTokenMint extends string,
-    TAccountBaseTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountAssociatedTokenProgram extends string,
 >(
     input: ClaimVestedTokenAsyncInput<
         TAccountBeneficiary,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountVestingRecord,
         TAccountBaseVault,
         TAccountUserBaseToken,
-        TAccountBaseTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        TAccountBaseTokenMint
     >,
 ): Promise<
     ClaimVestedTokenInstruction<
         typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountBeneficiary,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountVestingRecord,
         TAccountBaseVault,
         TAccountUserBaseToken,
         TAccountBaseTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        '11111111111111111111111111111111',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     >
 > {
     // Program address.
@@ -203,15 +177,15 @@ export async function getClaimVestedTokenInstructionAsync<
     // Original accounts.
     const originalAccounts = {
         beneficiary: { value: input.beneficiary ?? null, isWritable: true },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         vestingRecord: { value: input.vestingRecord ?? null, isWritable: true },
         baseVault: { value: input.baseVault ?? null, isWritable: true },
         userBaseToken: { value: input.userBaseToken ?? null, isWritable: true },
         baseTokenMint: { value: input.baseTokenMint ?? null, isWritable: false },
-        baseTokenProgram: { value: input.baseTokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
+        baseTokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -257,37 +231,28 @@ export async function getClaimVestedTokenInstructionAsync<
     } as ClaimVestedTokenInstruction<
         typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountBeneficiary,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountVestingRecord,
         TAccountBaseVault,
         TAccountUserBaseToken,
         TAccountBaseTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        '11111111111111111111111111111111',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     >);
 }
 
 export type ClaimVestedTokenInput<
     TAccountBeneficiary extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountVestingRecord extends string = string,
     TAccountBaseVault extends string = string,
     TAccountUserBaseToken extends string = string,
     TAccountBaseTokenMint extends string = string,
-    TAccountBaseTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
 > = {
     /** The beneficiary of the vesting account */
     beneficiary: TransactionSigner<TAccountBeneficiary>;
-    /**
-     * PDA that acts as the authority for pool vault and mint operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -306,53 +271,36 @@ export type ClaimVestedTokenInput<
      * Created in this instruction with specified decimals
      */
     baseTokenMint: Address<TAccountBaseTokenMint>;
-    /**
-     * SPL Token program for the base token
-     * Must be the standard Token program
-     */
-    baseTokenProgram?: Address<TAccountBaseTokenProgram>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Required for associated token program */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
 };
 
 export function getClaimVestedTokenInstruction<
     TAccountBeneficiary extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountVestingRecord extends string,
     TAccountBaseVault extends string,
     TAccountUserBaseToken extends string,
     TAccountBaseTokenMint extends string,
-    TAccountBaseTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountAssociatedTokenProgram extends string,
 >(
     input: ClaimVestedTokenInput<
         TAccountBeneficiary,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountVestingRecord,
         TAccountBaseVault,
         TAccountUserBaseToken,
-        TAccountBaseTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        TAccountBaseTokenMint
     >,
 ): ClaimVestedTokenInstruction<
     typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountBeneficiary,
-    TAccountAuthority,
+    'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState,
     TAccountVestingRecord,
     TAccountBaseVault,
     TAccountUserBaseToken,
     TAccountBaseTokenMint,
-    TAccountBaseTokenProgram,
-    TAccountSystemProgram,
-    TAccountAssociatedTokenProgram
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    '11111111111111111111111111111111',
+    'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
 > {
     // Program address.
     const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
@@ -360,15 +308,15 @@ export function getClaimVestedTokenInstruction<
     // Original accounts.
     const originalAccounts = {
         beneficiary: { value: input.beneficiary ?? null, isWritable: true },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         vestingRecord: { value: input.vestingRecord ?? null, isWritable: true },
         baseVault: { value: input.baseVault ?? null, isWritable: true },
         userBaseToken: { value: input.userBaseToken ?? null, isWritable: true },
         baseTokenMint: { value: input.baseTokenMint ?? null, isWritable: false },
-        baseTokenProgram: { value: input.baseTokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
+        baseTokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -408,15 +356,15 @@ export function getClaimVestedTokenInstruction<
     } as ClaimVestedTokenInstruction<
         typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountBeneficiary,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountPoolState,
         TAccountVestingRecord,
         TAccountBaseVault,
         TAccountUserBaseToken,
         TAccountBaseTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountSystemProgram,
-        TAccountAssociatedTokenProgram
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        '11111111111111111111111111111111',
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
     >);
 }
 

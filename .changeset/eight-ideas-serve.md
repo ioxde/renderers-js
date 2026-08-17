@@ -1,0 +1,17 @@
+---
+'@codama/renderers-js': major
+---
+
+Stop applying default values to IDL-optional instruction accounts, so that omitting one is expressible again. An account marked optional in the IDL is one the on-chain program branches on the absence of, which is not the same thing as the account being present at its derived or pinned address. The builder nevertheless filled every such account in: passing nothing for an optional account with a PDA default silently derived the PDA, and an optional account pinned by an `address =` constraint was silently set to that address. A caller could therefore never take the code path the program's `Option<AccountInfo>` exists to serve.
+
+Optional accounts now receive no builder-applied default, whatever the default's kind. Omitting one leaves its resolved value unset and `getAccountMeta` handles it as it always has, per `optionalAccountStrategy` — dropped from the account metas under `omitted`, replaced by the program address under `programId`. A caller who wants the derived or pinned address passes it explicitly, calling the generated `find<Pda>` helper where one applies.
+
+Two exceptions survive, mirroring the two the fixed-account rule already draws, and for the same reason: something would otherwise read a value no builder assigned. An optional account another input derives from — as a PDA seed, a bump, or an account field — keeps its default, because that reader resolves the account's value rather than its account meta and would throw on a null. And every optional account in an instruction containing a resolver keeps its default, because a resolver body is opaque to this renderer and may read any account in the instruction, so none of them can be shown to be unread. Omission stays out of reach for those accounts, exactly as it was.
+
+Two consequences follow. The synchronous and asynchronous builders now agree about optional accounts: previously the synchronous one already skipped an asynchronous PDA default because it cannot await, while the asynchronous one applied it, so whether omission worked depended on which builder you called. And an instruction whose only asynchronous default belonged to an optional account no longer renders an `…Async` variant at all, since nothing in it awaits any more; call the synchronous builder instead. An instruction that still derives such an account keeps its `…Async` variant, because deriving it still awaits.
+
+Under the `omitted` strategy the change reaches the account metas themselves: an optional account that used to be filled in can now drop out of the list entirely, shifting the positional index of every account after it. The generated code already models that — the instruction type builds its account tuple conditionally on the account being present, and the parse helper allocates optional slots against the metas actually received rather than fixed positions — so this is the strategy behaving as documented, on a path that was unreachable for a defaulted account before.
+
+An extra argument whose only reader was such a default follows it: nothing consumes the value any more, so both input types now mark the argument optional rather than demanding one the builder discards.
+
+This is a breaking change for callers who relied on the derivation happening for them. Code that omitted such an account and expected it to be filled in must now pass it, or accept that it is genuinely absent — which is what the IDL said all along.

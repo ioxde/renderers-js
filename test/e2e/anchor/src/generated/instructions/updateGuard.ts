@@ -142,15 +142,11 @@ export type UpdateGuardAsyncInput<
     TAccountMint extends string = string,
     TAccountTokenAccount extends string = string,
     TAccountGuardAuthority extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     guard?: Address<TAccountGuard>;
     mint: Address<TAccountMint>;
     tokenAccount?: Address<TAccountTokenAccount>;
     guardAuthority: TransactionSigner<TAccountGuardAuthority>;
-    tokenProgram?: Address<TAccountTokenProgram>;
-    systemProgram?: Address<TAccountSystemProgram>;
     cpiRule: UpdateGuardInstructionDataArgs['cpiRule'];
     transferAmountRule: UpdateGuardInstructionDataArgs['transferAmountRule'];
     additionalFieldsRule: UpdateGuardInstructionDataArgs['additionalFieldsRule'];
@@ -161,17 +157,8 @@ export async function getUpdateGuardInstructionAsync<
     TAccountMint extends string,
     TAccountTokenAccount extends string,
     TAccountGuardAuthority extends string,
-    TAccountTokenProgram extends string,
-    TAccountSystemProgram extends string,
 >(
-    input: UpdateGuardAsyncInput<
-        TAccountGuard,
-        TAccountMint,
-        TAccountTokenAccount,
-        TAccountGuardAuthority,
-        TAccountTokenProgram,
-        TAccountSystemProgram
-    >,
+    input: UpdateGuardAsyncInput<TAccountGuard, TAccountMint, TAccountTokenAccount, TAccountGuardAuthority>,
 ): Promise<
     UpdateGuardInstruction<
         typeof WEN_TRANSFER_GUARD_PROGRAM_ADDRESS,
@@ -179,8 +166,8 @@ export async function getUpdateGuardInstructionAsync<
         TAccountMint,
         TAccountTokenAccount,
         TAccountGuardAuthority,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+        '11111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -192,8 +179,8 @@ export async function getUpdateGuardInstructionAsync<
         mint: { value: input.mint ?? null, isWritable: false },
         tokenAccount: { value: input.tokenAccount ?? null, isWritable: false },
         guardAuthority: { value: input.guardAuthority ?? null, isWritable: false },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -246,8 +233,8 @@ export async function getUpdateGuardInstructionAsync<
         TAccountMint,
         TAccountTokenAccount,
         TAccountGuardAuthority,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+        '11111111111111111111111111111111'
     >);
 }
 
@@ -256,15 +243,11 @@ export type UpdateGuardInput<
     TAccountMint extends string = string,
     TAccountTokenAccount extends string = string,
     TAccountGuardAuthority extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     guard: Address<TAccountGuard>;
     mint: Address<TAccountMint>;
     tokenAccount: Address<TAccountTokenAccount>;
     guardAuthority: TransactionSigner<TAccountGuardAuthority>;
-    tokenProgram?: Address<TAccountTokenProgram>;
-    systemProgram?: Address<TAccountSystemProgram>;
     cpiRule: UpdateGuardInstructionDataArgs['cpiRule'];
     transferAmountRule: UpdateGuardInstructionDataArgs['transferAmountRule'];
     additionalFieldsRule: UpdateGuardInstructionDataArgs['additionalFieldsRule'];
@@ -275,25 +258,16 @@ export function getUpdateGuardInstruction<
     TAccountMint extends string,
     TAccountTokenAccount extends string,
     TAccountGuardAuthority extends string,
-    TAccountTokenProgram extends string,
-    TAccountSystemProgram extends string,
 >(
-    input: UpdateGuardInput<
-        TAccountGuard,
-        TAccountMint,
-        TAccountTokenAccount,
-        TAccountGuardAuthority,
-        TAccountTokenProgram,
-        TAccountSystemProgram
-    >,
+    input: UpdateGuardInput<TAccountGuard, TAccountMint, TAccountTokenAccount, TAccountGuardAuthority>,
 ): UpdateGuardInstruction<
     typeof WEN_TRANSFER_GUARD_PROGRAM_ADDRESS,
     TAccountGuard,
     TAccountMint,
     TAccountTokenAccount,
     TAccountGuardAuthority,
-    TAccountTokenProgram,
-    TAccountSystemProgram
+    'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+    '11111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = WEN_TRANSFER_GUARD_PROGRAM_ADDRESS;
@@ -304,8 +278,8 @@ export function getUpdateGuardInstruction<
         mint: { value: input.mint ?? null, isWritable: false },
         tokenAccount: { value: input.tokenAccount ?? null, isWritable: false },
         guardAuthority: { value: input.guardAuthority ?? null, isWritable: false },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -340,8 +314,8 @@ export function getUpdateGuardInstruction<
         TAccountMint,
         TAccountTokenAccount,
         TAccountGuardAuthority,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+        '11111111111111111111111111111111'
     >);
 }
 

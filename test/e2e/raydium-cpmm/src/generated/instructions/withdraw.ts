@@ -132,23 +132,18 @@ export function getWithdrawInstructionDataCodec(): FixedSizeCodec<
 
 export type WithdrawInput<
     TAccountOwner extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountOwnerLpToken extends string = string,
     TAccountToken0Account extends string = string,
     TAccountToken1Account extends string = string,
     TAccountToken0Vault extends string = string,
     TAccountToken1Vault extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountTokenProgram2022 extends string = string,
     TAccountVault0Mint extends string = string,
     TAccountVault1Mint extends string = string,
     TAccountLpMint extends string = string,
-    TAccountMemoProgram extends string = string,
 > = {
     /** Pays to mint the position */
     owner: TransactionSigner<TAccountOwner>;
-    authority?: Address<TAccountAuthority>;
     /** Pool state account */
     poolState: Address<TAccountPoolState>;
     /** Owner lp token account */
@@ -161,18 +156,12 @@ export type WithdrawInput<
     token0Vault: Address<TAccountToken0Vault>;
     /** The address that holds pool tokens for token_1 */
     token1Vault: Address<TAccountToken1Vault>;
-    /** token Program */
-    tokenProgram?: Address<TAccountTokenProgram>;
-    /** Token program 2022 */
-    tokenProgram2022?: Address<TAccountTokenProgram2022>;
     /** The mint of token_0 vault */
     vault0Mint: Address<TAccountVault0Mint>;
     /** The mint of token_1 vault */
     vault1Mint: Address<TAccountVault1Mint>;
     /** Pool lp token mint */
     lpMint: Address<TAccountLpMint>;
-    /** memo program */
-    memoProgram?: Address<TAccountMemoProgram>;
     lpTokenAmount: WithdrawInstructionDataArgs['lpTokenAmount'];
     minimumToken0Amount: WithdrawInstructionDataArgs['minimumToken0Amount'];
     minimumToken1Amount: WithdrawInstructionDataArgs['minimumToken1Amount'];
@@ -180,52 +169,44 @@ export type WithdrawInput<
 
 export function getWithdrawInstruction<
     TAccountOwner extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountOwnerLpToken extends string,
     TAccountToken0Account extends string,
     TAccountToken1Account extends string,
     TAccountToken0Vault extends string,
     TAccountToken1Vault extends string,
-    TAccountTokenProgram extends string,
-    TAccountTokenProgram2022 extends string,
     TAccountVault0Mint extends string,
     TAccountVault1Mint extends string,
     TAccountLpMint extends string,
-    TAccountMemoProgram extends string,
 >(
     input: WithdrawInput<
         TAccountOwner,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountOwnerLpToken,
         TAccountToken0Account,
         TAccountToken1Account,
         TAccountToken0Vault,
         TAccountToken1Vault,
-        TAccountTokenProgram,
-        TAccountTokenProgram2022,
         TAccountVault0Mint,
         TAccountVault1Mint,
-        TAccountLpMint,
-        TAccountMemoProgram
+        TAccountLpMint
     >,
 ): WithdrawInstruction<
     typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountOwner,
-    TAccountAuthority,
+    'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
     TAccountPoolState,
     TAccountOwnerLpToken,
     TAccountToken0Account,
     TAccountToken1Account,
     TAccountToken0Vault,
     TAccountToken1Vault,
-    TAccountTokenProgram,
-    TAccountTokenProgram2022,
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
     TAccountVault0Mint,
     TAccountVault1Mint,
     TAccountLpMint,
-    TAccountMemoProgram
+    'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
 > {
     // Program address.
     const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
@@ -233,19 +214,19 @@ export function getWithdrawInstruction<
     // Original accounts.
     const originalAccounts = {
         owner: { value: input.owner ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         ownerLpToken: { value: input.ownerLpToken ?? null, isWritable: true },
         token0Account: { value: input.token0Account ?? null, isWritable: true },
         token1Account: { value: input.token1Account ?? null, isWritable: true },
         token0Vault: { value: input.token0Vault ?? null, isWritable: true },
         token1Vault: { value: input.token1Vault ?? null, isWritable: true },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        tokenProgram2022: { value: input.tokenProgram2022 ?? null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
+        tokenProgram2022: { value: null, isWritable: false },
         vault0Mint: { value: input.vault0Mint ?? null, isWritable: false },
         vault1Mint: { value: input.vault1Mint ?? null, isWritable: false },
         lpMint: { value: input.lpMint ?? null, isWritable: true },
-        memoProgram: { value: input.memoProgram ?? null, isWritable: false },
+        memoProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -292,19 +273,19 @@ export function getWithdrawInstruction<
     } as WithdrawInstruction<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
-        TAccountAuthority,
+        'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
         TAccountPoolState,
         TAccountOwnerLpToken,
         TAccountToken0Account,
         TAccountToken1Account,
         TAccountToken0Vault,
         TAccountToken1Vault,
-        TAccountTokenProgram,
-        TAccountTokenProgram2022,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
         TAccountVault0Mint,
         TAccountVault1Mint,
         TAccountLpMint,
-        TAccountMemoProgram
+        'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
     >);
 }
 

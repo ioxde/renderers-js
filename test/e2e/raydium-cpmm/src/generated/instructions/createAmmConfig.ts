@@ -125,13 +125,11 @@ export function getCreateAmmConfigInstructionDataCodec(): FixedSizeCodec<
 export type CreateAmmConfigAsyncInput<
     TAccountOwner extends string = string,
     TAccountAmmConfig extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     /** Address to be set as protocol owner. */
     owner?: TransactionSigner<TAccountOwner>;
     /** Initialize config state account to store protocol owner address and fee rates. */
     ammConfig?: Address<TAccountAmmConfig>;
-    systemProgram?: Address<TAccountSystemProgram>;
     index: CreateAmmConfigInstructionDataArgs['index'];
     tradeFeeRate: CreateAmmConfigInstructionDataArgs['tradeFeeRate'];
     protocolFeeRate: CreateAmmConfigInstructionDataArgs['protocolFeeRate'];
@@ -142,15 +140,14 @@ export type CreateAmmConfigAsyncInput<
 export async function getCreateAmmConfigInstructionAsync<
     TAccountOwner extends string,
     TAccountAmmConfig extends string,
-    TAccountSystemProgram extends string,
 >(
-    input: CreateAmmConfigAsyncInput<TAccountOwner, TAccountAmmConfig, TAccountSystemProgram>,
+    input: CreateAmmConfigAsyncInput<TAccountOwner, TAccountAmmConfig>,
 ): Promise<
     CreateAmmConfigInstruction<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAmmConfig,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -160,7 +157,7 @@ export async function getCreateAmmConfigInstructionAsync<
     const originalAccounts = {
         owner: { value: input.owner ?? null, isWritable: true },
         ammConfig: { value: input.ammConfig ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -195,20 +192,15 @@ export async function getCreateAmmConfigInstructionAsync<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAmmConfig,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 
-export type CreateAmmConfigInput<
-    TAccountOwner extends string = string,
-    TAccountAmmConfig extends string = string,
-    TAccountSystemProgram extends string = string,
-> = {
+export type CreateAmmConfigInput<TAccountOwner extends string = string, TAccountAmmConfig extends string = string> = {
     /** Address to be set as protocol owner. */
     owner?: TransactionSigner<TAccountOwner>;
     /** Initialize config state account to store protocol owner address and fee rates. */
     ammConfig: Address<TAccountAmmConfig>;
-    systemProgram?: Address<TAccountSystemProgram>;
     index: CreateAmmConfigInstructionDataArgs['index'];
     tradeFeeRate: CreateAmmConfigInstructionDataArgs['tradeFeeRate'];
     protocolFeeRate: CreateAmmConfigInstructionDataArgs['protocolFeeRate'];
@@ -216,17 +208,13 @@ export type CreateAmmConfigInput<
     createPoolFee: CreateAmmConfigInstructionDataArgs['createPoolFee'];
 };
 
-export function getCreateAmmConfigInstruction<
-    TAccountOwner extends string,
-    TAccountAmmConfig extends string,
-    TAccountSystemProgram extends string,
->(
-    input: CreateAmmConfigInput<TAccountOwner, TAccountAmmConfig, TAccountSystemProgram>,
+export function getCreateAmmConfigInstruction<TAccountOwner extends string, TAccountAmmConfig extends string>(
+    input: CreateAmmConfigInput<TAccountOwner, TAccountAmmConfig>,
 ): CreateAmmConfigInstruction<
     typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountOwner,
     TAccountAmmConfig,
-    TAccountSystemProgram
+    '11111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
@@ -235,7 +223,7 @@ export function getCreateAmmConfigInstruction<
     const originalAccounts = {
         owner: { value: input.owner ?? null, isWritable: true },
         ammConfig: { value: input.ammConfig ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -265,7 +253,7 @@ export function getCreateAmmConfigInstruction<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountOwner,
         TAccountAmmConfig,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 

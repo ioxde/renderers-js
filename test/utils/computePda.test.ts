@@ -15,7 +15,7 @@ import {
 } from '@codama/nodes';
 import { describe, expect, test } from 'vitest';
 
-import { computePdaAddress } from '../../src/utils';
+import { computePdaAddress, isOnCurve } from '../../src/utils';
 
 const RAYDIUM_AMM = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8';
 const RAYDIUM_CPSWAP = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C';
@@ -153,5 +153,22 @@ describe('computePdaAddress', () => {
             address: '9B63ZbNjSj5ZnBTn2V8kWcPLpFZW9RcD7rHGT6dumC8K',
             bump: 254,
         });
+    });
+
+    test('it treats a non-canonical y-coordinate encoding as on-curve, matching the Solana runtime', () => {
+        // Solana decompresses with curve25519_dalek's `CompressedEdwardsY::decompress()`, which reads
+        // y mod 2^255 instead of requiring 0 <= y < p. With p = 2^255 - 19, y = 1 + p is a non-canonical
+        // encoding of y = 1, the identity point: accepted under zip215, rejected without it.
+        const p = 2n ** 255n - 19n;
+        const nonCanonicalY = 1n + p;
+
+        const bytes = new Uint8Array(32);
+        let value = nonCanonicalY;
+        for (let i = 0; i < 32; i++) {
+            bytes[i] = Number(value & 0xffn);
+            value >>= 8n;
+        }
+
+        expect(isOnCurve(bytes)).toBe(true);
     });
 });

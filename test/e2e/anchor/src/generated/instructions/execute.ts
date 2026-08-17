@@ -113,7 +113,6 @@ export type ExecuteAsyncInput<
     TAccountOwnerDelegate extends string = string,
     TAccountExtraMetasAccount extends string = string,
     TAccountGuard extends string = string,
-    TAccountInstructionSysvarAccount extends string = string,
 > = {
     sourceAccount: Address<TAccountSourceAccount>;
     mint: Address<TAccountMint>;
@@ -121,7 +120,6 @@ export type ExecuteAsyncInput<
     ownerDelegate: Address<TAccountOwnerDelegate>;
     extraMetasAccount?: Address<TAccountExtraMetasAccount>;
     guard?: Address<TAccountGuard>;
-    instructionSysvarAccount?: Address<TAccountInstructionSysvarAccount>;
     amount: ExecuteInstructionDataArgs['amount'];
     guardMint: ExecuteInstructionExtraArgs['guardMint'];
 };
@@ -133,7 +131,6 @@ export async function getExecuteInstructionAsync<
     TAccountOwnerDelegate extends string,
     TAccountExtraMetasAccount extends string,
     TAccountGuard extends string,
-    TAccountInstructionSysvarAccount extends string,
 >(
     input: ExecuteAsyncInput<
         TAccountSourceAccount,
@@ -141,8 +138,7 @@ export async function getExecuteInstructionAsync<
         TAccountDestinationAccount,
         TAccountOwnerDelegate,
         TAccountExtraMetasAccount,
-        TAccountGuard,
-        TAccountInstructionSysvarAccount
+        TAccountGuard
     >,
 ): Promise<
     ExecuteInstruction<
@@ -153,7 +149,7 @@ export async function getExecuteInstructionAsync<
         TAccountOwnerDelegate,
         TAccountExtraMetasAccount,
         TAccountGuard,
-        TAccountInstructionSysvarAccount
+        'Sysvar1nstructions1111111111111111111111111'
     >
 > {
     // Program address.
@@ -167,7 +163,7 @@ export async function getExecuteInstructionAsync<
         ownerDelegate: { value: input.ownerDelegate ?? null, isWritable: false },
         extraMetasAccount: { value: input.extraMetasAccount ?? null, isWritable: false },
         guard: { value: input.guard ?? null, isWritable: false },
-        instructionSysvarAccount: { value: input.instructionSysvarAccount ?? null, isWritable: false },
+        instructionSysvarAccount: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -211,7 +207,7 @@ export async function getExecuteInstructionAsync<
         TAccountOwnerDelegate,
         TAccountExtraMetasAccount,
         TAccountGuard,
-        TAccountInstructionSysvarAccount
+        'Sysvar1nstructions1111111111111111111111111'
     >);
 }
 
@@ -222,7 +218,6 @@ export type ExecuteInput<
     TAccountOwnerDelegate extends string = string,
     TAccountExtraMetasAccount extends string = string,
     TAccountGuard extends string = string,
-    TAccountInstructionSysvarAccount extends string = string,
 > = {
     sourceAccount: Address<TAccountSourceAccount>;
     mint: Address<TAccountMint>;
@@ -230,7 +225,6 @@ export type ExecuteInput<
     ownerDelegate: Address<TAccountOwnerDelegate>;
     extraMetasAccount: Address<TAccountExtraMetasAccount>;
     guard: Address<TAccountGuard>;
-    instructionSysvarAccount?: Address<TAccountInstructionSysvarAccount>;
     amount: ExecuteInstructionDataArgs['amount'];
     guardMint?: ExecuteInstructionExtraArgs['guardMint'];
 };
@@ -242,7 +236,6 @@ export function getExecuteInstruction<
     TAccountOwnerDelegate extends string,
     TAccountExtraMetasAccount extends string,
     TAccountGuard extends string,
-    TAccountInstructionSysvarAccount extends string,
 >(
     input: ExecuteInput<
         TAccountSourceAccount,
@@ -250,8 +243,7 @@ export function getExecuteInstruction<
         TAccountDestinationAccount,
         TAccountOwnerDelegate,
         TAccountExtraMetasAccount,
-        TAccountGuard,
-        TAccountInstructionSysvarAccount
+        TAccountGuard
     >,
 ): ExecuteInstruction<
     typeof WEN_TRANSFER_GUARD_PROGRAM_ADDRESS,
@@ -261,7 +253,7 @@ export function getExecuteInstruction<
     TAccountOwnerDelegate,
     TAccountExtraMetasAccount,
     TAccountGuard,
-    TAccountInstructionSysvarAccount
+    'Sysvar1nstructions1111111111111111111111111'
 > {
     // Program address.
     const programAddress = WEN_TRANSFER_GUARD_PROGRAM_ADDRESS;
@@ -274,7 +266,7 @@ export function getExecuteInstruction<
         ownerDelegate: { value: input.ownerDelegate ?? null, isWritable: false },
         extraMetasAccount: { value: input.extraMetasAccount ?? null, isWritable: false },
         guard: { value: input.guard ?? null, isWritable: false },
-        instructionSysvarAccount: { value: input.instructionSysvarAccount ?? null, isWritable: false },
+        instructionSysvarAccount: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -308,7 +300,7 @@ export function getExecuteInstruction<
         TAccountOwnerDelegate,
         TAccountExtraMetasAccount,
         TAccountGuard,
-        TAccountInstructionSysvarAccount
+        'Sysvar1nstructions1111111111111111111111111'
     >);
 }
 

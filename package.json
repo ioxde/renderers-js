@@ -64,6 +64,7 @@
         "@changesets/changelog-github": "^0.7.0",
         "@changesets/cli": "^2.29.7",
         "@codama/nodes-from-anchor": "^1.5.4",
+        "@codama/visitors": "^1.10.1",
         "@solana/eslint-config-solana": "^5.0.0",
         "@solana/prettier-config-solana": "0.0.7",
         "@types/node": "^26",

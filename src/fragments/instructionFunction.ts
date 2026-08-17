@@ -1,4 +1,4 @@
-import { camelCase, InstructionNode, pascalCase } from '@codama/nodes';
+import { camelCase, CamelCaseString, InstructionNode, pascalCase } from '@codama/nodes';
 import { mapFragmentContent } from '@codama/renderers-core';
 import {
     findProgramNodeFromPath,
@@ -13,6 +13,7 @@ import {
     AsyncScope,
     Fragment,
     fragment,
+    getFixedInstructionAccounts,
     getInstructionInputShape,
     hasAsyncFunction,
     mergeFragments,
@@ -49,8 +50,11 @@ export function getInstructionFunctionFragment(
     const customData = customInstructionData.get(instructionNode.name);
     const hasAccounts = (instructionNode.accounts ?? []).length > 0;
     const hasData = !!customData || (instructionNode.arguments ?? []).length > 0;
+    // Computed once and threaded into every fragment below, so they cannot describe different APIs.
+    const fixedAccounts = getFixedInstructionAccounts(scope);
     const { hasAnyArgs, hasDataArgs, hasInput } = getInstructionInputShape(instructionNode, {
         asyncScope,
+        fixedAccounts,
         hasCustomData: !!customData,
         useAsync,
     });
@@ -70,13 +74,15 @@ export function getInstructionFunctionFragment(
     const hasRemainingAccounts = !!remainingAccountsFragment;
     const hasByteDeltas = !!byteDeltaFragment;
     const hasResolver = resolvedInputFragment.features.has('instruction:resolverScopeVariable');
-    const instructionTypeFragment = getInstructionTypeFragment({ ...scope, programAddressConstant });
+    const instructionTypeFragment = getInstructionTypeFragment({ ...scope, fixedAccounts, programAddressConstant });
 
-    const typeParams = getTypeParamsFragment(instructionNode);
+    const typeParams = getTypeParamsFragment(instructionNode, fixedAccounts);
     const returnType = getReturnTypeFragment(instructionTypeFragment, hasByteDeltas, useAsync);
     // Without an `input` parameter nothing references the type — not the builder signature, not the plugin.
-    const inputType = hasInput ? getInstructionInputTypeFragment(scope) : undefined;
-    const inputArg = mapFragmentContent(getInputTypeCallFragment(scope), c => (hasInput ? `input: ${c}` : ''));
+    const inputType = hasInput ? getInstructionInputTypeFragment({ ...scope, fixedAccounts }) : undefined;
+    const inputArg = mapFragmentContent(getInputTypeCallFragment({ ...scope, fixedAccounts }), c =>
+        hasInput ? `input: ${c}` : '',
+    );
     const resolverScopeFragment = getResolverScopeInitializationFragment(hasResolver, hasAccounts, hasAnyArgs);
     const returnStatementFragment = getReturnStatementFragment({
         ...scope,
@@ -97,7 +103,7 @@ export function getInstructionFunctionFragment(
     const functionBody = mergeFragments(
         [
             getProgramAddressInitializationFragment(programAddressConstant),
-            getAccountsInitializationFragment(instructionNode),
+            getAccountsInitializationFragment(instructionNode, fixedAccounts),
             argsIsReferenced ? getArgumentsInitializationFragment(hasAnyArgs, renamedArgs) : undefined,
             resolverScopeFragment,
             resolvedInputFragment,
@@ -118,7 +124,10 @@ function getProgramAddressInitializationFragment(programAddressConstant: Fragmen
 const programAddress = ${programAddressConstant};`;
 }
 
-function getAccountsInitializationFragment(instructionNode: InstructionNode): Fragment | undefined {
+function getAccountsInitializationFragment(
+    instructionNode: InstructionNode,
+    fixedAccounts: ReadonlyMap<CamelCaseString, string>,
+): Fragment | undefined {
     const instructionAccounts = instructionNode.accounts ?? [];
     if (instructionAccounts.length === 0) return;
 
@@ -126,7 +135,10 @@ function getAccountsInitializationFragment(instructionNode: InstructionNode): Fr
         instructionAccounts.map(account => {
             const name = camelCase(account.name);
             const isWritable = account.isWritable ? 'true' : 'false';
-            return fragment`${name}: { value: input.${name} ?? null, isWritable: ${isWritable} }`;
+            // A fixed account has no input field, so `null` lets the usual default block assign the
+            // address the program enforces.
+            const value = fixedAccounts.has(account.name) ? 'null' : `input.${name} ?? null`;
+            return fragment`${name}: { value: ${value}, isWritable: ${isWritable} }`;
         }),
         cs => cs.join(', '),
     );
@@ -233,8 +245,11 @@ function getReturnTypeFragment(instructionTypeFragment: Fragment, hasByteDeltas:
     );
 }
 
-function getTypeParamsFragment(instructionNode: InstructionNode): Fragment {
-    const accounts = instructionNode.accounts ?? [];
+function getTypeParamsFragment(
+    instructionNode: InstructionNode,
+    fixedAccounts: ReadonlyMap<CamelCaseString, string>,
+): Fragment {
+    const accounts = (instructionNode.accounts ?? []).filter(account => !fixedAccounts.has(account.name));
     if (accounts.length === 0) return fragment``;
 
     return mergeFragments(
@@ -244,16 +259,22 @@ function getTypeParamsFragment(instructionNode: InstructionNode): Fragment {
 }
 
 function getInstructionTypeFragment(scope: {
+    fixedAccounts: ReadonlyMap<CamelCaseString, string>;
     instructionPath: NodePath<InstructionNode>;
     nameApi: NameApi;
     programAddressConstant: Fragment;
 }): Fragment {
-    const { instructionPath, nameApi, programAddressConstant } = scope;
+    const { fixedAccounts, instructionPath, nameApi, programAddressConstant } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
     const instructionTypeName = nameApi.instructionType(instructionNode.name);
     const accountTypeParamsFragments = (instructionNode.accounts ?? []).map(account => {
         const typeParam = fragment`TAccount${pascalCase(account.name)}`;
         const camelName = camelCase(account.name);
+
+        // The type parameter is gone from the builder, so the literal goes here — anything else
+        // widens the address back to `string`.
+        const fixedAddress = fixedAccounts.get(account.name);
+        if (fixedAddress !== undefined) return fragment`'${fixedAddress}'`;
 
         if (account.isSigner === 'either') {
             const signerRole = use(
@@ -276,16 +297,17 @@ function getInstructionTypeFragment(scope: {
 }
 
 function getInputTypeCallFragment(scope: {
+    fixedAccounts: ReadonlyMap<CamelCaseString, string>;
     instructionPath: NodePath<InstructionNode>;
     nameApi: NameApi;
     useAsync: boolean;
 }): Fragment {
-    const { instructionPath, useAsync, nameApi } = scope;
+    const { fixedAccounts, instructionPath, useAsync, nameApi } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
     const inputTypeName = useAsync
         ? nameApi.instructionAsyncInputType(instructionNode.name)
         : nameApi.instructionSyncInputType(instructionNode.name);
-    const instructionAccounts = instructionNode.accounts ?? [];
+    const instructionAccounts = (instructionNode.accounts ?? []).filter(account => !fixedAccounts.has(account.name));
     if (instructionAccounts.length === 0) return fragment`${inputTypeName}`;
     const accountTypeParams = instructionAccounts.map(account => `TAccount${pascalCase(account.name)}`).join(', ');
 

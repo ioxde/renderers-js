@@ -2,6 +2,7 @@ export * from './async';
 export * from './codecs';
 export * from './computePda';
 export * from './customData';
+export * from './fixedInstructionAccounts';
 export * from './formatCode';
 export * from './fragment';
 export * from './importMap';

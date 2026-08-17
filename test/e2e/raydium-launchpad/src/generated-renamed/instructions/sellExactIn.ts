@@ -136,7 +136,6 @@ export function getSellExactInInstructionDataCodec(): FixedSizeCodec<
 
 export type SellExactInInput<
     TAccountPayer extends string = string,
-    TAccountAuthority extends string = string,
     TAccountGlobalConfig extends string = string,
     TAccountPlatformConfig extends string = string,
     TAccountPoolState extends string = string,
@@ -147,8 +146,6 @@ export type SellExactInInput<
     TAccountBaseTokenMint extends string = string,
     TAccountQuoteTokenMint extends string = string,
     TAccountBaseTokenProgram extends string = string,
-    TAccountQuoteTokenProgram extends string = string,
-    TAccountEventAuthority extends string = string,
     TAccountProgram extends string = string,
 > = {
     /**
@@ -156,11 +153,6 @@ export type SellExactInInput<
      * Must sign the transaction and pay for fees
      */
     payer: TransactionSigner<TAccountPayer>;
-    /**
-     * PDA that acts as the authority for pool vault operations
-     * Generated using AUTH_SEED
-     */
-    authority?: Address<TAccountAuthority>;
     /**
      * Global configuration account containing protocol-wide settings
      * Used to read protocol fee rates and curve type
@@ -205,9 +197,6 @@ export type SellExactInInput<
     quoteTokenMint: Address<TAccountQuoteTokenMint>;
     /** SPL Token program for base token transfers */
     baseTokenProgram: Address<TAccountBaseTokenProgram>;
-    /** SPL Token program for quote token transfers */
-    quoteTokenProgram?: Address<TAccountQuoteTokenProgram>;
-    eventAuthority?: Address<TAccountEventAuthority>;
     program: Address<TAccountProgram>;
     amountIn: SellExactInInstructionDataArgs['amountIn'];
     minimumAmountOut: SellExactInInstructionDataArgs['minimumAmountOut'];
@@ -216,7 +205,6 @@ export type SellExactInInput<
 
 export function getSellExactInInstruction<
     TAccountPayer extends string,
-    TAccountAuthority extends string,
     TAccountGlobalConfig extends string,
     TAccountPlatformConfig extends string,
     TAccountPoolState extends string,
@@ -227,13 +215,10 @@ export function getSellExactInInstruction<
     TAccountBaseTokenMint extends string,
     TAccountQuoteTokenMint extends string,
     TAccountBaseTokenProgram extends string,
-    TAccountQuoteTokenProgram extends string,
-    TAccountEventAuthority extends string,
     TAccountProgram extends string,
 >(
     input: SellExactInInput<
         TAccountPayer,
-        TAccountAuthority,
         TAccountGlobalConfig,
         TAccountPlatformConfig,
         TAccountPoolState,
@@ -244,14 +229,12 @@ export function getSellExactInInstruction<
         TAccountBaseTokenMint,
         TAccountQuoteTokenMint,
         TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountEventAuthority,
         TAccountProgram
     >,
 ): SellExactInInstruction<
     typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPayer,
-    TAccountAuthority,
+    'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountGlobalConfig,
     TAccountPlatformConfig,
     TAccountPoolState,
@@ -262,8 +245,8 @@ export function getSellExactInInstruction<
     TAccountBaseTokenMint,
     TAccountQuoteTokenMint,
     TAccountBaseTokenProgram,
-    TAccountQuoteTokenProgram,
-    TAccountEventAuthority,
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
     TAccountProgram
 > {
     // Program address.
@@ -272,7 +255,7 @@ export function getSellExactInInstruction<
     // Original accounts.
     const originalAccounts = {
         payer: { value: input.payer ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         globalConfig: { value: input.globalConfig ?? null, isWritable: false },
         platformConfig: { value: input.platformConfig ?? null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
@@ -283,8 +266,8 @@ export function getSellExactInInstruction<
         baseTokenMint: { value: input.baseTokenMint ?? null, isWritable: false },
         quoteTokenMint: { value: input.quoteTokenMint ?? null, isWritable: false },
         baseTokenProgram: { value: input.baseTokenProgram ?? null, isWritable: false },
-        quoteTokenProgram: { value: input.quoteTokenProgram ?? null, isWritable: false },
-        eventAuthority: { value: input.eventAuthority ?? null, isWritable: false },
+        quoteTokenProgram: { value: null, isWritable: false },
+        eventAuthority: { value: null, isWritable: false },
         program: { value: input.program ?? null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
@@ -328,7 +311,7 @@ export function getSellExactInInstruction<
     } as SellExactInInstruction<
         typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         TAccountPayer,
-        TAccountAuthority,
+        'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
         TAccountGlobalConfig,
         TAccountPlatformConfig,
         TAccountPoolState,
@@ -339,8 +322,8 @@ export function getSellExactInInstruction<
         TAccountBaseTokenMint,
         TAccountQuoteTokenMint,
         TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountEventAuthority,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
         TAccountProgram
     >);
 }

@@ -3,6 +3,7 @@ import {
     getAllPrograms,
     InstructionAccountNode,
     InstructionArgumentNode,
+    InstructionByteDeltaValue,
     InstructionInputValueNode,
     InstructionNode,
     isNode,
@@ -12,6 +13,7 @@ import {
     ProgramNode,
 } from '@codama/nodes';
 import {
+    findProgramNodeFromPath,
     getLastNodeFromPath,
     getNodePathUntilLastNode,
     LinkableDictionary,
@@ -26,6 +28,8 @@ import { ComputedPda, computePdaAddress } from './computePda';
 
 const CACHE = new WeakMap<LinkableDictionary, WeakMap<Node, ReadonlySet<PdaNode>>>();
 const PRECOMPUTED_CACHE = new WeakMap<LinkableDictionary, WeakMap<Node, ReadonlyMap<PdaNode, ComputedPda>>>();
+/** Inline PDAs have no scope to key off, so they memoise per node and deriving program. */
+const INLINE_PDA_CACHE = new WeakMap<PdaNode, Map<string, ComputedPda | null>>();
 
 /**
  * Whether a `pdaValueNode` derives its PDA under a program only known at runtime. A program
@@ -117,11 +121,42 @@ export function getResolvedPdaValue(
     instructionPath: NodePath<InstructionNode>,
     linkables: LinkableDictionary,
 ): ComputedPda | undefined {
-    // Inline `pdaNode` values are derived inline; there is no finder to fold.
-    if (!isNode(pdaValue.pda, 'pdaLinkNode')) return undefined;
+    // Inline `pdaNode` values have no finder, so they resolve here rather than via the precomputed
+    // map; leaving them unresolved keeps the instruction needlessly asynchronous.
+    if (isNode(pdaValue.pda, 'pdaNode')) {
+        return getResolvedInlinePdaValue(pdaValue, pdaValue.pda, instructionPath);
+    }
     const linkedPda = linkables.get([...instructionPath, pdaValue.pda]);
     if (!linkedPda) return undefined;
     return getPrecomputedPdas([...instructionPath, linkedPda] as NodePath<PdaNode>, linkables).get(linkedPda);
+}
+
+/**
+ * Resolves the deriving program in the order `instructionInputDefault.ts` renders, and must keep
+ * mirroring it: the pin on the `pdaNode` wins, a runtime reference means unknown, else the
+ * enclosing program.
+ */
+function getResolvedInlinePdaValue(
+    pdaValue: PdaValueNode,
+    pda: PdaNode,
+    instructionPath: NodePath<InstructionNode>,
+): ComputedPda | undefined {
+    const programAddress =
+        pda.programId ??
+        (isNode(pdaValue.programId, ['accountValueNode', 'argumentValueNode'])
+            ? undefined
+            : findProgramNodeFromPath(instructionPath)?.publicKey);
+    if (!programAddress) return undefined;
+
+    // Keyed by program as well as node: the same node could sit under two programs.
+    const byProgram = INLINE_PDA_CACHE.get(pda) ?? new Map<string, ComputedPda | null>();
+    INLINE_PDA_CACHE.set(pda, byProgram);
+    const cached = byProgram.get(programAddress);
+    if (cached !== undefined) return cached ?? undefined;
+
+    const computed = computePdaAddress(pda.seeds ?? [], programAddress);
+    byProgram.set(programAddress, computed);
+    return computed ?? undefined;
 }
 
 /**
@@ -154,24 +189,90 @@ export function isPdaValueFoldedToAddress(
 }
 
 /**
+ * Whether any value the instruction resolves is a resolver call. A resolver body is opaque and may
+ * read any account, so every rule that turns on "is this account referenced" gives up here.
+ */
+export function instructionHasResolver(instructionNode: InstructionNode): boolean {
+    return someInstructionInputValue(instructionNode, value => isNode(value, 'resolverValueNode'));
+}
+
+/**
+ * Whether anything else in the instruction derives from this account, skipping the account's own
+ * default. Such a reader emits `getAddressFromResolvedInstructionAccount(…)`, which throws on a
+ * value the builder left null.
+ */
+export function instructionReadsAccount(instructionNode: InstructionNode, accountName: CamelCaseString): boolean {
+    return someInstructionInputValue(
+        instructionNode,
+        value => {
+            if (isNode(value, 'accountFieldValueNode')) return value.account === accountName;
+            if (isNode(value, ['accountBumpValueNode', 'accountValueNode'])) return value.name === accountName;
+            return false;
+        },
+        input => isNode(input, 'instructionAccountNode') && input.name === accountName,
+    );
+}
+
+/**
  * An account whose bump is read must keep the whole `ProgramDerivedAddress` tuple the bump comes out
  * of, so its default cannot fold to a bare address constant.
  */
 export function instructionReadsAccountBump(instructionNode: InstructionNode, accountName: CamelCaseString): boolean {
-    const readsBump = (value: InstructionInputValueNode | undefined): boolean => {
-        if (!value) return false;
-        if (isNode(value, 'accountBumpValueNode')) return value.name === accountName;
-        if (isNode(value, 'conditionalValueNode')) {
-            return readsBump(value.condition) || readsBump(value.ifTrue) || readsBump(value.ifFalse);
-        }
-        return false;
-    };
+    return someInstructionInputValue(
+        instructionNode,
+        value => isNode(value, 'accountBumpValueNode') && value.name === accountName,
+    );
+}
 
-    return [
+/** A value reached by {@link someInstructionInputValue}. Byte deltas widen the union with `accountLinkNode`. */
+export type InstructionInputValue = InstructionByteDeltaValue | InstructionInputValueNode;
+
+/**
+ * Whether any value the instruction resolves satisfies `predicate`. Values also nest inside
+ * conditional branches, PDA seeds and program ids, and resolver dependencies; add new containers
+ * here rather than writing a second walk.
+ */
+export function someInstructionInputValue(
+    instructionNode: InstructionNode,
+    predicate: (value: InstructionInputValue) => boolean,
+    skipInput?: (input: InstructionAccountNode | InstructionArgumentNode) => boolean,
+): boolean {
+    const inputs = [
         ...(instructionNode.accounts ?? []),
         ...(instructionNode.arguments ?? []),
         ...(instructionNode.extraArguments ?? []),
-    ].some(input => readsBump(input.defaultValue));
+    ].filter(input => !skipInput?.(input));
+
+    return (
+        inputs.some(input => someNestedInputValue(input.defaultValue, predicate)) ||
+        (instructionNode.byteDeltas ?? []).some(({ value }) => someNestedInputValue(value, predicate)) ||
+        (instructionNode.remainingAccounts ?? []).some(({ value }) => someNestedInputValue(value, predicate))
+    );
+}
+
+function someNestedInputValue(
+    value: InstructionInputValue | undefined,
+    predicate: (value: InstructionInputValue) => boolean,
+): boolean {
+    if (!value) return false;
+    if (predicate(value)) return true;
+    if (isNode(value, 'pdaValueNode')) {
+        return (
+            (value.seeds ?? []).some(seed => someNestedInputValue(seed.value, predicate)) ||
+            someNestedInputValue(value.programId, predicate)
+        );
+    }
+    if (isNode(value, 'conditionalValueNode')) {
+        return (
+            someNestedInputValue(value.condition, predicate) ||
+            someNestedInputValue(value.ifTrue, predicate) ||
+            someNestedInputValue(value.ifFalse, predicate)
+        );
+    }
+    if (isNode(value, 'resolverValueNode')) {
+        return (value.dependsOn ?? []).some(dependency => someNestedInputValue(dependency, predicate));
+    }
+    return false;
 }
 
 function getPdaScope(

@@ -23,7 +23,7 @@ import {
     ResolvedInstructionInput,
 } from '@codama/visitors-core';
 
-import { isPdaValueResolvedAtGenerationTime } from './pdas';
+import { instructionHasResolver, instructionReadsAccount, isPdaValueResolvedAtGenerationTime } from './pdas';
 
 /** What the renderer reads to decide whether a default value is asynchronous. */
 export type AsyncScope = Readonly<{
@@ -64,14 +64,19 @@ export type InstructionInputShape = {
 };
 
 /**
- * An instruction with no accounts and no caller-supplied arguments renders a zero-parameter builder,
- * so callers must not pass one.
+ * The argument shape of an instruction's builder. Accounts fixed at generation time carry no input
+ * field, so an instruction made up entirely of them still renders a zero-parameter builder.
  */
 export function getInstructionInputShape(
     instructionNode: InstructionNode,
-    options: { asyncScope: AsyncScope; hasCustomData: boolean; useAsync: boolean },
+    options: {
+        asyncScope: AsyncScope;
+        fixedAccounts: ReadonlyMap<CamelCaseString, string>;
+        hasCustomData: boolean;
+        useAsync: boolean;
+    },
 ): InstructionInputShape {
-    const { asyncScope, hasCustomData, useAsync } = options;
+    const { asyncScope, fixedAccounts, hasCustomData, useAsync } = options;
     const dependencies = getInstructionDependencies(instructionNode, asyncScope.asyncResolvers, useAsync);
     const argDependencies = dependencies.filter(isNodeFilter('argumentValueNode')).map(node => node.name);
     const argIsNotOmitted = (arg: InstructionArgumentNode) =>
@@ -91,8 +96,9 @@ export function getInstructionInputShape(
     const hasRemainingAccountArgs =
         (instructionNode.remainingAccounts ?? []).filter(({ value }) => isNode(value, 'argumentValueNode')).length > 0;
     const hasAnyArgs = hasDataArgs || hasExtraArgs || hasRemainingAccountArgs;
+    const hasInputAccounts = (instructionNode.accounts ?? []).some(account => !fixedAccounts.has(account.name));
 
-    return { hasAnyArgs, hasDataArgs, hasInput: (instructionNode.accounts ?? []).length > 0 || hasAnyArgs };
+    return { hasAnyArgs, hasDataArgs, hasInput: hasInputAccounts || hasAnyArgs };
 }
 
 export function hasAsyncFunction(
@@ -108,11 +114,39 @@ export function hasAsyncFunction(
         ({ value }) => isNode(value, 'resolverValueNode') && asyncResolvers.includes(value.name),
     );
 
-    return hasAsyncDefaultValues(resolvedInputs, asyncScope) || hasByteDeltasAsync || hasRemainingAccountsAsync;
+    return (
+        hasAsyncDefaultValues(resolvedInputs, asyncScope, instructionNode) ||
+        hasByteDeltasAsync ||
+        hasRemainingAccountsAsync
+    );
 }
 
-export function hasAsyncDefaultValues(resolvedInputs: ResolvedInstructionInput[], asyncScope: AsyncScope): boolean {
-    return resolvedInputs.some(input => !!input.defaultValue && isAsyncDefaultValue(input.defaultValue, asyncScope));
+export function hasAsyncDefaultValues(
+    resolvedInputs: ResolvedInstructionInput[],
+    asyncScope: AsyncScope,
+    instructionNode: InstructionNode,
+): boolean {
+    return resolvedInputs.some(
+        input =>
+            !!input.defaultValue &&
+            // Counting a default the builder never applies renders an `…Async` variant with nothing to await.
+            !isDefaultSkippedForOptionalAccount(input, instructionNode) &&
+            isAsyncDefaultValue(input.defaultValue, asyncScope),
+    );
+}
+
+/**
+ * Whether the builder skips this input's default: the program branches on the optional account's
+ * absence, so omission must leave the value null. Exceptions — an account another input derives
+ * from, whose reader throws on null, and every account of a resolver-bearing instruction (opaque).
+ */
+export function isDefaultSkippedForOptionalAccount(
+    input: InstructionAccountNode | InstructionArgumentNode,
+    instructionNode: InstructionNode,
+): boolean {
+    if (input.kind !== 'instructionAccountNode' || !input.isOptional) return false;
+    if (instructionHasResolver(instructionNode)) return false;
+    return !instructionReadsAccount(instructionNode, input.name);
 }
 
 export function isAsyncDefaultValue(defaultValue: InstructionInputValueNode, asyncScope: AsyncScope): boolean {

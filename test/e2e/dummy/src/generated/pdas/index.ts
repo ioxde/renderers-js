@@ -6,8 +6,5 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from './instructions/index.js';
-export * from './pdas/index.js';
-export * from './plugins/index.js';
-export * from './programs/index.js';
-export * from './types/index.js';
+export * from './derivedFromSource.js';
+export * from './globalConfig.js';

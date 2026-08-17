@@ -2,7 +2,40 @@
   "kind": "rootNode",
   "program": {
     "kind": "programNode",
-    "pdas": [],
+    "pdas": [
+      {
+        "kind": "pdaNode",
+        "name": "globalConfig",
+        "programId": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+        "seeds": [
+          {
+            "kind": "constantPdaSeedNode",
+            "type": { "kind": "stringTypeNode", "encoding": "utf8" },
+            "value": { "kind": "stringValueNode", "string": "global_config" }
+          }
+        ],
+        "docs": ["Every seed is constant and the deriving program is pinned, so the address folds at generation time."]
+      },
+      {
+        "kind": "pdaNode",
+        "name": "derivedFromSource",
+        "programId": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+        "seeds": [
+          {
+            "kind": "constantPdaSeedNode",
+            "type": { "kind": "stringTypeNode", "encoding": "utf8" },
+            "value": { "kind": "stringValueNode", "string": "derived" }
+          },
+          {
+            "kind": "variablePdaSeedNode",
+            "name": "source",
+            "type": { "kind": "publicKeyTypeNode" },
+            "docs": []
+          }
+        ],
+        "docs": ["Seeded by an IDL-optional account, which keeps that account's default applied."]
+      }
+    ],
     "accounts": [],
     "instructions": [
       {
@@ -208,6 +241,212 @@
             "offset": 0
           }
         ]
+      },
+      {
+        "kind": "instructionNode",
+        "name": "instruction11",
+        "optionalAccountStrategy": "programId",
+        "docs": ["Testing IDL-optional accounts whose defaults resolve to one address at generation time"],
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "payer",
+            "isWritable": true,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": []
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "pinnedOptional",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+              "identifier": "pinnedOptional"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "derivedOptional",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": { "kind": "pdaLinkNode", "name": "globalConfig" },
+              "seeds": []
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "programOptional",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": { "kind": "programIdValueNode" }
+          }
+        ],
+        "arguments": [],
+        "remainingAccounts": []
+      },
+      {
+        "kind": "instructionNode",
+        "name": "instruction12",
+        "optionalAccountStrategy": "omitted",
+        "docs": ["Testing the same IDL-optional defaults under the omitted strategy"],
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "payer",
+            "isWritable": true,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": []
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "pinnedOptional",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+              "identifier": "pinnedOptional"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "derivedOptional",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": { "kind": "pdaLinkNode", "name": "globalConfig" },
+              "seeds": []
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "programOptional",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": { "kind": "programIdValueNode" }
+          }
+        ],
+        "arguments": [],
+        "remainingAccounts": []
+      },
+      {
+        "kind": "instructionNode",
+        "name": "instruction13",
+        "optionalAccountStrategy": "programId",
+        "docs": ["Testing an IDL-optional account whose default another account's PDA seeds read"],
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "authority",
+            "isWritable": false,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": []
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "optionalSource",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+              "identifier": "optionalSource"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "derived",
+            "isWritable": true,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [],
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": { "kind": "pdaLinkNode", "name": "derivedFromSource" },
+              "seeds": [
+                {
+                  "kind": "pdaSeedValueNode",
+                  "name": "source",
+                  "value": { "kind": "accountValueNode", "name": "optionalSource" }
+                }
+              ]
+            }
+          }
+        ],
+        "arguments": [],
+        "remainingAccounts": []
+      },
+      {
+        "kind": "instructionNode",
+        "name": "instruction14",
+        "optionalAccountStrategy": "omitted",
+        "docs": ["Testing the same read IDL-optional account under the omitted strategy"],
+        "accounts": [
+          {
+            "kind": "instructionAccountNode",
+            "name": "authority",
+            "isWritable": false,
+            "isSigner": true,
+            "isOptional": false,
+            "docs": []
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "optionalSource",
+            "isWritable": false,
+            "isSigner": false,
+            "isOptional": true,
+            "docs": [],
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+              "identifier": "optionalSource"
+            }
+          },
+          {
+            "kind": "instructionAccountNode",
+            "name": "derived",
+            "isWritable": true,
+            "isSigner": false,
+            "isOptional": false,
+            "docs": [],
+            "defaultValue": {
+              "kind": "pdaValueNode",
+              "pda": { "kind": "pdaLinkNode", "name": "derivedFromSource" },
+              "seeds": [
+                {
+                  "kind": "pdaSeedValueNode",
+                  "name": "source",
+                  "value": { "kind": "accountValueNode", "name": "optionalSource" }
+                }
+              ]
+            }
+          }
+        ],
+        "arguments": [],
+        "remainingAccounts": []
       }
     ],
     "definedTypes": [

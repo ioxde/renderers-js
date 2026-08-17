@@ -23,6 +23,10 @@ import {
     parseInstruction10Instruction,
     type ParsedInstruction10Instruction,
 } from './instruction10.js';
+import { parseInstruction11Instruction, type ParsedInstruction11Instruction } from './instruction11.js';
+import { parseInstruction12Instruction, type ParsedInstruction12Instruction } from './instruction12.js';
+import { parseInstruction13Instruction, type ParsedInstruction13Instruction } from './instruction13.js';
+import { parseInstruction14Instruction, type ParsedInstruction14Instruction } from './instruction14.js';
 import { parseInstruction2Instruction, type ParsedInstruction2Instruction } from './instruction2.js';
 import {
     INSTRUCTION3_DISCRIMINATOR,
@@ -47,7 +51,11 @@ export type DummyInstructionType =
     | 'instruction7'
     | 'instruction8'
     | 'instruction9'
-    | 'instruction10';
+    | 'instruction10'
+    | 'instruction11'
+    | 'instruction12'
+    | 'instruction13'
+    | 'instruction14';
 
 /**
  * Identifies dummy instruction data by its discriminators.
@@ -78,7 +86,11 @@ export type ParsedDummyInstruction<TProgram extends string = 'Dummy1111111111111
     | ({ instructionType: 'instruction7' } & ParsedInstruction7Instruction<TProgram>)
     | ({ instructionType: 'instruction8' } & ParsedInstruction8Instruction<TProgram>)
     | ({ instructionType: 'instruction9' } & ParsedInstruction9Instruction<TProgram>)
-    | ({ instructionType: 'instruction10' } & ParsedInstruction10Instruction<TProgram>);
+    | ({ instructionType: 'instruction10' } & ParsedInstruction10Instruction<TProgram>)
+    | ({ instructionType: 'instruction11' } & ParsedInstruction11Instruction<TProgram>)
+    | ({ instructionType: 'instruction12' } & ParsedInstruction12Instruction<TProgram>)
+    | ({ instructionType: 'instruction13' } & ParsedInstruction13Instruction<TProgram>)
+    | ({ instructionType: 'instruction14' } & ParsedInstruction14Instruction<TProgram>);
 
 /**
  * Parses a dummy instruction into its kind tag plus parsed accounts and data.
@@ -124,6 +136,22 @@ export function parseDummyInstruction<TProgram extends string>(
         }
         case 'instruction10': {
             return { instructionType: 'instruction10', ...parseInstruction10Instruction(instruction) };
+        }
+        case 'instruction11': {
+            assertIsInstructionWithAccounts(instruction);
+            return { instructionType: 'instruction11', ...parseInstruction11Instruction(instruction) };
+        }
+        case 'instruction12': {
+            assertIsInstructionWithAccounts(instruction);
+            return { instructionType: 'instruction12', ...parseInstruction12Instruction(instruction) };
+        }
+        case 'instruction13': {
+            assertIsInstructionWithAccounts(instruction);
+            return { instructionType: 'instruction13', ...parseInstruction13Instruction(instruction) };
+        }
+        case 'instruction14': {
+            assertIsInstructionWithAccounts(instruction);
+            return { instructionType: 'instruction14', ...parseInstruction14Instruction(instruction) };
         }
     }
 }

@@ -143,7 +143,6 @@ export type CreateConfigAsyncInput<
     TAccountMigrateFeeOwner extends string = string,
     TAccountMigrateToAmmWallet extends string = string,
     TAccountMigrateToCpswapWallet extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     /**
      * The protocol owner/admin account
@@ -170,8 +169,6 @@ export type CreateConfigAsyncInput<
     migrateToAmmWallet: Address<TAccountMigrateToAmmWallet>;
     /** The control wallet address for migrating to cpswap */
     migrateToCpswapWallet: Address<TAccountMigrateToCpswapWallet>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
     curveType: CreateConfigInstructionDataArgs['curveType'];
     index: CreateConfigInstructionDataArgs['index'];
     migrateFee: CreateConfigInstructionDataArgs['migrateFee'];
@@ -186,7 +183,6 @@ export async function getCreateConfigInstructionAsync<
     TAccountMigrateFeeOwner extends string,
     TAccountMigrateToAmmWallet extends string,
     TAccountMigrateToCpswapWallet extends string,
-    TAccountSystemProgram extends string,
 >(
     input: CreateConfigAsyncInput<
         TAccountOwner,
@@ -195,8 +191,7 @@ export async function getCreateConfigInstructionAsync<
         TAccountProtocolFeeOwner,
         TAccountMigrateFeeOwner,
         TAccountMigrateToAmmWallet,
-        TAccountMigrateToCpswapWallet,
-        TAccountSystemProgram
+        TAccountMigrateToCpswapWallet
     >,
 ): Promise<
     CreateConfigInstruction<
@@ -208,7 +203,7 @@ export async function getCreateConfigInstructionAsync<
         TAccountMigrateFeeOwner,
         TAccountMigrateToAmmWallet,
         TAccountMigrateToCpswapWallet,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -223,7 +218,7 @@ export async function getCreateConfigInstructionAsync<
         migrateFeeOwner: { value: input.migrateFeeOwner ?? null, isWritable: false },
         migrateToAmmWallet: { value: input.migrateToAmmWallet ?? null, isWritable: false },
         migrateToCpswapWallet: { value: input.migrateToCpswapWallet ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -270,7 +265,7 @@ export async function getCreateConfigInstructionAsync<
         TAccountMigrateFeeOwner,
         TAccountMigrateToAmmWallet,
         TAccountMigrateToCpswapWallet,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 
@@ -282,7 +277,6 @@ export type CreateConfigInput<
     TAccountMigrateFeeOwner extends string = string,
     TAccountMigrateToAmmWallet extends string = string,
     TAccountMigrateToCpswapWallet extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     /**
      * The protocol owner/admin account
@@ -309,8 +303,6 @@ export type CreateConfigInput<
     migrateToAmmWallet: Address<TAccountMigrateToAmmWallet>;
     /** The control wallet address for migrating to cpswap */
     migrateToCpswapWallet: Address<TAccountMigrateToCpswapWallet>;
-    /** Required for account creation */
-    systemProgram?: Address<TAccountSystemProgram>;
     curveType: CreateConfigInstructionDataArgs['curveType'];
     index: CreateConfigInstructionDataArgs['index'];
     migrateFee: CreateConfigInstructionDataArgs['migrateFee'];
@@ -325,7 +317,6 @@ export function getCreateConfigInstruction<
     TAccountMigrateFeeOwner extends string,
     TAccountMigrateToAmmWallet extends string,
     TAccountMigrateToCpswapWallet extends string,
-    TAccountSystemProgram extends string,
 >(
     input: CreateConfigInput<
         TAccountOwner,
@@ -334,8 +325,7 @@ export function getCreateConfigInstruction<
         TAccountProtocolFeeOwner,
         TAccountMigrateFeeOwner,
         TAccountMigrateToAmmWallet,
-        TAccountMigrateToCpswapWallet,
-        TAccountSystemProgram
+        TAccountMigrateToCpswapWallet
     >,
 ): CreateConfigInstruction<
     typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
@@ -346,7 +336,7 @@ export function getCreateConfigInstruction<
     TAccountMigrateFeeOwner,
     TAccountMigrateToAmmWallet,
     TAccountMigrateToCpswapWallet,
-    TAccountSystemProgram
+    '11111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
@@ -360,7 +350,7 @@ export function getCreateConfigInstruction<
         migrateFeeOwner: { value: input.migrateFeeOwner ?? null, isWritable: false },
         migrateToAmmWallet: { value: input.migrateToAmmWallet ?? null, isWritable: false },
         migrateToCpswapWallet: { value: input.migrateToCpswapWallet ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -400,7 +390,7 @@ export function getCreateConfigInstruction<
         TAccountMigrateFeeOwner,
         TAccountMigrateToAmmWallet,
         TAccountMigrateToCpswapWallet,
-        TAccountSystemProgram
+        '11111111111111111111111111111111'
     >);
 }
 

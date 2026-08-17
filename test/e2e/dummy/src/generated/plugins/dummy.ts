@@ -16,6 +16,10 @@ import {
 import { addSelfPlanAndSendFunctions, type SelfPlanAndSendFunctions } from '@solana/kit/program-client-core';
 import {
     getInstruction10Instruction,
+    getInstruction11Instruction,
+    getInstruction12Instruction,
+    getInstruction13InstructionAsync,
+    getInstruction14InstructionAsync,
     getInstruction1Instruction,
     getInstruction2Instruction,
     getInstruction3Instruction,
@@ -27,6 +31,10 @@ import {
     getInstruction9Instruction,
     identifyDummyInstruction,
     parseDummyInstruction,
+    type Instruction11Input,
+    type Instruction12Input,
+    type Instruction13AsyncInput,
+    type Instruction14AsyncInput,
     type Instruction2Input,
     type Instruction4Input,
     type Instruction5Input,
@@ -35,9 +43,11 @@ import {
     type Instruction8Input,
     type Instruction9Input,
 } from '../instructions/index.js';
+import { findDerivedFromSourcePda, findGlobalConfigPda } from '../pdas/index.js';
 
 export type DummyPlugin = {
     instructions: DummyPluginInstructions;
+    pdas: DummyPluginPdas;
     identifyInstruction: typeof identifyDummyInstruction;
     parseInstruction: typeof parseDummyInstruction;
 };
@@ -67,6 +77,23 @@ export type DummyPluginInstructions = {
         input: MakeOptional<Instruction9Input, 'authority' | 'authorityArg'>,
     ) => ReturnType<typeof getInstruction9Instruction> & SelfPlanAndSendFunctions;
     instruction10: () => ReturnType<typeof getInstruction10Instruction> & SelfPlanAndSendFunctions;
+    instruction11: (
+        input: Instruction11Input,
+    ) => ReturnType<typeof getInstruction11Instruction> & SelfPlanAndSendFunctions;
+    instruction12: (
+        input: Instruction12Input,
+    ) => ReturnType<typeof getInstruction12Instruction> & SelfPlanAndSendFunctions;
+    instruction13: (
+        input: Instruction13AsyncInput,
+    ) => ReturnType<typeof getInstruction13InstructionAsync> & SelfPlanAndSendFunctions;
+    instruction14: (
+        input: Instruction14AsyncInput,
+    ) => ReturnType<typeof getInstruction14InstructionAsync> & SelfPlanAndSendFunctions;
+};
+
+export type DummyPluginPdas = {
+    globalConfig: typeof findGlobalConfigPda;
+    derivedFromSource: typeof findDerivedFromSourcePda;
 };
 
 export type DummyPluginRequirements = ClientWithPayer & ClientWithTransactionPlanning & ClientWithTransactionSending;
@@ -94,7 +121,14 @@ export function dummyProgram() {
                             }),
                         ),
                     instruction10: () => addSelfPlanAndSendFunctions(client, getInstruction10Instruction()),
+                    instruction11: input => addSelfPlanAndSendFunctions(client, getInstruction11Instruction(input)),
+                    instruction12: input => addSelfPlanAndSendFunctions(client, getInstruction12Instruction(input)),
+                    instruction13: input =>
+                        addSelfPlanAndSendFunctions(client, getInstruction13InstructionAsync(input)),
+                    instruction14: input =>
+                        addSelfPlanAndSendFunctions(client, getInstruction14InstructionAsync(input)),
                 },
+                pdas: { globalConfig: findGlobalConfigPda, derivedFromSource: findDerivedFromSourcePda },
                 identifyInstruction: identifyDummyInstruction,
                 parseInstruction: parseDummyInstruction,
             },

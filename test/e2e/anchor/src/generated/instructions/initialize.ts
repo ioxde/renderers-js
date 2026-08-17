@@ -108,14 +108,12 @@ export type InitializeAsyncInput<
     TAccountGuard extends string = string,
     TAccountMint extends string = string,
     TAccountTransferHookAuthority extends string = string,
-    TAccountSystemProgram extends string = string,
     TAccountPayer extends string = string,
 > = {
     extraMetasAccount?: Address<TAccountExtraMetasAccount>;
     guard?: Address<TAccountGuard>;
     mint: Address<TAccountMint>;
     transferHookAuthority: TransactionSigner<TAccountTransferHookAuthority>;
-    systemProgram?: Address<TAccountSystemProgram>;
     payer: TransactionSigner<TAccountPayer>;
     guardMint: InitializeInstructionExtraArgs['guardMint'];
 };
@@ -125,7 +123,6 @@ export async function getInitializeInstructionAsync<
     TAccountGuard extends string,
     TAccountMint extends string,
     TAccountTransferHookAuthority extends string,
-    TAccountSystemProgram extends string,
     TAccountPayer extends string,
 >(
     input: InitializeAsyncInput<
@@ -133,7 +130,6 @@ export async function getInitializeInstructionAsync<
         TAccountGuard,
         TAccountMint,
         TAccountTransferHookAuthority,
-        TAccountSystemProgram,
         TAccountPayer
     >,
 ): Promise<
@@ -143,7 +139,7 @@ export async function getInitializeInstructionAsync<
         TAccountGuard,
         TAccountMint,
         TAccountTransferHookAuthority,
-        TAccountSystemProgram,
+        '11111111111111111111111111111111',
         TAccountPayer
     >
 > {
@@ -156,7 +152,7 @@ export async function getInitializeInstructionAsync<
         guard: { value: input.guard ?? null, isWritable: false },
         mint: { value: input.mint ?? null, isWritable: false },
         transferHookAuthority: { value: input.transferHookAuthority ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
         payer: { value: input.payer ?? null, isWritable: true },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
@@ -198,7 +194,7 @@ export async function getInitializeInstructionAsync<
         TAccountGuard,
         TAccountMint,
         TAccountTransferHookAuthority,
-        TAccountSystemProgram,
+        '11111111111111111111111111111111',
         TAccountPayer
     >);
 }
@@ -208,14 +204,12 @@ export type InitializeInput<
     TAccountGuard extends string = string,
     TAccountMint extends string = string,
     TAccountTransferHookAuthority extends string = string,
-    TAccountSystemProgram extends string = string,
     TAccountPayer extends string = string,
 > = {
     extraMetasAccount: Address<TAccountExtraMetasAccount>;
     guard: Address<TAccountGuard>;
     mint: Address<TAccountMint>;
     transferHookAuthority: TransactionSigner<TAccountTransferHookAuthority>;
-    systemProgram?: Address<TAccountSystemProgram>;
     payer: TransactionSigner<TAccountPayer>;
     guardMint?: InitializeInstructionExtraArgs['guardMint'];
 };
@@ -225,7 +219,6 @@ export function getInitializeInstruction<
     TAccountGuard extends string,
     TAccountMint extends string,
     TAccountTransferHookAuthority extends string,
-    TAccountSystemProgram extends string,
     TAccountPayer extends string,
 >(
     input: InitializeInput<
@@ -233,7 +226,6 @@ export function getInitializeInstruction<
         TAccountGuard,
         TAccountMint,
         TAccountTransferHookAuthority,
-        TAccountSystemProgram,
         TAccountPayer
     >,
 ): InitializeInstruction<
@@ -242,7 +234,7 @@ export function getInitializeInstruction<
     TAccountGuard,
     TAccountMint,
     TAccountTransferHookAuthority,
-    TAccountSystemProgram,
+    '11111111111111111111111111111111',
     TAccountPayer
 > {
     // Program address.
@@ -254,7 +246,7 @@ export function getInitializeInstruction<
         guard: { value: input.guard ?? null, isWritable: false },
         mint: { value: input.mint ?? null, isWritable: false },
         transferHookAuthority: { value: input.transferHookAuthority ?? null, isWritable: true },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
         payer: { value: input.payer ?? null, isWritable: true },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
@@ -283,7 +275,7 @@ export function getInitializeInstruction<
         TAccountGuard,
         TAccountMint,
         TAccountTransferHookAuthority,
-        TAccountSystemProgram,
+        '11111111111111111111111111111111',
         TAccountPayer
     >);
 }

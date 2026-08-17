@@ -160,7 +160,6 @@ export function getInitializeInstructionDataCodec(): FixedSizeCodec<
 export type InitializeAsyncInput<
     TAccountCreator extends string = string,
     TAccountAmmConfig extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountToken0Mint extends string = string,
     TAccountToken1Mint extends string = string,
@@ -170,21 +169,14 @@ export type InitializeAsyncInput<
     TAccountCreatorLpToken extends string = string,
     TAccountToken0Vault extends string = string,
     TAccountToken1Vault extends string = string,
-    TAccountCreatePoolFee extends string = string,
     TAccountObservationState extends string = string,
-    TAccountTokenProgram extends string = string,
     TAccountToken0Program extends string = string,
     TAccountToken1Program extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountRent extends string = string,
 > = {
     /** Address paying to create the pool. Can be anyone */
     creator: TransactionSigner<TAccountCreator>;
     /** Which config the pool belongs to. */
     ammConfig: Address<TAccountAmmConfig>;
-    /** pool vault and lp mint authority */
-    authority?: Address<TAccountAuthority>;
     /**
      * PDA account:
      * seeds = [
@@ -211,22 +203,12 @@ export type InitializeAsyncInput<
     creatorLpToken?: Address<TAccountCreatorLpToken>;
     token0Vault?: Address<TAccountToken0Vault>;
     token1Vault?: Address<TAccountToken1Vault>;
-    /** create pool fee account */
-    createPoolFee?: Address<TAccountCreatePoolFee>;
     /** an account to store oracle observations */
     observationState?: Address<TAccountObservationState>;
-    /** Program to create mint account and mint tokens */
-    tokenProgram?: Address<TAccountTokenProgram>;
     /** Spl token program or token program 2022 */
     token0Program: Address<TAccountToken0Program>;
     /** Spl token program or token program 2022 */
     token1Program: Address<TAccountToken1Program>;
-    /** Program to create an ATA for receiving position NFT */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
-    /** To create a new program account */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Sysvar for program account */
-    rent?: Address<TAccountRent>;
     initAmount0: InitializeInstructionDataArgs['initAmount0'];
     initAmount1: InitializeInstructionDataArgs['initAmount1'];
     openTime: InitializeInstructionDataArgs['openTime'];
@@ -235,7 +217,6 @@ export type InitializeAsyncInput<
 export async function getInitializeInstructionAsync<
     TAccountCreator extends string,
     TAccountAmmConfig extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountToken0Mint extends string,
     TAccountToken1Mint extends string,
@@ -245,19 +226,13 @@ export async function getInitializeInstructionAsync<
     TAccountCreatorLpToken extends string,
     TAccountToken0Vault extends string,
     TAccountToken1Vault extends string,
-    TAccountCreatePoolFee extends string,
     TAccountObservationState extends string,
-    TAccountTokenProgram extends string,
     TAccountToken0Program extends string,
     TAccountToken1Program extends string,
-    TAccountAssociatedTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountRent extends string,
 >(
     input: InitializeAsyncInput<
         TAccountCreator,
         TAccountAmmConfig,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountToken0Mint,
         TAccountToken1Mint,
@@ -267,21 +242,16 @@ export async function getInitializeInstructionAsync<
         TAccountCreatorLpToken,
         TAccountToken0Vault,
         TAccountToken1Vault,
-        TAccountCreatePoolFee,
         TAccountObservationState,
-        TAccountTokenProgram,
         TAccountToken0Program,
-        TAccountToken1Program,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRent
+        TAccountToken1Program
     >,
 ): Promise<
     InitializeInstruction<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountCreator,
         TAccountAmmConfig,
-        TAccountAuthority,
+        'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
         TAccountPoolState,
         TAccountToken0Mint,
         TAccountToken1Mint,
@@ -291,14 +261,14 @@ export async function getInitializeInstructionAsync<
         TAccountCreatorLpToken,
         TAccountToken0Vault,
         TAccountToken1Vault,
-        TAccountCreatePoolFee,
+        'DNXgeM9EiiaAbaWvwjHj9fQQLAX5ZsfHyvmYUNRAdNC8',
         TAccountObservationState,
-        TAccountTokenProgram,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
         TAccountToken0Program,
         TAccountToken1Program,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRent
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -308,7 +278,7 @@ export async function getInitializeInstructionAsync<
     const originalAccounts = {
         creator: { value: input.creator ?? null, isWritable: true },
         ammConfig: { value: input.ammConfig ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         token0Mint: { value: input.token0Mint ?? null, isWritable: false },
         token1Mint: { value: input.token1Mint ?? null, isWritable: false },
@@ -318,14 +288,14 @@ export async function getInitializeInstructionAsync<
         creatorLpToken: { value: input.creatorLpToken ?? null, isWritable: true },
         token0Vault: { value: input.token0Vault ?? null, isWritable: true },
         token1Vault: { value: input.token1Vault ?? null, isWritable: true },
-        createPoolFee: { value: input.createPoolFee ?? null, isWritable: true },
+        createPoolFee: { value: null, isWritable: true },
         observationState: { value: input.observationState ?? null, isWritable: true },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
         token0Program: { value: input.token0Program ?? null, isWritable: false },
         token1Program: { value: input.token1Program ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        rent: { value: input.rent ?? null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        rent: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -425,7 +395,7 @@ export async function getInitializeInstructionAsync<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountCreator,
         TAccountAmmConfig,
-        TAccountAuthority,
+        'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
         TAccountPoolState,
         TAccountToken0Mint,
         TAccountToken1Mint,
@@ -435,21 +405,20 @@ export async function getInitializeInstructionAsync<
         TAccountCreatorLpToken,
         TAccountToken0Vault,
         TAccountToken1Vault,
-        TAccountCreatePoolFee,
+        'DNXgeM9EiiaAbaWvwjHj9fQQLAX5ZsfHyvmYUNRAdNC8',
         TAccountObservationState,
-        TAccountTokenProgram,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
         TAccountToken0Program,
         TAccountToken1Program,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRent
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111'
     >);
 }
 
 export type InitializeInput<
     TAccountCreator extends string = string,
     TAccountAmmConfig extends string = string,
-    TAccountAuthority extends string = string,
     TAccountPoolState extends string = string,
     TAccountToken0Mint extends string = string,
     TAccountToken1Mint extends string = string,
@@ -459,21 +428,14 @@ export type InitializeInput<
     TAccountCreatorLpToken extends string = string,
     TAccountToken0Vault extends string = string,
     TAccountToken1Vault extends string = string,
-    TAccountCreatePoolFee extends string = string,
     TAccountObservationState extends string = string,
-    TAccountTokenProgram extends string = string,
     TAccountToken0Program extends string = string,
     TAccountToken1Program extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
-    TAccountRent extends string = string,
 > = {
     /** Address paying to create the pool. Can be anyone */
     creator: TransactionSigner<TAccountCreator>;
     /** Which config the pool belongs to. */
     ammConfig: Address<TAccountAmmConfig>;
-    /** pool vault and lp mint authority */
-    authority?: Address<TAccountAuthority>;
     /**
      * PDA account:
      * seeds = [
@@ -500,22 +462,12 @@ export type InitializeInput<
     creatorLpToken: Address<TAccountCreatorLpToken>;
     token0Vault: Address<TAccountToken0Vault>;
     token1Vault: Address<TAccountToken1Vault>;
-    /** create pool fee account */
-    createPoolFee?: Address<TAccountCreatePoolFee>;
     /** an account to store oracle observations */
     observationState: Address<TAccountObservationState>;
-    /** Program to create mint account and mint tokens */
-    tokenProgram?: Address<TAccountTokenProgram>;
     /** Spl token program or token program 2022 */
     token0Program: Address<TAccountToken0Program>;
     /** Spl token program or token program 2022 */
     token1Program: Address<TAccountToken1Program>;
-    /** Program to create an ATA for receiving position NFT */
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
-    /** To create a new program account */
-    systemProgram?: Address<TAccountSystemProgram>;
-    /** Sysvar for program account */
-    rent?: Address<TAccountRent>;
     initAmount0: InitializeInstructionDataArgs['initAmount0'];
     initAmount1: InitializeInstructionDataArgs['initAmount1'];
     openTime: InitializeInstructionDataArgs['openTime'];
@@ -524,7 +476,6 @@ export type InitializeInput<
 export function getInitializeInstruction<
     TAccountCreator extends string,
     TAccountAmmConfig extends string,
-    TAccountAuthority extends string,
     TAccountPoolState extends string,
     TAccountToken0Mint extends string,
     TAccountToken1Mint extends string,
@@ -534,19 +485,13 @@ export function getInitializeInstruction<
     TAccountCreatorLpToken extends string,
     TAccountToken0Vault extends string,
     TAccountToken1Vault extends string,
-    TAccountCreatePoolFee extends string,
     TAccountObservationState extends string,
-    TAccountTokenProgram extends string,
     TAccountToken0Program extends string,
     TAccountToken1Program extends string,
-    TAccountAssociatedTokenProgram extends string,
-    TAccountSystemProgram extends string,
-    TAccountRent extends string,
 >(
     input: InitializeInput<
         TAccountCreator,
         TAccountAmmConfig,
-        TAccountAuthority,
         TAccountPoolState,
         TAccountToken0Mint,
         TAccountToken1Mint,
@@ -556,20 +501,15 @@ export function getInitializeInstruction<
         TAccountCreatorLpToken,
         TAccountToken0Vault,
         TAccountToken1Vault,
-        TAccountCreatePoolFee,
         TAccountObservationState,
-        TAccountTokenProgram,
         TAccountToken0Program,
-        TAccountToken1Program,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRent
+        TAccountToken1Program
     >,
 ): InitializeInstruction<
     typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountCreator,
     TAccountAmmConfig,
-    TAccountAuthority,
+    'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
     TAccountPoolState,
     TAccountToken0Mint,
     TAccountToken1Mint,
@@ -579,14 +519,14 @@ export function getInitializeInstruction<
     TAccountCreatorLpToken,
     TAccountToken0Vault,
     TAccountToken1Vault,
-    TAccountCreatePoolFee,
+    'DNXgeM9EiiaAbaWvwjHj9fQQLAX5ZsfHyvmYUNRAdNC8',
     TAccountObservationState,
-    TAccountTokenProgram,
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     TAccountToken0Program,
     TAccountToken1Program,
-    TAccountAssociatedTokenProgram,
-    TAccountSystemProgram,
-    TAccountRent
+    'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+    '11111111111111111111111111111111',
+    'SysvarRent111111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
@@ -595,7 +535,7 @@ export function getInitializeInstruction<
     const originalAccounts = {
         creator: { value: input.creator ?? null, isWritable: true },
         ammConfig: { value: input.ammConfig ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         token0Mint: { value: input.token0Mint ?? null, isWritable: false },
         token1Mint: { value: input.token1Mint ?? null, isWritable: false },
@@ -605,14 +545,14 @@ export function getInitializeInstruction<
         creatorLpToken: { value: input.creatorLpToken ?? null, isWritable: true },
         token0Vault: { value: input.token0Vault ?? null, isWritable: true },
         token1Vault: { value: input.token1Vault ?? null, isWritable: true },
-        createPoolFee: { value: input.createPoolFee ?? null, isWritable: true },
+        createPoolFee: { value: null, isWritable: true },
         observationState: { value: input.observationState ?? null, isWritable: true },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
         token0Program: { value: input.token0Program ?? null, isWritable: false },
         token1Program: { value: input.token1Program ?? null, isWritable: false },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
-        rent: { value: input.rent ?? null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
+        rent: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -674,7 +614,7 @@ export function getInitializeInstruction<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountCreator,
         TAccountAmmConfig,
-        TAccountAuthority,
+        'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
         TAccountPoolState,
         TAccountToken0Mint,
         TAccountToken1Mint,
@@ -684,14 +624,14 @@ export function getInitializeInstruction<
         TAccountCreatorLpToken,
         TAccountToken0Vault,
         TAccountToken1Vault,
-        TAccountCreatePoolFee,
+        'DNXgeM9EiiaAbaWvwjHj9fQQLAX5ZsfHyvmYUNRAdNC8',
         TAccountObservationState,
-        TAccountTokenProgram,
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
         TAccountToken0Program,
         TAccountToken1Program,
-        TAccountAssociatedTokenProgram,
-        TAccountSystemProgram,
-        TAccountRent
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        '11111111111111111111111111111111',
+        'SysvarRent111111111111111111111111111111111'
     >);
 }
 

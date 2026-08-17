@@ -131,7 +131,6 @@ export function getSwapBaseOutputInstructionDataCodec(): FixedSizeCodec<
 
 export type SwapBaseOutputInput<
     TAccountPayer extends string = string,
-    TAccountAuthority extends string = string,
     TAccountAmmConfig extends string = string,
     TAccountPoolState extends string = string,
     TAccountInputTokenAccount extends string = string,
@@ -146,7 +145,6 @@ export type SwapBaseOutputInput<
 > = {
     /** The user performing the swap */
     payer: TransactionSigner<TAccountPayer>;
-    authority?: Address<TAccountAuthority>;
     /** The factory state to read protocol fees */
     ammConfig: Address<TAccountAmmConfig>;
     /** The program account of the pool in which the swap will be performed */
@@ -175,7 +173,6 @@ export type SwapBaseOutputInput<
 
 export function getSwapBaseOutputInstruction<
     TAccountPayer extends string,
-    TAccountAuthority extends string,
     TAccountAmmConfig extends string,
     TAccountPoolState extends string,
     TAccountInputTokenAccount extends string,
@@ -190,7 +187,6 @@ export function getSwapBaseOutputInstruction<
 >(
     input: SwapBaseOutputInput<
         TAccountPayer,
-        TAccountAuthority,
         TAccountAmmConfig,
         TAccountPoolState,
         TAccountInputTokenAccount,
@@ -206,7 +202,7 @@ export function getSwapBaseOutputInstruction<
 ): SwapBaseOutputInstruction<
     typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountPayer,
-    TAccountAuthority,
+    'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
     TAccountAmmConfig,
     TAccountPoolState,
     TAccountInputTokenAccount,
@@ -225,7 +221,7 @@ export function getSwapBaseOutputInstruction<
     // Original accounts.
     const originalAccounts = {
         payer: { value: input.payer ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
+        authority: { value: null, isWritable: false },
         ammConfig: { value: input.ammConfig ?? null, isWritable: false },
         poolState: { value: input.poolState ?? null, isWritable: true },
         inputTokenAccount: { value: input.inputTokenAccount ?? null, isWritable: true },
@@ -270,7 +266,7 @@ export function getSwapBaseOutputInstruction<
     } as SwapBaseOutputInstruction<
         typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         TAccountPayer,
-        TAccountAuthority,
+        'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
         TAccountAmmConfig,
         TAccountPoolState,
         TAccountInputTokenAccount,

@@ -1,0 +1,11 @@
+---
+'@codama/renderers-js': major
+---
+
+Drop instruction accounts whose address is fixed at generation time from the generated input types. An account qualifies when its default resolves to exactly one address here — a pinned public key, a program link, the program id, or a PDA whose every seed is constant — and it is not a signer, its default was not invented from its name by Codama's common account-default rules, nothing else in the instruction derives from it, and the instruction contains no resolver. Such an address is enforced by the on-chain program, so passing anything else could only ever produce a failing transaction. The account is still emitted into the account metas with its fixed address, still appears in the low-level instruction type and in the parse helper, and the instruction type now carries the literal `Address<'…'>` for it instead of an inferred type parameter.
+
+An IDL-optional account always keeps its input, whatever its default's kind. The builder applies no default to such an account unless something else in the instruction derives from it, so its input is the only way a caller can express the absence the on-chain program branches on.
+
+This is a breaking change for callers. Code that passes one of these accounts will no longer compile: the field is gone from the instruction's input type, so an object literal supplying it fails with an excess-property error, and the corresponding `TAccountX` type parameter is gone from both the input type and the builder's generics. The remedy is simply to delete the field. There is deliberately no override: the address is a generation-time fact drawn from the IDL, like the discriminators and the account order around it, so a client that needs a different one is generated from a different IDL.
+
+PDA defaults written inline rather than through a PDA link now resolve at generation time too, when all of their seeds are constant and their deriving program is known. Those accounts previously derived their address at runtime through `getProgramDerivedAddress`, which forced an asynchronous builder; they are now folded to a constant, so an instruction whose only asynchronous default was such a PDA no longer renders an `…Async` variant.

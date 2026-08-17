@@ -1,5 +1,6 @@
 import {
     camelCase,
+    CamelCaseString,
     getAllInstructionArguments,
     InstructionArgumentNode,
     InstructionNode,
@@ -20,6 +21,7 @@ import {
     Fragment,
     fragment,
     getDocblockFragment,
+    isDefaultSkippedForOptionalAccount,
     isDefaultValueAppliedByBuilder,
     isDefaultValueSkippedOnSyncPath,
     mergeFragmentImports,
@@ -33,23 +35,25 @@ export function getInstructionInputTypeFragment(
     scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
         asyncScope: AsyncScope;
         dataArgsManifest: TypeManifest;
+        fixedAccounts: ReadonlyMap<CamelCaseString, string>;
         instructionPath: NodePath<InstructionNode>;
         renamedArgs: Map<string, string>;
         resolvedInputs: ResolvedInstructionInput[];
         useAsync: boolean;
     },
 ): Fragment {
-    const { instructionPath, useAsync, nameApi } = scope;
+    const { fixedAccounts, instructionPath, useAsync, nameApi } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
     const instructionInputType = useAsync
         ? nameApi.instructionAsyncInputType(instructionNode.name)
         : nameApi.instructionSyncInputType(instructionNode.name);
     const [dataArgumentsFragment, customDataArgumentsFragment] = getDataArgumentsFragments(scope);
 
-    const instructionAccounts = instructionNode.accounts ?? [];
+    // A type parameter with no field left to infer from would widen the return type to `string`.
+    const inputAccounts = (instructionNode.accounts ?? []).filter(account => !fixedAccounts.has(account.name));
     let accountTypeParams = '';
-    if (instructionAccounts.length > 0) {
-        accountTypeParams = instructionAccounts
+    if (inputAccounts.length > 0) {
+        accountTypeParams = inputAccounts
             .map(account => `TAccount${pascalCase(account.name)} extends string = string`)
             .join(', ');
         accountTypeParams = `<${accountTypeParams}>`;
@@ -73,22 +77,27 @@ export function getInstructionInputTypeFragment(
 function getAccountsFragment(
     scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
         asyncScope: AsyncScope;
+        fixedAccounts: ReadonlyMap<CamelCaseString, string>;
         instructionPath: NodePath<InstructionNode>;
         resolvedInputs: ResolvedInstructionInput[];
         useAsync: boolean;
     },
 ): Fragment {
-    const { instructionPath, resolvedInputs, useAsync, asyncScope } = scope;
+    const { fixedAccounts, instructionPath, resolvedInputs, useAsync, asyncScope } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
 
-    const fragments = (instructionNode.accounts ?? []).map(account => {
+    const fragments = (instructionNode.accounts ?? []).flatMap(account => {
+        // The program enforces this address, so an override could only produce a failing transaction.
+        if (fixedAccounts.has(account.name)) return [];
         const resolvedAccount = resolvedInputs.find(
             input => input.kind === 'instructionAccountNode' && input.name === account.name,
         ) as ResolvedInstructionAccount;
         const hasDefaultValue = isDefaultValueAppliedByBuilder(resolvedAccount.defaultValue, asyncScope, useAsync);
         const docs = getDocblockFragment(account.docs ?? [], true);
         const optionalSign = hasDefaultValue || resolvedAccount.isOptional ? '?' : '';
-        return fragment`${docs}${camelCase(account.name)}${optionalSign}: ${getAccountTypeFragment(resolvedAccount)};`;
+        return [
+            fragment`${docs}${camelCase(account.name)}${optionalSign}: ${getAccountTypeFragment(resolvedAccount)};`,
+        ];
     });
 
     return mergeFragments(fragments, c => c.join('\n'));
@@ -159,32 +168,27 @@ function getExtraArgumentsFragment(
     const instructionExtraName = nameApi.instructionExtraType(instructionNode.name);
     const extraArgsType = nameApi.dataArgsType(instructionExtraName);
 
-    // Args referenced only by defaults the sync builder skips are dead on the sync path,
-    // so the sync input type marks them optional. Keep in sync with `instructionInputDefault.ts`.
-    const asyncOnlyDefaultRefs = new Set<string>();
-    // Args the sync builder still reads (remaining accounts, byte deltas, sync-rendered defaults) stay required.
-    const syncReadRefs = new Set<string>();
-    if (!useAsync) {
-        collectArgumentValueNames(instructionNode.remainingAccounts ?? [], syncReadRefs);
-        collectArgumentValueNames(instructionNode.byteDeltas ?? [], syncReadRefs);
-        for (const input of scope.resolvedInputs) {
-            if (!input.defaultValue) continue;
-            if (isDefaultValueSkippedOnSyncPath(input.defaultValue, asyncScope, useAsync)) {
-                collectArgumentValueNames(input.defaultValue, asyncOnlyDefaultRefs);
-            } else {
-                collectArgumentValueNames(input.defaultValue, syncReadRefs);
-            }
-        }
+    // An arg referenced only by defaults this variant skips is dead, so the input type marks it
+    // optional. Keep in sync with `instructionInputDefault.ts`.
+    const skippedRefs = new Set<string>();
+    const readRefs = new Set<string>();
+    collectArgumentValueNames(instructionNode.remainingAccounts ?? [], readRefs);
+    collectArgumentValueNames(instructionNode.byteDeltas ?? [], readRefs);
+    for (const input of scope.resolvedInputs) {
+        if (!input.defaultValue) continue;
+        const isSkipped =
+            isDefaultValueSkippedOnSyncPath(input.defaultValue, asyncScope, useAsync) ||
+            isDefaultSkippedForOptionalAccount(input, instructionNode);
+        collectArgumentValueNames(input.defaultValue, isSkipped ? skippedRefs : readRefs);
     }
 
     const fragments = extraArguments.flatMap(arg => {
-        // Dead on the sync path: the arg only feeds sync-skipped defaults, its own or another input's.
-        // Add any new sync-path reader to syncReadRefs above, or live args will render optional.
-        const hasAsyncOnlyRole =
-            asyncOnlyDefaultRefs.has(arg.name) ||
-            isDefaultValueSkippedOnSyncPath(arg.defaultValue, asyncScope, useAsync);
-        const unreadInSync = !useAsync && hasAsyncOnlyRole && !syncReadRefs.has(arg.name);
-        const argFragment = getArgumentFragment(arg, extraArgsType, scope, unreadInSync);
+        // An arg nothing references at all is left alone: a caller's argument, not a dead one.
+        // Add any new reader to readRefs above, or live args will render optional.
+        const onlyFeedsSkippedDefaults =
+            skippedRefs.has(arg.name) || isDefaultValueSkippedOnSyncPath(arg.defaultValue, asyncScope, useAsync);
+        const unread = onlyFeedsSkippedDefaults && !readRefs.has(arg.name);
+        const argFragment = getArgumentFragment(arg, extraArgsType, scope, unread);
         return argFragment ? [argFragment] : [];
     });
     if (fragments.length === 0) return;

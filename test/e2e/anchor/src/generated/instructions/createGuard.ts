@@ -175,18 +175,12 @@ export type CreateGuardAsyncInput<
     TAccountMintTokenAccount extends string = string,
     TAccountGuardAuthority extends string = string,
     TAccountPayer extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     guard?: Address<TAccountGuard>;
     mint: TransactionSigner<TAccountMint>;
     mintTokenAccount?: Address<TAccountMintTokenAccount>;
     guardAuthority: TransactionSigner<TAccountGuardAuthority>;
     payer: TransactionSigner<TAccountPayer>;
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
-    tokenProgram?: Address<TAccountTokenProgram>;
-    systemProgram?: Address<TAccountSystemProgram>;
     name: CreateGuardInstructionDataArgs['name'];
     symbol: CreateGuardInstructionDataArgs['symbol'];
     uri: CreateGuardInstructionDataArgs['uri'];
@@ -201,19 +195,13 @@ export async function getCreateGuardInstructionAsync<
     TAccountMintTokenAccount extends string,
     TAccountGuardAuthority extends string,
     TAccountPayer extends string,
-    TAccountAssociatedTokenProgram extends string,
-    TAccountTokenProgram extends string,
-    TAccountSystemProgram extends string,
 >(
     input: CreateGuardAsyncInput<
         TAccountGuard,
         TAccountMint,
         TAccountMintTokenAccount,
         TAccountGuardAuthority,
-        TAccountPayer,
-        TAccountAssociatedTokenProgram,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        TAccountPayer
     >,
 ): Promise<
     CreateGuardInstruction<
@@ -223,9 +211,9 @@ export async function getCreateGuardInstructionAsync<
         TAccountMintTokenAccount,
         TAccountGuardAuthority,
         TAccountPayer,
-        TAccountAssociatedTokenProgram,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+        '11111111111111111111111111111111'
     >
 > {
     // Program address.
@@ -238,9 +226,9 @@ export async function getCreateGuardInstructionAsync<
         mintTokenAccount: { value: input.mintTokenAccount ?? null, isWritable: true },
         guardAuthority: { value: input.guardAuthority ?? null, isWritable: false },
         payer: { value: input.payer ?? null, isWritable: true },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -300,9 +288,9 @@ export async function getCreateGuardInstructionAsync<
         TAccountMintTokenAccount,
         TAccountGuardAuthority,
         TAccountPayer,
-        TAccountAssociatedTokenProgram,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+        '11111111111111111111111111111111'
     >);
 }
 
@@ -312,18 +300,12 @@ export type CreateGuardInput<
     TAccountMintTokenAccount extends string = string,
     TAccountGuardAuthority extends string = string,
     TAccountPayer extends string = string,
-    TAccountAssociatedTokenProgram extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountSystemProgram extends string = string,
 > = {
     guard: Address<TAccountGuard>;
     mint: TransactionSigner<TAccountMint>;
     mintTokenAccount: Address<TAccountMintTokenAccount>;
     guardAuthority: TransactionSigner<TAccountGuardAuthority>;
     payer: TransactionSigner<TAccountPayer>;
-    associatedTokenProgram?: Address<TAccountAssociatedTokenProgram>;
-    tokenProgram?: Address<TAccountTokenProgram>;
-    systemProgram?: Address<TAccountSystemProgram>;
     name: CreateGuardInstructionDataArgs['name'];
     symbol: CreateGuardInstructionDataArgs['symbol'];
     uri: CreateGuardInstructionDataArgs['uri'];
@@ -338,19 +320,13 @@ export function getCreateGuardInstruction<
     TAccountMintTokenAccount extends string,
     TAccountGuardAuthority extends string,
     TAccountPayer extends string,
-    TAccountAssociatedTokenProgram extends string,
-    TAccountTokenProgram extends string,
-    TAccountSystemProgram extends string,
 >(
     input: CreateGuardInput<
         TAccountGuard,
         TAccountMint,
         TAccountMintTokenAccount,
         TAccountGuardAuthority,
-        TAccountPayer,
-        TAccountAssociatedTokenProgram,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        TAccountPayer
     >,
 ): CreateGuardInstruction<
     typeof WEN_TRANSFER_GUARD_PROGRAM_ADDRESS,
@@ -359,9 +335,9 @@ export function getCreateGuardInstruction<
     TAccountMintTokenAccount,
     TAccountGuardAuthority,
     TAccountPayer,
-    TAccountAssociatedTokenProgram,
-    TAccountTokenProgram,
-    TAccountSystemProgram
+    'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+    'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+    '11111111111111111111111111111111'
 > {
     // Program address.
     const programAddress = WEN_TRANSFER_GUARD_PROGRAM_ADDRESS;
@@ -373,9 +349,9 @@ export function getCreateGuardInstruction<
         mintTokenAccount: { value: input.mintTokenAccount ?? null, isWritable: true },
         guardAuthority: { value: input.guardAuthority ?? null, isWritable: false },
         payer: { value: input.payer ?? null, isWritable: true },
-        associatedTokenProgram: { value: input.associatedTokenProgram ?? null, isWritable: false },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+        associatedTokenProgram: { value: null, isWritable: false },
+        tokenProgram: { value: null, isWritable: false },
+        systemProgram: { value: null, isWritable: false },
     };
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
@@ -417,9 +393,9 @@ export function getCreateGuardInstruction<
         TAccountMintTokenAccount,
         TAccountGuardAuthority,
         TAccountPayer,
-        TAccountAssociatedTokenProgram,
-        TAccountTokenProgram,
-        TAccountSystemProgram
+        'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+        'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+        '11111111111111111111111111111111'
     >);
 }
 

@@ -1,6 +1,6 @@
-import { camelCase, InstructionNode, isNode, parseOptionalAccountStrategy } from '@codama/nodes';
+import { camelCase, InstructionNode, isNode } from '@codama/nodes';
 import { mapFragmentContent } from '@codama/renderers-core';
-import { getLastNodeFromPath, NodePath, ResolvedInstructionInput } from '@codama/visitors-core';
+import { NodePath, ResolvedInstructionInput } from '@codama/visitors-core';
 
 import { AsyncScope, Fragment, fragment, mergeFragments, RenderScope } from '../utils';
 import { getInstructionInputDefaultFragment } from './instructionInputDefault';
@@ -13,13 +13,8 @@ export function getInstructionInputResolvedFragment(
         useAsync: boolean;
     },
 ): Fragment {
-    const instructionNode = getLastNodeFromPath(scope.instructionPath);
     const resolvedInputFragments = scope.resolvedInputs.flatMap((input: ResolvedInstructionInput): Fragment[] => {
-        const inputFragment = getInstructionInputDefaultFragment({
-            ...scope,
-            input,
-            optionalAccountStrategy: parseOptionalAccountStrategy(instructionNode.optionalAccountStrategy),
-        });
+        const inputFragment = getInstructionInputDefaultFragment({ ...scope, input });
         if (!inputFragment.content) return [];
         const camelName = camelCase(input.name);
         return [
