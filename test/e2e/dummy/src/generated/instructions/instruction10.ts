@@ -59,8 +59,6 @@ export function getInstruction10InstructionDataCodec(): FixedSizeCodec<
     return combineCodec(getInstruction10InstructionDataEncoder(), getInstruction10InstructionDataDecoder());
 }
 
-export type Instruction10Input = {};
-
 export function getInstruction10Instruction(): Instruction10Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
     const programAddress = DUMMY_PROGRAM_ADDRESS;

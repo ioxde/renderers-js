@@ -453,7 +453,7 @@ test('it keeps data arguments with async-only defaults required in the sync inpu
     await codeDoesNotContain(syncSection, /amount\?:/);
 });
 
-test('it renders extra arguments only read by async-only argument defaults as optional in the sync input type', async () => {
+test('it gives the sync builder no input when its only extra argument feeds an async-only default', async () => {
     // Given an instruction where extra argument "a" is only consumed by
     // the async-only resolver default of extra argument "b".
     const node = programNode({
@@ -477,22 +477,20 @@ test('it renders extra arguments only read by async-only argument defaults as op
     // When we render it with the resolver registered as async.
     const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
 
-    // And split the async and sync sections of the file.
-    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
-        /export\s+type\s+CreateInput\b/,
-    );
+    const content = getFromRenderMap(renderMap, 'instructions/create.ts').content;
 
     // Then we expect "a" to stay required in the async input type
     // since the async builder passes it to the resolver.
-    await codeContains(asyncSection, /a:\s*CreateInstructionExtraArgs\[['"]a['"]\];/);
-    await codeDoesNotContain(asyncSection, /a\?:/);
+    await codeContains(content, /a:\s*CreateInstructionExtraArgs\[['"]a['"]\];/);
+    await codeDoesNotContain(content, /a\?:/);
 
-    // And we expect "a" to be optional in the sync input type since the sync
-    // builder skips the async-only default and never reads it.
-    await codeContains(syncSection, /a\?:\s*CreateInstructionExtraArgs\[['"]a['"]\];/);
+    // And we expect no sync input type: that builder skips the async-only default,
+    // so nothing on the sync path reads either argument.
+    await codeDoesNotContain(content, /export\s+type\s+CreateInput\b/);
+    await codeContains(content, /export\s+function\s+getCreateInstruction\(\s*\)/);
 });
 
-test('it renders unread extra arguments with async-only defaults as optional in the sync input type', async () => {
+test('it gives the sync builder no input when its only extra argument is unread on that path', async () => {
     // Given an instruction with an extra argument that has an async-only
     // resolver default and no other consumers.
     const node = programNode({
@@ -515,18 +513,16 @@ test('it renders unread extra arguments with async-only defaults as optional in 
     // When we render it with the resolver registered as async.
     const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
 
-    // And split the async and sync sections of the file.
-    const [asyncSection, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
-        /export\s+type\s+CreateInput\b/,
-    );
+    const content = getFromRenderMap(renderMap, 'instructions/create.ts').content;
 
     // Then we expect the argument to be optional in the async input type
     // since the async builder applies the resolver default.
-    await codeContains(asyncSection, /foo\?:\s*CreateInstructionExtraArgs\[['"]foo['"]\];/);
+    await codeContains(content, /foo\?:\s*CreateInstructionExtraArgs\[['"]foo['"]\];/);
 
-    // And optional in the sync input type since the sync builder
-    // skips the default and nothing else reads the argument.
-    await codeContains(syncSection, /foo\?:\s*CreateInstructionExtraArgs\[['"]foo['"]\];/);
+    // And we expect no sync input type: nothing on that path reads the argument, and an
+    // unreferenced `input` parameter would trip `noUnusedParameters` in the client.
+    await codeDoesNotContain(content, /export\s+type\s+CreateInput\b/);
+    await codeContains(content, /export\s+function\s+getCreateInstruction\(\s*\)/);
 });
 
 test('it keeps extra arguments with async-only defaults required in the sync input type when the sync builder reads them', async () => {
@@ -566,6 +562,47 @@ test('it keeps extra arguments with async-only defaults required in the sync inp
     // default but still reads the argument for the byte delta.
     await codeContains(syncSection, /space:\s*CreateInstructionExtraArgs\[['"]space['"]\];/);
     await codeDoesNotContain(syncSection, /space\?:/);
+});
+
+test('it gives the sync builder an input parameter when only a byte delta reads an extra argument', async () => {
+    // Given an instruction whose byte delta is the sync builder's only reader of an
+    // extra argument that has an async-only resolver default.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                byteDeltas: [instructionByteDeltaNode(argumentValueNode('space'), { withHeader: true })],
+                extraArguments: [
+                    instructionArgumentNode({
+                        defaultValue: resolverValueNode('myAsyncResolver'),
+                        name: 'space',
+                        type: numberTypeNode('u64'),
+                    }),
+                ],
+                name: 'create',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it with the resolver registered as async.
+    const renderMap = visit(node, getRenderMapVisitor({ asyncResolvers: ['myAsyncResolver'] }));
+
+    // Then we expect the sync builder to take an input parameter.
+    await renderMapContains(renderMap, 'instructions/create.ts', [
+        /export\s+function\s+getCreateInstruction\(\s*input:\s*CreateInput\s*\)/,
+    ]);
+
+    // And split the async and sync sections of the file.
+    const [, syncSection] = getFromRenderMap(renderMap, 'instructions/create.ts').content.split(
+        /export\s+type\s+CreateInput\b/,
+    );
+
+    // And we expect the sync builder to declare the "args" object its byte delta reads.
+    await codeContains(syncSection, [
+        /const\s+args\s*=\s*\{\s*\.\.\.input\s*,?\s*\}\s*;/,
+        /const\s+byteDelta:\s*number\s*=\s*\[Number\(args\.space\)\s*\+\s*BASE_ACCOUNT_SIZE\]/,
+    ]);
 });
 
 test('it keeps data arguments with identity or payer defaults required in the input type', async () => {
@@ -883,6 +920,61 @@ test('it renders instruction accounts with inlined PDAs from another program as 
     });
 });
 
+test('it prefers the pinned program over the runtime reference on inlined PDA default values', async () => {
+    // Given an inlined PDA that points at another account as its program and carries the resolved pin.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({ isSigner: true, isWritable: false, name: 'authority' }),
+                    instructionAccountNode({
+                        defaultValue: publicKeyValueNode('2222'),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'myProgram',
+                    }),
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode(
+                            pdaNode({
+                                name: 'counter',
+                                programId: '2222',
+                                seeds: [
+                                    constantPdaSeedNodeFromString('utf8', 'counter'),
+                                    variablePdaSeedNode('authority', publicKeyTypeNode()),
+                                ],
+                            }),
+                            [pdaSeedValueNode('authority', accountValueNode('authority'))],
+                            accountValueNode('myProgram'),
+                        ),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'counter',
+                    }),
+                ],
+                name: 'increment',
+            }),
+        ],
+        name: 'counter',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the derivation uses the pinned address rather than reading the account back at runtime.
+    await renderMapContains(renderMap, 'instructions/increment.ts', [
+        'if (!accounts.counter.value) { ' +
+            'accounts.counter.value = await getProgramDerivedAddress( { ' +
+            "  programAddress: '2222' as Address<'2222'>, " +
+            '  seeds: [ ' +
+            "    getUtf8Encoder().encode('counter'), " +
+            "    getAddressEncoder().encode( getAddressFromResolvedInstructionAccount ( 'authority', accounts.authority.value ) ) " +
+            '  ] ' +
+            '} ); ' +
+            '}',
+    ]);
+});
+
 test('it renders constants for instruction field discriminators', async () => {
     // Given the following instruction with a field discriminator.
     const node = programNode({
@@ -1149,11 +1241,14 @@ test('it renders instructions with no accounts and no data', async () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then the instruction input type is generated as an empty object.
-    await renderMapContains(renderMap, 'instructions/myInstruction.ts', ['export type MyInstructionInput = {};']);
-
-    // But the instruction function does not use it as an argument.
-    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', ['input: MyInstructionInput']);
+    // Then the instruction function takes no argument and no input type is generated.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'export function getMyInstructionInstruction():',
+    ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', [
+        'export type MyInstructionInput',
+        'input: MyInstructionInput',
+    ]);
 });
 
 test('it renders instructions with no accounts but with some omitted data', async () => {
@@ -1180,11 +1275,41 @@ test('it renders instructions with no accounts but with some omitted data', asyn
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor());
 
-    // Then the instruction input type is generated as an empty object.
-    await renderMapContains(renderMap, 'instructions/myInstruction.ts', ['export type MyInstructionInput = {};']);
+    // Then the instruction function takes no argument and no input type is generated.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'export function getMyInstructionInstruction():',
+    ]);
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', [
+        'export type MyInstructionInput',
+        'input: MyInstructionInput',
+    ]);
+});
 
-    // But the instruction function does not use it as an argument.
-    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', ['input: MyInstructionInput']);
+test('it does not render an input type for instructions that take no input', async () => {
+    // Given one instruction with no accounts and no arguments, and one with an account.
+    const node = programNode({
+        instructions: [
+            instructionNode({ name: 'withoutInput' }),
+            instructionNode({
+                accounts: [instructionAccountNode({ isSigner: false, isWritable: false, name: 'myAccount' })],
+                name: 'withInput',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then we expect no input type for the builder that takes no parameter.
+    await renderMapDoesNotContain(renderMap, 'instructions/withoutInput.ts', ['export type WithoutInputInput']);
+
+    // And we expect an input type for the instruction whose builder takes one.
+    await renderMapContains(renderMap, 'instructions/withInput.ts', [
+        'export type WithInputInput <TAccountMyAccount extends string = string> = { myAccount: Address<TAccountMyAccount>; };',
+        'input: WithInputInput<TAccountMyAccount>',
+    ]);
 });
 
 test('it renders instructions with no accounts but with some arguments', async () => {

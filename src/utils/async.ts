@@ -8,6 +8,7 @@ import {
     IdentityValueNode,
     InstructionAccountNode,
     InstructionArgumentNode,
+    InstructionByteDeltaValue,
     InstructionInputValueNode,
     InstructionNode,
     isNode,
@@ -152,29 +153,33 @@ export function getInstructionDependencies(
             ...(input.accounts ?? []).flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
             ...(input.arguments ?? []).flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
             ...(input.extraArguments ?? []).flatMap(x => getInstructionDependencies(x, asyncResolvers, useAsync)),
+            // Byte deltas read these values from the builder (`args.<name>`, or the resolver scope);
+            // leaving them out emits code that references locals the builder never declares.
+            ...(input.byteDeltas ?? []).flatMap(x => getValueDependencies(x.value, asyncResolvers, useAsync)),
         ]);
     }
 
-    if (!input.defaultValue) return [];
+    return getValueDependencies(input.defaultValue, asyncResolvers, useAsync);
+}
 
-    const getNestedDependencies = (
-        defaultValue: InstructionInputValueNode | undefined,
-    ): (AccountValueNode | ArgumentValueNode)[] => {
-        if (!defaultValue) return [];
-        return getInstructionDependencies({ ...input, defaultValue }, asyncResolvers, useAsync);
-    };
+function getValueDependencies(
+    value: InstructionByteDeltaValue | InstructionInputValueNode | undefined,
+    asyncResolvers: string[],
+    useAsync: boolean,
+): (AccountValueNode | ArgumentValueNode)[] {
+    if (!value) return [];
 
-    if (isNode(input.defaultValue, ['accountValueNode', 'accountBumpValueNode'])) {
-        return [accountValueNode(input.defaultValue.name)];
+    if (isNode(value, ['accountValueNode', 'accountBumpValueNode'])) {
+        return [accountValueNode(value.name)];
     }
 
-    if (isNode(input.defaultValue, ['argumentValueNode'])) {
-        return [argumentValueNode(input.defaultValue.name)];
+    if (isNode(value, ['argumentValueNode'])) {
+        return [argumentValueNode(value.name)];
     }
 
-    if (isNode(input.defaultValue, 'pdaValueNode')) {
+    if (isNode(value, 'pdaValueNode')) {
         const dependencies = new Map<CamelCaseString, AccountValueNode | ArgumentValueNode>();
-        (input.defaultValue.seeds ?? []).forEach(seed => {
+        (value.seeds ?? []).forEach(seed => {
             if (isNode(seed.value, ['accountValueNode', 'argumentValueNode'])) {
                 dependencies.set(seed.value.name, { ...seed.value });
             }
@@ -182,18 +187,18 @@ export function getInstructionDependencies(
         return [...dependencies.values()];
     }
 
-    if (isNode(input.defaultValue, 'resolverValueNode')) {
-        const isSynchronousResolver = !asyncResolvers.includes(input.defaultValue.name);
+    if (isNode(value, 'resolverValueNode')) {
+        const isSynchronousResolver = !asyncResolvers.includes(value.name);
         if (useAsync || isSynchronousResolver) {
-            return input.defaultValue.dependsOn ?? [];
+            return value.dependsOn ?? [];
         }
     }
 
-    if (isNode(input.defaultValue, 'conditionalValueNode')) {
+    if (isNode(value, 'conditionalValueNode')) {
         return deduplicateInstructionDependencies([
-            ...getNestedDependencies(input.defaultValue.condition),
-            ...getNestedDependencies(input.defaultValue.ifTrue),
-            ...getNestedDependencies(input.defaultValue.ifFalse),
+            ...getValueDependencies(value.condition, asyncResolvers, useAsync),
+            ...getValueDependencies(value.ifTrue, asyncResolvers, useAsync),
+            ...getValueDependencies(value.ifFalse, asyncResolvers, useAsync),
         ]);
     }
 

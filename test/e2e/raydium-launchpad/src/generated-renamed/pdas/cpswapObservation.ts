@@ -18,15 +18,10 @@ export type CpswapObservationSeeds = {
     cpswapPool: Address;
 };
 
-export async function findCpswapObservationPda(
-    seeds: CpswapObservationSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
-    } = config;
+export async function findCpswapObservationPda(seeds: CpswapObservationSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress:
+            'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
         seeds: [
             getBytesEncoder().encode(new Uint8Array([111, 98, 115, 101, 114, 118, 97, 116, 105, 111, 110])),
             getAddressEncoder().encode(seeds.cpswapPool),

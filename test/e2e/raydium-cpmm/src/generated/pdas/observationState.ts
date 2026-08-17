@@ -13,20 +13,15 @@ import {
     type Address,
     type ProgramDerivedAddress,
 } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type ObservationStateSeeds = {
     poolState: Address;
 };
 
-export async function findObservationStatePda(
-    seeds: ObservationStateSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
-    } = config;
+export async function findObservationStatePda(seeds: ObservationStateSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(new Uint8Array([111, 98, 115, 101, 114, 118, 97, 116, 105, 111, 110])),
             getAddressEncoder().encode(seeds.poolState),

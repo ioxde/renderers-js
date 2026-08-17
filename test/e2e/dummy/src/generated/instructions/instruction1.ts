@@ -20,8 +20,6 @@ export type Instruction1Instruction<
     TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> & InstructionWithAccounts<TRemainingAccounts>;
 
-export type Instruction1Input = {};
-
 export function getInstruction1Instruction(): Instruction1Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
     const programAddress = DUMMY_PROGRAM_ADDRESS;

@@ -8,14 +8,10 @@
 
 import { getBytesEncoder, getProgramDerivedAddress, type Address, type ProgramDerivedAddress } from '@solana/kit';
 
-export async function findAmmConfigPda(
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>,
-    } = config;
+export async function findAmmConfigPda(): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress:
+            '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>,
         seeds: [
             getBytesEncoder().encode(
                 new Uint8Array([

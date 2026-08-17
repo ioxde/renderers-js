@@ -60,8 +60,6 @@ export function getInstruction3InstructionDataCodec(): FixedSizeCodec<
     return combineCodec(getInstruction3InstructionDataEncoder(), getInstruction3InstructionDataDecoder());
 }
 
-export type Instruction3Input = {};
-
 export function getInstruction3Instruction(): Instruction3Instruction<typeof DUMMY_PROGRAM_ADDRESS> {
     // Program address.
     const programAddress = DUMMY_PROGRAM_ADDRESS;

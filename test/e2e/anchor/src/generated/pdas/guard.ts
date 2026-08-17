@@ -13,20 +13,15 @@ import {
     type Address,
     type ProgramDerivedAddress,
 } from '@solana/kit';
+import { WEN_TRANSFER_GUARD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type GuardSeeds = {
     mint: Address;
 };
 
-export async function findGuardPda(
-    seeds: GuardSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'LockdqYQ9X2kwtWB99ioSbxubAmEi8o9jqYwbXgrrRw' as Address<'LockdqYQ9X2kwtWB99ioSbxubAmEi8o9jqYwbXgrrRw'>,
-    } = config;
+export async function findGuardPda(seeds: GuardSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: WEN_TRANSFER_GUARD_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(
                 new Uint8Array([

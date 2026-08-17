@@ -19,15 +19,10 @@ export type AmmQuoteVaultSeeds = {
     market: Address;
 };
 
-export async function findAmmQuoteVaultPda(
-    seeds: AmmQuoteVaultSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>,
-    } = config;
+export async function findAmmQuoteVaultPda(seeds: AmmQuoteVaultSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress:
+            '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>,
         seeds: [
             getAddressEncoder().encode(address('675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8')),
             getAddressEncoder().encode(seeds.market),

@@ -406,48 +406,36 @@ export async function getMigrateToCpswapInstructionAsync<
             'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>;
     }
     if (!accounts.cpswapAuthority.value) {
-        accounts.cpswapAuthority.value = await findCpswapAuthorityPda({
-            programAddress: getAddressFromResolvedInstructionAccount('cpswapProgram', accounts.cpswapProgram.value),
-        });
+        accounts.cpswapAuthority.value = await findCpswapAuthorityPda();
     }
     if (!accounts.cpswapLpMint.value) {
-        accounts.cpswapLpMint.value = await findCpswapLpMintPda(
-            { cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value) },
-            { programAddress: getAddressFromResolvedInstructionAccount('cpswapProgram', accounts.cpswapProgram.value) },
-        );
+        accounts.cpswapLpMint.value = await findCpswapLpMintPda({
+            cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value),
+        });
     }
     if (!accounts.cpswapBaseVault.value) {
-        accounts.cpswapBaseVault.value = await findCpswapBaseVaultPda(
-            {
-                cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value),
-                baseMint: getAddressFromResolvedInstructionAccount('baseMint', accounts.baseMint.value),
-            },
-            { programAddress: getAddressFromResolvedInstructionAccount('cpswapProgram', accounts.cpswapProgram.value) },
-        );
+        accounts.cpswapBaseVault.value = await findCpswapBaseVaultPda({
+            cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value),
+            baseMint: getAddressFromResolvedInstructionAccount('baseMint', accounts.baseMint.value),
+        });
     }
     if (!accounts.cpswapQuoteVault.value) {
-        accounts.cpswapQuoteVault.value = await findCpswapQuoteVaultPda(
-            {
-                cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value),
-                quoteMint: getAddressFromResolvedInstructionAccount('quoteMint', accounts.quoteMint.value),
-            },
-            { programAddress: getAddressFromResolvedInstructionAccount('cpswapProgram', accounts.cpswapProgram.value) },
-        );
+        accounts.cpswapQuoteVault.value = await findCpswapQuoteVaultPda({
+            cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value),
+            quoteMint: getAddressFromResolvedInstructionAccount('quoteMint', accounts.quoteMint.value),
+        });
     }
     if (!accounts.cpswapObservation.value) {
-        accounts.cpswapObservation.value = await findCpswapObservationPda(
-            { cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value) },
-            { programAddress: getAddressFromResolvedInstructionAccount('cpswapProgram', accounts.cpswapProgram.value) },
-        );
+        accounts.cpswapObservation.value = await findCpswapObservationPda({
+            cpswapPool: getAddressFromResolvedInstructionAccount('cpswapPool', accounts.cpswapPool.value),
+        });
     }
     if (!accounts.lockProgram.value) {
         accounts.lockProgram.value =
             'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE' as Address<'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE'>;
     }
     if (!accounts.lockAuthority.value) {
-        accounts.lockAuthority.value = await findLockAuthorityPda({
-            programAddress: getAddressFromResolvedInstructionAccount('lockProgram', accounts.lockProgram.value),
-        });
+        accounts.lockAuthority.value = await findLockAuthorityPda();
     }
     if (!accounts.authority.value) {
         accounts.authority.value = await findAuthorityPda();

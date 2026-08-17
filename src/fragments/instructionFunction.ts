@@ -28,7 +28,7 @@ import { getInstructionRemainingAccountsFragment } from './instructionRemainingA
 export function getInstructionFunctionFragment(
     scope: Pick<
         RenderScope,
-        'asyncResolvers' | 'customInstructionData' | 'getImportFrom' | 'nameApi' | 'typeManifestVisitor'
+        'asyncResolvers' | 'customInstructionData' | 'getImportFrom' | 'linkables' | 'nameApi' | 'typeManifestVisitor'
     > & {
         dataArgsManifest: TypeManifest;
         extraArgsManifest: TypeManifest;
@@ -72,7 +72,8 @@ export function getInstructionFunctionFragment(
 
     const typeParams = getTypeParamsFragment(instructionNode);
     const returnType = getReturnTypeFragment(instructionTypeFragment, hasByteDeltas, useAsync);
-    const inputType = getInstructionInputTypeFragment(scope);
+    // Without an `input` parameter nothing references the type — not the builder signature, not the plugin.
+    const inputType = hasInput ? getInstructionInputTypeFragment(scope) : undefined;
     const inputArg = mapFragmentContent(getInputTypeCallFragment(scope), c => (hasInput ? `input: ${c}` : ''));
     const resolverScopeFragment = getResolverScopeInitializationFragment(hasResolver, hasAccounts, hasAnyArgs);
     const returnStatementFragment = getReturnStatementFragment({
@@ -103,9 +104,11 @@ export function getInstructionFunctionFragment(
         cs => cs.join('\n\n'),
     );
 
-    return fragment`${inputType}\n\nexport ${useAsync ? 'async ' : ''}function ${functionName}${typeParams}(${inputArg}): ${returnType} {
+    const functionFragment = fragment`export ${useAsync ? 'async ' : ''}function ${functionName}${typeParams}(${inputArg}): ${returnType} {
   ${functionBody}
 }`;
+
+    return mergeFragments([inputType, functionFragment], cs => cs.join('\n\n'));
 }
 
 function getProgramAddressInitializationFragment(programAddressConstant: Fragment): Fragment {

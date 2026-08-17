@@ -13,21 +13,16 @@ import {
     type Address,
     type ProgramDerivedAddress,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type PoolStateSeeds = {
     baseMint: Address;
     quoteMint: Address;
 };
 
-export async function findPoolStatePda(
-    seeds: PoolStateSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj' as Address<'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj'>,
-    } = config;
+export async function findPoolStatePda(seeds: PoolStateSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(new Uint8Array([112, 111, 111, 108])),
             getAddressEncoder().encode(seeds.baseMint),

@@ -1,27 +1,58 @@
-import { camelCase, isNode, isNodeFilter, PdaNode, PdaSeedNode } from '@codama/nodes';
+import { camelCase, isNode, isNodeFilter, PdaNode, PdaSeedNode, ProgramNode } from '@codama/nodes';
 import { findProgramNodeFromPath, getLastNodeFromPath, NodePath, visit } from '@codama/visitors-core';
 
-import { Fragment, fragment, getDocblockFragment, mergeFragments, RenderScope, use } from '../utils';
+import {
+    Fragment,
+    fragment,
+    getDocblockFragment,
+    getPdasWithProgramIdOverride,
+    mergeFragments,
+    RenderScope,
+    use,
+} from '../utils';
 
-export function getPdaFunctionFragment(
-    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
-        pdaPath: NodePath<PdaNode>;
-    },
-): Fragment {
+type PdaFunctionScope = Pick<RenderScope, 'linkables' | 'nameApi' | 'typeManifestVisitor'> & {
+    pdaPath: NodePath<PdaNode>;
+};
+
+export function getPdaFunctionFragment(scope: PdaFunctionScope): Fragment {
     const pdaNode = getLastNodeFromPath(scope.pdaPath);
-    const seeds = parsePdaSeedNodes(pdaNode.seeds ?? [], scope);
+    const programNode = findProgramNodeFromPath(scope.pdaPath)!;
 
-    return mergeFragments([getSeedInputTypeFragment(seeds, scope), getFunctionFragment(seeds, scope)], cs =>
-        cs.join('\n\n'),
+    const hasProgramAddressConfig = getPdasWithProgramIdOverride(scope.pdaPath, scope.linkables).has(pdaNode);
+    const programAddressValue = hasProgramAddressConfig
+        ? fragment`programAddress`
+        : getPinnedProgramAddressFragment(pdaNode, programNode, scope.nameApi);
+
+    const seeds = parsePdaSeedNodes(pdaNode.seeds ?? [], { ...scope, programAddressValue });
+
+    return mergeFragments(
+        [
+            getSeedInputTypeFragment(seeds, scope),
+            getFunctionFragment(seeds, { ...scope, hasProgramAddressConfig, programAddressValue }),
+        ],
+        cs => cs.join('\n\n'),
     );
 }
 
-function getSeedInputTypeFragment(
-    seeds: ParsedPdaSeedNode[],
-    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
-        pdaPath: NodePath<PdaNode>;
-    },
-): Fragment | undefined {
+/**
+ * The program a generation-time PDA derives under. Any program but the enclosing one inlines its
+ * address; the enclosing program goes through its generated constant so the address has a single
+ * source of truth.
+ */
+function getPinnedProgramAddressFragment(
+    pdaNode: PdaNode,
+    programNode: ProgramNode,
+    nameApi: RenderScope['nameApi'],
+): Fragment {
+    if (pdaNode.programId && pdaNode.programId !== programNode.publicKey) {
+        const addressType = use('type Address', 'solanaAddresses');
+        return fragment`'${pdaNode.programId}' as ${addressType}<'${pdaNode.programId}'>`;
+    }
+    return use(nameApi.programAddressConstant(programNode.name), 'generatedPrograms');
+}
+
+function getSeedInputTypeFragment(seeds: ParsedPdaSeedNode[], scope: PdaFunctionScope): Fragment | undefined {
     const variableSeeds = seeds.filter(isNodeFilter('variablePdaSeedNode'));
     if (variableSeeds.length === 0) return;
 
@@ -37,12 +68,13 @@ function getSeedInputTypeFragment(
 
 function getFunctionFragment(
     seeds: ParsedPdaSeedNode[],
-    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
-        pdaPath: NodePath<PdaNode>;
+    scope: PdaFunctionScope & {
+        hasProgramAddressConfig: boolean;
+        programAddressValue: Fragment;
     },
 ): Fragment {
+    const { hasProgramAddressConfig, programAddressValue } = scope;
     const pdaNode = getLastNodeFromPath(scope.pdaPath);
-    const programNode = findProgramNodeFromPath(scope.pdaPath)!;
 
     const addressType = use('type Address', 'solanaAddresses');
     const pdaType = use('type ProgramDerivedAddress', 'solanaAddresses');
@@ -53,16 +85,27 @@ function getFunctionFragment(
 
     const docs = getDocblockFragment(pdaNode.docs ?? [], true);
     const hasVariableSeeds = seeds.filter(isNodeFilter('variablePdaSeedNode')).length > 0;
-    const seedArgument = hasVariableSeeds ? `seeds: ${seedTypeName}, ` : '';
-    const programAddress = pdaNode.programId ?? programNode.publicKey;
+    const parameters = mergeFragments(
+        [
+            hasVariableSeeds ? fragment`seeds: ${seedTypeName}` : undefined,
+            // No default: falling back to the enclosing program would silently derive a wrong address.
+            hasProgramAddressConfig ? fragment`config: { programAddress: ${addressType} }` : undefined,
+        ],
+        cs => cs.join(', '),
+    );
+    const programAddressStatement = hasProgramAddressConfig
+        ? fragment`const { programAddress } = config;\n`
+        : fragment``;
+    const programAddressArgument = hasProgramAddressConfig
+        ? fragment`programAddress`
+        : fragment`programAddress: ${programAddressValue}`;
     const encodedSeeds = mergeFragments(
         seeds.map(s => s.encodedValue),
         cs => cs.join(', '),
     );
 
-    return fragment`${docs}export async function ${findPdaFunction}(${seedArgument}config: { programAddress?: ${addressType} | undefined } = {}): Promise<${pdaType}> {
-  const { programAddress = '${programAddress}' as ${addressType}<'${programAddress}'> } = config;
-  return await ${getPdaFunction}({ programAddress, seeds: [${encodedSeeds}]});
+    return fragment`${docs}export async function ${findPdaFunction}(${parameters}): Promise<${pdaType}> {
+  ${programAddressStatement}return await ${getPdaFunction}({ ${programAddressArgument}, seeds: [${encodedSeeds}]});
 }`;
 }
 
@@ -71,7 +114,10 @@ type ParsedPdaSeedNode = PdaSeedNode & {
     inputAttribute?: Fragment;
 };
 
-function parsePdaSeedNodes(seeds: PdaSeedNode[], scope: Pick<RenderScope, 'typeManifestVisitor'>): ParsedPdaSeedNode[] {
+function parsePdaSeedNodes(
+    seeds: PdaSeedNode[],
+    scope: Pick<RenderScope, 'typeManifestVisitor'> & { programAddressValue: Fragment },
+): ParsedPdaSeedNode[] {
     return seeds.map(seed => {
         if (isNode(seed, 'variablePdaSeedNode')) {
             const name = camelCase(seed.name);
@@ -86,7 +132,7 @@ function parsePdaSeedNodes(seeds: PdaSeedNode[], scope: Pick<RenderScope, 'typeM
 
         if (isNode(seed.value, 'programIdValueNode')) {
             const addressEncoder = use('getAddressEncoder', 'solanaAddresses');
-            return { ...seed, encodedValue: fragment`${addressEncoder}().encode(programAddress)` };
+            return { ...seed, encodedValue: fragment`${addressEncoder}().encode(${scope.programAddressValue})` };
         }
 
         const { encoder } = visit(seed.type, scope.typeManifestVisitor);

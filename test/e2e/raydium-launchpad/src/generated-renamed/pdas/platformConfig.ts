@@ -13,20 +13,15 @@ import {
     type Address,
     type ProgramDerivedAddress,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type PlatformConfigSeeds = {
     platformAdmin: Address;
 };
 
-export async function findPlatformConfigPda(
-    seeds: PlatformConfigSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj' as Address<'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj'>,
-    } = config;
+export async function findPlatformConfigPda(seeds: PlatformConfigSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(
                 new Uint8Array([112, 108, 97, 116, 102, 111, 114, 109, 95, 99, 111, 110, 102, 105, 103]),

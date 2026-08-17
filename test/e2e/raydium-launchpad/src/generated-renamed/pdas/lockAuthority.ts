@@ -8,14 +8,10 @@
 
 import { getBytesEncoder, getProgramDerivedAddress, type Address, type ProgramDerivedAddress } from '@solana/kit';
 
-export async function findLockAuthorityPda(
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE' as Address<'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE'>,
-    } = config;
+export async function findLockAuthorityPda(): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress:
+            'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE' as Address<'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE'>,
         seeds: [
             getBytesEncoder().encode(
                 new Uint8Array([

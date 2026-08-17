@@ -1,7 +1,14 @@
-import { AccountNode, isNodeFilter } from '@codama/nodes';
+import { AccountNode, isNodeFilter, PdaNode } from '@codama/nodes';
 import { getLastNodeFromPath, NodePath, pipe } from '@codama/visitors-core';
 
-import { addFragmentImports, Fragment, fragment, RenderScope, TypeManifest } from '../utils';
+import {
+    addFragmentImports,
+    Fragment,
+    fragment,
+    getPdasWithProgramIdOverride,
+    RenderScope,
+    TypeManifest,
+} from '../utils';
 
 export function getAccountPdaHelpersFragment(
     scope: Pick<RenderScope, 'customAccountData' | 'linkables' | 'nameApi'> & {
@@ -13,6 +20,18 @@ export function getAccountPdaHelpersFragment(
     const accountNode = getLastNodeFromPath(accountPath);
     const pdaNode = accountNode.pda ? linkables.get([...accountPath, accountNode.pda]) : undefined;
     if (!pdaNode) return;
+
+    const pdaPath = [...accountPath, pdaNode] as NodePath<PdaNode>;
+    if (getPdasWithProgramIdOverride(pdaPath, linkables).has(pdaNode)) {
+        throw new Error(
+            `Account [${accountNode.name}] is linked to PDA [${pdaNode.name}], which is derived under a ` +
+                `program that is only known at runtime. The owner guard of its decoder cannot be determined ` +
+                `at generation time: it would check the account against the program being rendered, while the ` +
+                `address derives under another program. Either pin the PDA's deriving program by setting ` +
+                `"programId" on PDA [${pdaNode.name}], or address-constrain the account referenced by the ` +
+                `"programId" of the PDA value so Codama can resolve it at generation time.`,
+        );
+    }
 
     const accountType = customAccountData.has(accountNode.name)
         ? typeManifest.strictType

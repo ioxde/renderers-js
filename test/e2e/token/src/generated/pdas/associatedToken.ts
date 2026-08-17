@@ -7,6 +7,7 @@
  */
 
 import { getAddressEncoder, getProgramDerivedAddress, type Address, type ProgramDerivedAddress } from '@solana/kit';
+import { ASSOCIATED_TOKEN_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type AssociatedTokenSeeds = {
     /** The wallet address of the associated token account. */
@@ -18,15 +19,9 @@ export type AssociatedTokenSeeds = {
 };
 
 /** The address of the associated token account. */
-export async function findAssociatedTokenPda(
-    seeds: AssociatedTokenSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>,
-    } = config;
+export async function findAssociatedTokenPda(seeds: AssociatedTokenSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
         seeds: [
             getAddressEncoder().encode(seeds.owner),
             getAddressEncoder().encode(seeds.tokenProgram),

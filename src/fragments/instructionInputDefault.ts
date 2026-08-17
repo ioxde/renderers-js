@@ -1,13 +1,21 @@
 /* eslint-disable no-case-declarations */
-import { camelCase, InstructionInputValueNode, isNode, OptionalAccountStrategy } from '@codama/nodes';
+import {
+    camelCase,
+    InstructionInputValueNode,
+    InstructionNode,
+    isNode,
+    OptionalAccountStrategy,
+    PdaNode,
+} from '@codama/nodes';
 import { mapFragmentContent, setFragmentContent } from '@codama/renderers-core';
-import { pipe, ResolvedInstructionInput, visit } from '@codama/visitors-core';
+import { NodePath, pipe, ResolvedInstructionInput, visit } from '@codama/visitors-core';
 
 import {
     addFragmentFeatures,
     addFragmentImports,
     Fragment,
     fragment,
+    getPdasWithProgramIdOverride,
     isDefaultValueAppliedByBuilder,
     mergeFragments,
     RenderScope,
@@ -15,14 +23,24 @@ import {
 } from '../utils';
 
 export function getInstructionInputDefaultFragment(
-    scope: Pick<RenderScope, 'asyncResolvers' | 'getImportFrom' | 'nameApi' | 'typeManifestVisitor'> & {
+    scope: Pick<RenderScope, 'asyncResolvers' | 'getImportFrom' | 'linkables' | 'nameApi' | 'typeManifestVisitor'> & {
         input: ResolvedInstructionInput;
+        instructionPath: NodePath<InstructionNode>;
         optionalAccountStrategy: OptionalAccountStrategy;
         useAsync: boolean;
     },
 ): Fragment {
-    const { input, optionalAccountStrategy, asyncResolvers, useAsync, nameApi, typeManifestVisitor, getImportFrom } =
-        scope;
+    const {
+        input,
+        instructionPath,
+        linkables,
+        optionalAccountStrategy,
+        asyncResolvers,
+        useAsync,
+        nameApi,
+        typeManifestVisitor,
+        getImportFrom,
+    } = scope;
     if (!input.defaultValue) {
         return fragment``;
     }
@@ -90,11 +108,12 @@ export function getInstructionInputDefaultFragment(
             }
 
             if (isNode(defaultValue.pda, 'pdaNode')) {
+                // Codama only sets `pda.programId` by resolving this very reference, so the pin takes priority.
                 let pdaProgram = fragment`programAddress`;
-                if (pdaProgramValue) {
-                    pdaProgram = pdaProgramValue;
-                } else if (defaultValue.pda.programId) {
+                if (defaultValue.pda.programId) {
                     pdaProgram = fragment`'${defaultValue.pda.programId}' as ${addressType}<'${defaultValue.pda.programId}'>`;
+                } else if (pdaProgramValue) {
+                    pdaProgram = pdaProgramValue;
                 }
                 const pdaSeeds = (defaultValue.pda.seeds ?? []).flatMap((seed): Fragment[] => {
                     if (isNode(seed, 'constantPdaSeedNode') && isNode(seed.value, 'programIdValueNode')) {
@@ -157,8 +176,19 @@ export function getInstructionInputDefaultFragment(
             if (pdaSeeds.length > 0) {
                 pdaArgs.push(pdaSeedsFragment);
             }
-            if (pdaProgramValue) {
-                pdaArgs.push(fragment`{ programAddress: ${pdaProgramValue} }`);
+            // Must stay the same predicate the finder's signature uses, or the call site stops matching it.
+            // Un-overridden use-sites still pass an address: the enclosing program is what they derive under.
+            const linkedPda = linkables.get([...instructionPath, defaultValue.pda]);
+            if (linkedPda) {
+                const linkedPdaPath = [...instructionPath, linkedPda] as NodePath<PdaNode>;
+                if (getPdasWithProgramIdOverride(linkedPdaPath, linkables).has(linkedPda)) {
+                    // Object shorthand for the `programAddress` local of the generated builder.
+                    pdaArgs.push(
+                        pdaProgramValue
+                            ? fragment`{ programAddress: ${pdaProgramValue} }`
+                            : fragment`{ programAddress }`,
+                    );
+                }
             }
             return defaultFragment(fragment`await ${pdaFunction}(${mergeFragments(pdaArgs, c => c.join(', '))})`);
 

@@ -15,6 +15,7 @@ import {
     type Address,
     type ProgramDerivedAddress,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type GlobalConfigSeeds = {
     quoteTokenMint: Address;
@@ -22,15 +23,9 @@ export type GlobalConfigSeeds = {
     index: number;
 };
 
-export async function findGlobalConfigPda(
-    seeds: GlobalConfigSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj' as Address<'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj'>,
-    } = config;
+export async function findGlobalConfigPda(seeds: GlobalConfigSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(new Uint8Array([103, 108, 111, 98, 97, 108, 95, 99, 111, 110, 102, 105, 103])),
             getAddressEncoder().encode(seeds.quoteTokenMint),

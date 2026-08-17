@@ -6,16 +6,12 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { getBytesEncoder, getProgramDerivedAddress, type Address, type ProgramDerivedAddress } from '@solana/kit';
+import { getBytesEncoder, getProgramDerivedAddress, type ProgramDerivedAddress } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
-export async function findAuthorityPda(
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
-    } = config;
+export async function findAuthorityPda(): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(
                 new Uint8Array([

@@ -13,21 +13,16 @@ import {
     type Address,
     type ProgramDerivedAddress,
 } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type Token1VaultSeeds = {
     poolState: Address;
     token1Mint: Address;
 };
 
-export async function findToken1VaultPda(
-    seeds: Token1VaultSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
-    } = config;
+export async function findToken1VaultPda(seeds: Token1VaultSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(new Uint8Array([112, 111, 111, 108, 95, 118, 97, 117, 108, 116])),
             getAddressEncoder().encode(seeds.poolState),

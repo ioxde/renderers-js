@@ -6,27 +6,16 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import {
-    getBytesEncoder,
-    getProgramDerivedAddress,
-    getU16Encoder,
-    type Address,
-    type ProgramDerivedAddress,
-} from '@solana/kit';
+import { getBytesEncoder, getProgramDerivedAddress, getU16Encoder, type ProgramDerivedAddress } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type AmmConfigSeeds = {
     index: number;
 };
 
-export async function findAmmConfigPda(
-    seeds: AmmConfigSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
-    } = config;
+export async function findAmmConfigPda(seeds: AmmConfigSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(new Uint8Array([97, 109, 109, 95, 99, 111, 110, 102, 105, 103])),
             getU16Encoder().encode(seeds.index),

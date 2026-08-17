@@ -18,15 +18,10 @@ export type CpswapLpMintSeeds = {
     cpswapPool: Address;
 };
 
-export async function findCpswapLpMintPda(
-    seeds: CpswapLpMintSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
-    } = config;
+export async function findCpswapLpMintPda(seeds: CpswapLpMintSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress:
+            'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>,
         seeds: [
             getBytesEncoder().encode(new Uint8Array([112, 111, 111, 108, 95, 108, 112, 95, 109, 105, 110, 116])),
             getAddressEncoder().encode(seeds.cpswapPool),

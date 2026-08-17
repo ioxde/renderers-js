@@ -13,20 +13,15 @@ import {
     type Address,
     type ProgramDerivedAddress,
 } from '@solana/kit';
+import { WEN_TRANSFER_GUARD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export type ExtraMetasAccountSeeds = {
     mint: Address;
 };
 
-export async function findExtraMetasAccountPda(
-    seeds: ExtraMetasAccountSeeds,
-    config: { programAddress?: Address | undefined } = {},
-): Promise<ProgramDerivedAddress> {
-    const {
-        programAddress = 'LockdqYQ9X2kwtWB99ioSbxubAmEi8o9jqYwbXgrrRw' as Address<'LockdqYQ9X2kwtWB99ioSbxubAmEi8o9jqYwbXgrrRw'>,
-    } = config;
+export async function findExtraMetasAccountPda(seeds: ExtraMetasAccountSeeds): Promise<ProgramDerivedAddress> {
     return await getProgramDerivedAddress({
-        programAddress,
+        programAddress: WEN_TRANSFER_GUARD_PROGRAM_ADDRESS,
         seeds: [
             getBytesEncoder().encode(
                 new Uint8Array([
