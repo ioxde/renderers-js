@@ -35,7 +35,7 @@ import {
     type WritableAccount,
 } from '@solana/kit';
 import { getAccountMetaFactory, type ResolvedInstructionAccount } from '@solana/kit/program-client-core';
-import { findAuthorityPda } from '../pdas/index.js';
+import { AUTHORITY_PDA_ADDRESS } from '../pdas/index.js';
 import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const COLLECT_MIGRATE_FEE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
@@ -49,7 +49,7 @@ export function getCollectMigrateFeeDiscriminatorBytes(): ReadonlyUint8Array {
 export type CollectMigrateFeeInstruction<
     TProgram extends string = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountOwner extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountGlobalConfig extends string | AccountMeta<string> = string,
     TAccountQuoteVault extends string | AccountMeta<string> = string,
@@ -99,118 +99,6 @@ export function getCollectMigrateFeeInstructionDataCodec(): FixedSizeCodec<
     return combineCodec(getCollectMigrateFeeInstructionDataEncoder(), getCollectMigrateFeeInstructionDataDecoder());
 }
 
-export type CollectMigrateFeeAsyncInput<
-    TAccountOwner extends string = string,
-    TAccountAuthority extends string = string,
-    TAccountPoolState extends string = string,
-    TAccountGlobalConfig extends string = string,
-    TAccountQuoteVault extends string = string,
-    TAccountQuoteMint extends string = string,
-    TAccountRecipientTokenAccount extends string = string,
-    TAccountTokenProgram extends string = string,
-> = {
-    /** Only migrate_fee_owner saved in global_config can collect migrate fee now */
-    owner: TransactionSigner<TAccountOwner>;
-    authority?: Address<TAccountAuthority>;
-    /** Pool state stores accumulated protocol fee amount */
-    poolState: Address<TAccountPoolState>;
-    /** Global config account stores owner */
-    globalConfig: Address<TAccountGlobalConfig>;
-    /** The address that holds pool tokens for quote token */
-    quoteVault: Address<TAccountQuoteVault>;
-    /** The mint of quote token vault */
-    quoteMint: Address<TAccountQuoteMint>;
-    /** The address that receives the collected quote token fees */
-    recipientTokenAccount: Address<TAccountRecipientTokenAccount>;
-    /** SPL program for input token transfers */
-    tokenProgram?: Address<TAccountTokenProgram>;
-};
-
-export async function getCollectMigrateFeeInstructionAsync<
-    TAccountOwner extends string,
-    TAccountAuthority extends string,
-    TAccountPoolState extends string,
-    TAccountGlobalConfig extends string,
-    TAccountQuoteVault extends string,
-    TAccountQuoteMint extends string,
-    TAccountRecipientTokenAccount extends string,
-    TAccountTokenProgram extends string,
->(
-    input: CollectMigrateFeeAsyncInput<
-        TAccountOwner,
-        TAccountAuthority,
-        TAccountPoolState,
-        TAccountGlobalConfig,
-        TAccountQuoteVault,
-        TAccountQuoteMint,
-        TAccountRecipientTokenAccount,
-        TAccountTokenProgram
-    >,
-): Promise<
-    CollectMigrateFeeInstruction<
-        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
-        TAccountOwner,
-        TAccountAuthority,
-        TAccountPoolState,
-        TAccountGlobalConfig,
-        TAccountQuoteVault,
-        TAccountQuoteMint,
-        TAccountRecipientTokenAccount,
-        TAccountTokenProgram
-    >
-> {
-    // Program address.
-    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
-
-    // Original accounts.
-    const originalAccounts = {
-        owner: { value: input.owner ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
-        poolState: { value: input.poolState ?? null, isWritable: true },
-        globalConfig: { value: input.globalConfig ?? null, isWritable: false },
-        quoteVault: { value: input.quoteVault ?? null, isWritable: true },
-        quoteMint: { value: input.quoteMint ?? null, isWritable: false },
-        recipientTokenAccount: { value: input.recipientTokenAccount ?? null, isWritable: true },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-    };
-    const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
-
-    // Resolve default values.
-    if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
-    }
-    if (!accounts.tokenProgram.value) {
-        accounts.tokenProgram.value =
-            'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
-    }
-
-    const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
-    return Object.freeze({
-        accounts: [
-            getAccountMeta('owner', accounts.owner),
-            getAccountMeta('authority', accounts.authority),
-            getAccountMeta('poolState', accounts.poolState),
-            getAccountMeta('globalConfig', accounts.globalConfig),
-            getAccountMeta('quoteVault', accounts.quoteVault),
-            getAccountMeta('quoteMint', accounts.quoteMint),
-            getAccountMeta('recipientTokenAccount', accounts.recipientTokenAccount),
-            getAccountMeta('tokenProgram', accounts.tokenProgram),
-        ],
-        data: getCollectMigrateFeeInstructionDataEncoder().encode({}),
-        programAddress,
-    } as CollectMigrateFeeInstruction<
-        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
-        TAccountOwner,
-        TAccountAuthority,
-        TAccountPoolState,
-        TAccountGlobalConfig,
-        TAccountQuoteVault,
-        TAccountQuoteMint,
-        TAccountRecipientTokenAccount,
-        TAccountTokenProgram
-    >);
-}
-
 export type CollectMigrateFeeInput<
     TAccountOwner extends string = string,
     TAccountAuthority extends string = string,
@@ -223,7 +111,7 @@ export type CollectMigrateFeeInput<
 > = {
     /** Only migrate_fee_owner saved in global_config can collect migrate fee now */
     owner: TransactionSigner<TAccountOwner>;
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /** Pool state stores accumulated protocol fee amount */
     poolState: Address<TAccountPoolState>;
     /** Global config account stores owner */
@@ -286,6 +174,9 @@ export function getCollectMigrateFeeInstruction<
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
     // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.tokenProgram.value) {
         accounts.tokenProgram.value =
             'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;

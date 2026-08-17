@@ -1,5 +1,6 @@
 export * from './async';
 export * from './codecs';
+export * from './computePda';
 export * from './customData';
 export * from './formatCode';
 export * from './fragment';

@@ -44,15 +44,15 @@ import {
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
 import {
-    findAmmAuthorityPda,
+    AMM_AUTHORITY_PDA_ADDRESS,
+    AMM_CONFIG_PDA_ADDRESS,
+    AUTHORITY_PDA_ADDRESS,
     findAmmBaseVaultPda,
-    findAmmConfigPda,
     findAmmLpMintPda,
     findAmmOpenOrdersPda,
     findAmmPoolPda,
     findAmmQuoteVaultPda,
     findAmmTargetOrdersPda,
-    findAuthorityPda,
     findPoolStatePda,
 } from '../pdas/index.js';
 import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
@@ -79,15 +79,15 @@ export type MigrateToAmmInstruction<
     TAccountMarketQuoteVault extends string | AccountMeta<string> = string,
     TAccountAmmProgram extends string | AccountMeta<string> = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
     TAccountAmmPool extends string | AccountMeta<string> = string,
-    TAccountAmmAuthority extends string | AccountMeta<string> = string,
+    TAccountAmmAuthority extends string | AccountMeta<string> = '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1',
     TAccountAmmOpenOrders extends string | AccountMeta<string> = string,
     TAccountAmmLpMint extends string | AccountMeta<string> = string,
     TAccountAmmBaseVault extends string | AccountMeta<string> = string,
     TAccountAmmQuoteVault extends string | AccountMeta<string> = string,
     TAccountAmmTargetOrders extends string | AccountMeta<string> = string,
-    TAccountAmmConfig extends string | AccountMeta<string> = string,
+    TAccountAmmConfig extends string | AccountMeta<string> = '9DCxsMizn3H1hprZ7xWe6LDzeUeZBksYFpBWBtSf1PQX',
     TAccountAmmCreateFeeDestination extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountGlobalConfig extends string | AccountMeta<string> = string,
     TAccountBaseVault extends string | AccountMeta<string> = string,
@@ -461,7 +461,7 @@ export async function getMigrateToAmmInstructionAsync<
         });
     }
     if (!accounts.ammAuthority.value) {
-        accounts.ammAuthority.value = await findAmmAuthorityPda();
+        accounts.ammAuthority.value = AMM_AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.ammOpenOrders.value) {
         accounts.ammOpenOrders.value = await findAmmOpenOrdersPda({
@@ -489,10 +489,10 @@ export async function getMigrateToAmmInstructionAsync<
         });
     }
     if (!accounts.ammConfig.value) {
-        accounts.ammConfig.value = await findAmmConfigPda();
+        accounts.ammConfig.value = AMM_CONFIG_PDA_ADDRESS;
     }
     if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.poolState.value) {
         accounts.poolState.value = await findPoolStatePda({
@@ -653,19 +653,19 @@ export type MigrateToAmmInput<
     marketQuoteVault: Address<TAccountMarketQuoteVault>;
     ammProgram?: Address<TAccountAmmProgram>;
     ammPool: Address<TAccountAmmPool>;
-    ammAuthority: Address<TAccountAmmAuthority>;
+    ammAuthority?: Address<TAccountAmmAuthority>;
     ammOpenOrders: Address<TAccountAmmOpenOrders>;
     ammLpMint: Address<TAccountAmmLpMint>;
     ammBaseVault: Address<TAccountAmmBaseVault>;
     ammQuoteVault: Address<TAccountAmmQuoteVault>;
     ammTargetOrders: Address<TAccountAmmTargetOrders>;
-    ammConfig: Address<TAccountAmmConfig>;
+    ammConfig?: Address<TAccountAmmConfig>;
     ammCreateFeeDestination: Address<TAccountAmmCreateFeeDestination>;
     /**
      * PDA that acts as the authority for pool vault operations
      * Generated using AUTH_SEED
      */
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -854,6 +854,15 @@ export function getMigrateToAmmInstruction<
     if (!accounts.ammProgram.value) {
         accounts.ammProgram.value =
             '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>;
+    }
+    if (!accounts.ammAuthority.value) {
+        accounts.ammAuthority.value = AMM_AUTHORITY_PDA_ADDRESS;
+    }
+    if (!accounts.ammConfig.value) {
+        accounts.ammConfig.value = AMM_CONFIG_PDA_ADDRESS;
+    }
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.splTokenProgram.value) {
         accounts.splTokenProgram.value =

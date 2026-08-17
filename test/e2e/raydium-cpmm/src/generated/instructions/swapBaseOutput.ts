@@ -37,7 +37,7 @@ import {
     type WritableAccount,
 } from '@solana/kit';
 import { getAccountMetaFactory, type ResolvedInstructionAccount } from '@solana/kit/program-client-core';
-import { findAuthorityPda } from '../pdas/index.js';
+import { AUTHORITY_PDA_ADDRESS } from '../pdas/index.js';
 import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const SWAP_BASE_OUTPUT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([55, 217, 98, 86, 163, 74, 180, 173]);
@@ -49,7 +49,7 @@ export function getSwapBaseOutputDiscriminatorBytes(): ReadonlyUint8Array {
 export type SwapBaseOutputInstruction<
     TProgram extends string = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountPayer extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
     TAccountAmmConfig extends string | AccountMeta<string> = string,
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountInputTokenAccount extends string | AccountMeta<string> = string,
@@ -129,164 +129,6 @@ export function getSwapBaseOutputInstructionDataCodec(): FixedSizeCodec<
     return combineCodec(getSwapBaseOutputInstructionDataEncoder(), getSwapBaseOutputInstructionDataDecoder());
 }
 
-export type SwapBaseOutputAsyncInput<
-    TAccountPayer extends string = string,
-    TAccountAuthority extends string = string,
-    TAccountAmmConfig extends string = string,
-    TAccountPoolState extends string = string,
-    TAccountInputTokenAccount extends string = string,
-    TAccountOutputTokenAccount extends string = string,
-    TAccountInputVault extends string = string,
-    TAccountOutputVault extends string = string,
-    TAccountInputTokenProgram extends string = string,
-    TAccountOutputTokenProgram extends string = string,
-    TAccountInputTokenMint extends string = string,
-    TAccountOutputTokenMint extends string = string,
-    TAccountObservationState extends string = string,
-> = {
-    /** The user performing the swap */
-    payer: TransactionSigner<TAccountPayer>;
-    authority?: Address<TAccountAuthority>;
-    /** The factory state to read protocol fees */
-    ammConfig: Address<TAccountAmmConfig>;
-    /** The program account of the pool in which the swap will be performed */
-    poolState: Address<TAccountPoolState>;
-    /** The user token account for input token */
-    inputTokenAccount: Address<TAccountInputTokenAccount>;
-    /** The user token account for output token */
-    outputTokenAccount: Address<TAccountOutputTokenAccount>;
-    /** The vault token account for input token */
-    inputVault: Address<TAccountInputVault>;
-    /** The vault token account for output token */
-    outputVault: Address<TAccountOutputVault>;
-    /** SPL program for input token transfers */
-    inputTokenProgram: Address<TAccountInputTokenProgram>;
-    /** SPL program for output token transfers */
-    outputTokenProgram: Address<TAccountOutputTokenProgram>;
-    /** The mint of input token */
-    inputTokenMint: Address<TAccountInputTokenMint>;
-    /** The mint of output token */
-    outputTokenMint: Address<TAccountOutputTokenMint>;
-    /** The program account for the most recent oracle observation */
-    observationState: Address<TAccountObservationState>;
-    maxAmountIn: SwapBaseOutputInstructionDataArgs['maxAmountIn'];
-    amountOut: SwapBaseOutputInstructionDataArgs['amountOut'];
-};
-
-export async function getSwapBaseOutputInstructionAsync<
-    TAccountPayer extends string,
-    TAccountAuthority extends string,
-    TAccountAmmConfig extends string,
-    TAccountPoolState extends string,
-    TAccountInputTokenAccount extends string,
-    TAccountOutputTokenAccount extends string,
-    TAccountInputVault extends string,
-    TAccountOutputVault extends string,
-    TAccountInputTokenProgram extends string,
-    TAccountOutputTokenProgram extends string,
-    TAccountInputTokenMint extends string,
-    TAccountOutputTokenMint extends string,
-    TAccountObservationState extends string,
->(
-    input: SwapBaseOutputAsyncInput<
-        TAccountPayer,
-        TAccountAuthority,
-        TAccountAmmConfig,
-        TAccountPoolState,
-        TAccountInputTokenAccount,
-        TAccountOutputTokenAccount,
-        TAccountInputVault,
-        TAccountOutputVault,
-        TAccountInputTokenProgram,
-        TAccountOutputTokenProgram,
-        TAccountInputTokenMint,
-        TAccountOutputTokenMint,
-        TAccountObservationState
-    >,
-): Promise<
-    SwapBaseOutputInstruction<
-        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
-        TAccountPayer,
-        TAccountAuthority,
-        TAccountAmmConfig,
-        TAccountPoolState,
-        TAccountInputTokenAccount,
-        TAccountOutputTokenAccount,
-        TAccountInputVault,
-        TAccountOutputVault,
-        TAccountInputTokenProgram,
-        TAccountOutputTokenProgram,
-        TAccountInputTokenMint,
-        TAccountOutputTokenMint,
-        TAccountObservationState
-    >
-> {
-    // Program address.
-    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
-
-    // Original accounts.
-    const originalAccounts = {
-        payer: { value: input.payer ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
-        ammConfig: { value: input.ammConfig ?? null, isWritable: false },
-        poolState: { value: input.poolState ?? null, isWritable: true },
-        inputTokenAccount: { value: input.inputTokenAccount ?? null, isWritable: true },
-        outputTokenAccount: { value: input.outputTokenAccount ?? null, isWritable: true },
-        inputVault: { value: input.inputVault ?? null, isWritable: true },
-        outputVault: { value: input.outputVault ?? null, isWritable: true },
-        inputTokenProgram: { value: input.inputTokenProgram ?? null, isWritable: false },
-        outputTokenProgram: { value: input.outputTokenProgram ?? null, isWritable: false },
-        inputTokenMint: { value: input.inputTokenMint ?? null, isWritable: false },
-        outputTokenMint: { value: input.outputTokenMint ?? null, isWritable: false },
-        observationState: { value: input.observationState ?? null, isWritable: true },
-    };
-    const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
-
-    // Original args.
-    const args = { ...input };
-
-    // Resolve default values.
-    if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
-    }
-
-    const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
-    return Object.freeze({
-        accounts: [
-            getAccountMeta('payer', accounts.payer),
-            getAccountMeta('authority', accounts.authority),
-            getAccountMeta('ammConfig', accounts.ammConfig),
-            getAccountMeta('poolState', accounts.poolState),
-            getAccountMeta('inputTokenAccount', accounts.inputTokenAccount),
-            getAccountMeta('outputTokenAccount', accounts.outputTokenAccount),
-            getAccountMeta('inputVault', accounts.inputVault),
-            getAccountMeta('outputVault', accounts.outputVault),
-            getAccountMeta('inputTokenProgram', accounts.inputTokenProgram),
-            getAccountMeta('outputTokenProgram', accounts.outputTokenProgram),
-            getAccountMeta('inputTokenMint', accounts.inputTokenMint),
-            getAccountMeta('outputTokenMint', accounts.outputTokenMint),
-            getAccountMeta('observationState', accounts.observationState),
-        ],
-        data: getSwapBaseOutputInstructionDataEncoder().encode(args as SwapBaseOutputInstructionDataArgs),
-        programAddress,
-    } as SwapBaseOutputInstruction<
-        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
-        TAccountPayer,
-        TAccountAuthority,
-        TAccountAmmConfig,
-        TAccountPoolState,
-        TAccountInputTokenAccount,
-        TAccountOutputTokenAccount,
-        TAccountInputVault,
-        TAccountOutputVault,
-        TAccountInputTokenProgram,
-        TAccountOutputTokenProgram,
-        TAccountInputTokenMint,
-        TAccountOutputTokenMint,
-        TAccountObservationState
-    >);
-}
-
 export type SwapBaseOutputInput<
     TAccountPayer extends string = string,
     TAccountAuthority extends string = string,
@@ -304,7 +146,7 @@ export type SwapBaseOutputInput<
 > = {
     /** The user performing the swap */
     payer: TransactionSigner<TAccountPayer>;
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /** The factory state to read protocol fees */
     ammConfig: Address<TAccountAmmConfig>;
     /** The program account of the pool in which the swap will be performed */
@@ -400,6 +242,11 @@ export function getSwapBaseOutputInstruction<
 
     // Original args.
     const args = { ...input };
+
+    // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
 
     const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
     return Object.freeze({

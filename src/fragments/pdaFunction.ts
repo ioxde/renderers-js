@@ -2,10 +2,12 @@ import { camelCase, isNode, isNodeFilter, PdaNode, PdaSeedNode, ProgramNode } fr
 import { findProgramNodeFromPath, getLastNodeFromPath, NodePath, visit } from '@codama/visitors-core';
 
 import {
+    ComputedPda,
     Fragment,
     fragment,
     getDocblockFragment,
     getPdasWithProgramIdOverride,
+    getPrecomputedPdas,
     mergeFragments,
     RenderScope,
     use,
@@ -18,6 +20,11 @@ type PdaFunctionScope = Pick<RenderScope, 'linkables' | 'nameApi' | 'typeManifes
 export function getPdaFunctionFragment(scope: PdaFunctionScope): Fragment {
     const pdaNode = getLastNodeFromPath(scope.pdaPath);
     const programNode = findProgramNodeFromPath(scope.pdaPath)!;
+
+    const precomputed = getPrecomputedPdas(scope.pdaPath, scope.linkables).get(pdaNode);
+    if (precomputed) {
+        return getPrecomputedFunctionFragment(precomputed, scope);
+    }
 
     const hasProgramAddressConfig = getPdasWithProgramIdOverride(scope.pdaPath, scope.linkables).has(pdaNode);
     const programAddressValue = hasProgramAddressConfig
@@ -33,6 +40,29 @@ export function getPdaFunctionFragment(scope: PdaFunctionScope): Fragment {
         ],
         cs => cs.join('\n\n'),
     );
+}
+
+/**
+ * The address constant plus a finder returning it. The finder is synchronous, and the async policy
+ * in `async.ts` plus every generated call site depend on it staying that way.
+ */
+function getPrecomputedFunctionFragment(precomputed: ComputedPda, scope: PdaFunctionScope): Fragment {
+    const { address, bump } = precomputed;
+    const pdaNode = getLastNodeFromPath(scope.pdaPath);
+
+    const addressType = use('type Address', 'solanaAddresses');
+    const pdaType = use('type ProgramDerivedAddress', 'solanaAddresses');
+    const bumpType = use('type ProgramDerivedAddressBump', 'solanaAddresses');
+
+    const addressConstant = scope.nameApi.pdaAddressConstant(pdaNode.name);
+    const findPdaFunction = scope.nameApi.pdaFindFunction(pdaNode.name);
+    const docs = getDocblockFragment(pdaNode.docs ?? [], true);
+
+    return fragment`export const ${addressConstant} = '${address}' as ${addressType}<'${address}'>;
+
+${docs}export function ${findPdaFunction}(): ${pdaType} {
+  return [${addressConstant}, ${bump} as ${bumpType}];
+}`;
 }
 
 /**

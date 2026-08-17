@@ -37,7 +37,7 @@ import {
     type WritableAccount,
 } from '@solana/kit';
 import { getAccountMetaFactory, type ResolvedInstructionAccount } from '@solana/kit/program-client-core';
-import { findAuthorityPda } from '../pdas/index.js';
+import { AUTHORITY_PDA_ADDRESS } from '../pdas/index.js';
 import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const COLLECT_FUND_FEE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([167, 138, 78, 149, 223, 194, 6, 126]);
@@ -49,7 +49,7 @@ export function getCollectFundFeeDiscriminatorBytes(): ReadonlyUint8Array {
 export type CollectFundFeeInstruction<
     TProgram extends string = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountOwner extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountAmmConfig extends string | AccountMeta<string> = string,
     TAccountToken0Vault extends string | AccountMeta<string> = string,
@@ -126,163 +126,6 @@ export function getCollectFundFeeInstructionDataCodec(): FixedSizeCodec<
     return combineCodec(getCollectFundFeeInstructionDataEncoder(), getCollectFundFeeInstructionDataDecoder());
 }
 
-export type CollectFundFeeAsyncInput<
-    TAccountOwner extends string = string,
-    TAccountAuthority extends string = string,
-    TAccountPoolState extends string = string,
-    TAccountAmmConfig extends string = string,
-    TAccountToken0Vault extends string = string,
-    TAccountToken1Vault extends string = string,
-    TAccountVault0Mint extends string = string,
-    TAccountVault1Mint extends string = string,
-    TAccountRecipientToken0Account extends string = string,
-    TAccountRecipientToken1Account extends string = string,
-    TAccountTokenProgram extends string = string,
-    TAccountTokenProgram2022 extends string = string,
-> = {
-    /** Only admin or fund_owner can collect fee now */
-    owner: TransactionSigner<TAccountOwner>;
-    authority?: Address<TAccountAuthority>;
-    /** Pool state stores accumulated protocol fee amount */
-    poolState: Address<TAccountPoolState>;
-    /** Amm config account stores fund_owner */
-    ammConfig: Address<TAccountAmmConfig>;
-    /** The address that holds pool tokens for token_0 */
-    token0Vault: Address<TAccountToken0Vault>;
-    /** The address that holds pool tokens for token_1 */
-    token1Vault: Address<TAccountToken1Vault>;
-    /** The mint of token_0 vault */
-    vault0Mint: Address<TAccountVault0Mint>;
-    /** The mint of token_1 vault */
-    vault1Mint: Address<TAccountVault1Mint>;
-    /** The address that receives the collected token_0 fund fees */
-    recipientToken0Account: Address<TAccountRecipientToken0Account>;
-    /** The address that receives the collected token_1 fund fees */
-    recipientToken1Account: Address<TAccountRecipientToken1Account>;
-    /** The SPL program to perform token transfers */
-    tokenProgram?: Address<TAccountTokenProgram>;
-    /** The SPL program 2022 to perform token transfers */
-    tokenProgram2022?: Address<TAccountTokenProgram2022>;
-    amount0Requested: CollectFundFeeInstructionDataArgs['amount0Requested'];
-    amount1Requested: CollectFundFeeInstructionDataArgs['amount1Requested'];
-};
-
-export async function getCollectFundFeeInstructionAsync<
-    TAccountOwner extends string,
-    TAccountAuthority extends string,
-    TAccountPoolState extends string,
-    TAccountAmmConfig extends string,
-    TAccountToken0Vault extends string,
-    TAccountToken1Vault extends string,
-    TAccountVault0Mint extends string,
-    TAccountVault1Mint extends string,
-    TAccountRecipientToken0Account extends string,
-    TAccountRecipientToken1Account extends string,
-    TAccountTokenProgram extends string,
-    TAccountTokenProgram2022 extends string,
->(
-    input: CollectFundFeeAsyncInput<
-        TAccountOwner,
-        TAccountAuthority,
-        TAccountPoolState,
-        TAccountAmmConfig,
-        TAccountToken0Vault,
-        TAccountToken1Vault,
-        TAccountVault0Mint,
-        TAccountVault1Mint,
-        TAccountRecipientToken0Account,
-        TAccountRecipientToken1Account,
-        TAccountTokenProgram,
-        TAccountTokenProgram2022
-    >,
-): Promise<
-    CollectFundFeeInstruction<
-        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
-        TAccountOwner,
-        TAccountAuthority,
-        TAccountPoolState,
-        TAccountAmmConfig,
-        TAccountToken0Vault,
-        TAccountToken1Vault,
-        TAccountVault0Mint,
-        TAccountVault1Mint,
-        TAccountRecipientToken0Account,
-        TAccountRecipientToken1Account,
-        TAccountTokenProgram,
-        TAccountTokenProgram2022
-    >
-> {
-    // Program address.
-    const programAddress = RAYDIUM_CP_SWAP_PROGRAM_ADDRESS;
-
-    // Original accounts.
-    const originalAccounts = {
-        owner: { value: input.owner ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
-        poolState: { value: input.poolState ?? null, isWritable: true },
-        ammConfig: { value: input.ammConfig ?? null, isWritable: false },
-        token0Vault: { value: input.token0Vault ?? null, isWritable: true },
-        token1Vault: { value: input.token1Vault ?? null, isWritable: true },
-        vault0Mint: { value: input.vault0Mint ?? null, isWritable: false },
-        vault1Mint: { value: input.vault1Mint ?? null, isWritable: false },
-        recipientToken0Account: { value: input.recipientToken0Account ?? null, isWritable: true },
-        recipientToken1Account: { value: input.recipientToken1Account ?? null, isWritable: true },
-        tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
-        tokenProgram2022: { value: input.tokenProgram2022 ?? null, isWritable: false },
-    };
-    const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
-
-    // Original args.
-    const args = { ...input };
-
-    // Resolve default values.
-    if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
-    }
-    if (!accounts.tokenProgram.value) {
-        accounts.tokenProgram.value =
-            'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
-    }
-    if (!accounts.tokenProgram2022.value) {
-        accounts.tokenProgram2022.value =
-            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
-    }
-
-    const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
-    return Object.freeze({
-        accounts: [
-            getAccountMeta('owner', accounts.owner),
-            getAccountMeta('authority', accounts.authority),
-            getAccountMeta('poolState', accounts.poolState),
-            getAccountMeta('ammConfig', accounts.ammConfig),
-            getAccountMeta('token0Vault', accounts.token0Vault),
-            getAccountMeta('token1Vault', accounts.token1Vault),
-            getAccountMeta('vault0Mint', accounts.vault0Mint),
-            getAccountMeta('vault1Mint', accounts.vault1Mint),
-            getAccountMeta('recipientToken0Account', accounts.recipientToken0Account),
-            getAccountMeta('recipientToken1Account', accounts.recipientToken1Account),
-            getAccountMeta('tokenProgram', accounts.tokenProgram),
-            getAccountMeta('tokenProgram2022', accounts.tokenProgram2022),
-        ],
-        data: getCollectFundFeeInstructionDataEncoder().encode(args as CollectFundFeeInstructionDataArgs),
-        programAddress,
-    } as CollectFundFeeInstruction<
-        typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
-        TAccountOwner,
-        TAccountAuthority,
-        TAccountPoolState,
-        TAccountAmmConfig,
-        TAccountToken0Vault,
-        TAccountToken1Vault,
-        TAccountVault0Mint,
-        TAccountVault1Mint,
-        TAccountRecipientToken0Account,
-        TAccountRecipientToken1Account,
-        TAccountTokenProgram,
-        TAccountTokenProgram2022
-    >);
-}
-
 export type CollectFundFeeInput<
     TAccountOwner extends string = string,
     TAccountAuthority extends string = string,
@@ -299,7 +142,7 @@ export type CollectFundFeeInput<
 > = {
     /** Only admin or fund_owner can collect fee now */
     owner: TransactionSigner<TAccountOwner>;
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /** Pool state stores accumulated protocol fee amount */
     poolState: Address<TAccountPoolState>;
     /** Amm config account stores fund_owner */
@@ -391,6 +234,9 @@ export function getCollectFundFeeInstruction<
     const args = { ...input };
 
     // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.tokenProgram.value) {
         accounts.tokenProgram.value =
             'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;

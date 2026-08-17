@@ -40,14 +40,14 @@ import {
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
 import {
-    findAuthorityPda,
-    findCpswapAuthorityPda,
+    AUTHORITY_PDA_ADDRESS,
+    CPSWAP_AUTHORITY_PDA_ADDRESS,
     findCpswapBaseVaultPda,
     findCpswapLpMintPda,
     findCpswapObservationPda,
     findCpswapQuoteVaultPda,
-    findLockAuthorityPda,
     findPoolStatePda,
+    LOCK_AUTHORITY_PDA_ADDRESS,
 } from '../pdas/index.js';
 import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
@@ -67,7 +67,7 @@ export type MigrateToCpswapInstruction<
     TAccountPlatformConfig extends string | AccountMeta<string> = string,
     TAccountCpswapProgram extends string | AccountMeta<string> = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C',
     TAccountCpswapPool extends string | AccountMeta<string> = string,
-    TAccountCpswapAuthority extends string | AccountMeta<string> = string,
+    TAccountCpswapAuthority extends string | AccountMeta<string> = 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
     TAccountCpswapLpMint extends string | AccountMeta<string> = string,
     TAccountCpswapBaseVault extends string | AccountMeta<string> = string,
     TAccountCpswapQuoteVault extends string | AccountMeta<string> = string,
@@ -75,9 +75,9 @@ export type MigrateToCpswapInstruction<
     TAccountCpswapCreatePoolFee extends string | AccountMeta<string> = string,
     TAccountCpswapObservation extends string | AccountMeta<string> = string,
     TAccountLockProgram extends string | AccountMeta<string> = 'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE',
-    TAccountLockAuthority extends string | AccountMeta<string> = string,
+    TAccountLockAuthority extends string | AccountMeta<string> = '3f7GcQFG397GAaEnv51zR6tsTVihYRydnydDD1cXekxH',
     TAccountLockLpVault extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountGlobalConfig extends string | AccountMeta<string> = string,
     TAccountBaseVault extends string | AccountMeta<string> = string,
@@ -406,7 +406,7 @@ export async function getMigrateToCpswapInstructionAsync<
             'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>;
     }
     if (!accounts.cpswapAuthority.value) {
-        accounts.cpswapAuthority.value = await findCpswapAuthorityPda();
+        accounts.cpswapAuthority.value = CPSWAP_AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.cpswapLpMint.value) {
         accounts.cpswapLpMint.value = await findCpswapLpMintPda({
@@ -435,10 +435,10 @@ export async function getMigrateToCpswapInstructionAsync<
             'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE' as Address<'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE'>;
     }
     if (!accounts.lockAuthority.value) {
-        accounts.lockAuthority.value = await findLockAuthorityPda();
+        accounts.lockAuthority.value = LOCK_AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.poolState.value) {
         accounts.poolState.value = await findPoolStatePda({
@@ -596,7 +596,7 @@ export type MigrateToCpswapInput<
      * Or random account: must be signed by cli
      */
     cpswapPool: Address<TAccountCpswapPool>;
-    cpswapAuthority: Address<TAccountCpswapAuthority>;
+    cpswapAuthority?: Address<TAccountCpswapAuthority>;
     cpswapLpMint: Address<TAccountCpswapLpMint>;
     cpswapBaseVault: Address<TAccountCpswapBaseVault>;
     cpswapQuoteVault: Address<TAccountCpswapQuoteVault>;
@@ -604,13 +604,13 @@ export type MigrateToCpswapInput<
     cpswapCreatePoolFee: Address<TAccountCpswapCreatePoolFee>;
     cpswapObservation: Address<TAccountCpswapObservation>;
     lockProgram?: Address<TAccountLockProgram>;
-    lockAuthority: Address<TAccountLockAuthority>;
+    lockAuthority?: Address<TAccountLockAuthority>;
     lockLpVault: Address<TAccountLockLpVault>;
     /**
      * PDA that acts as the authority for pool vault operations
      * Generated using AUTH_SEED
      */
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -778,9 +778,18 @@ export function getMigrateToCpswapInstruction<
         accounts.cpswapProgram.value =
             'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C' as Address<'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C'>;
     }
+    if (!accounts.cpswapAuthority.value) {
+        accounts.cpswapAuthority.value = CPSWAP_AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.lockProgram.value) {
         accounts.lockProgram.value =
             'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE' as Address<'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE'>;
+    }
+    if (!accounts.lockAuthority.value) {
+        accounts.lockAuthority.value = LOCK_AUTHORITY_PDA_ADDRESS;
+    }
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.baseTokenProgram.value) {
         accounts.baseTokenProgram.value =

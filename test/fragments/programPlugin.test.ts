@@ -30,7 +30,7 @@ test('it renders nothing is a program has no accounts or instructions', () => {
     });
 
     // Then we expect no plugin fragment to be rendered.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
     expect(fragment).toBeUndefined();
 });
 
@@ -44,7 +44,7 @@ test('it renders the main program plugin type', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following plugin type to be rendered.
     await fragmentContains(fragment, [
@@ -61,7 +61,7 @@ test('it renders program plugin account types', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following type to be rendered.
     await fragmentContains(fragment, [
@@ -85,7 +85,7 @@ test('it renders program plugin instruction types', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following type to be rendered.
     await fragmentContains(fragment, [
@@ -137,7 +137,7 @@ test('it renders program plugin instruction types with async builders', async ()
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the `initializeAssociatedToken` instruction to be using the async input type.
     await fragmentContains(fragment, [
@@ -168,7 +168,7 @@ test('it renders program plugin instruction types with default payer values', as
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the plugin instruction type to have a default payer in its input type.
     await fragmentContains(fragment, [
@@ -199,7 +199,7 @@ test('it renders the program plugin requirements', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following requirements.
     await fragmentContains(fragment, [
@@ -232,7 +232,7 @@ test('it renders the program plugin function', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following plugin function.
     await fragmentContains(fragment, [
@@ -274,7 +274,7 @@ test('it fills payer value nodes with the payer (signer) set on the client by de
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following instruction function with a default payer to be rendered.
     await fragmentContains(fragment, [
@@ -304,7 +304,7 @@ test('it fills payer value nodes with the payer (address) set on the client by d
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following instruction function with a default payer to be rendered.
     await fragmentContains(fragment, [
@@ -342,7 +342,7 @@ test('it tackles arguments and accounts with conflicting names', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following instruction function with default payers
     // and renamed conflicting attributes to be rendered.
@@ -368,7 +368,7 @@ test('it renders the plugin type with pdas field when program has PDAs', async (
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the plugin type to include a pdas field.
     await fragmentContains(fragment, [
@@ -394,7 +394,7 @@ test('it renders program plugin PDA types', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the following PDA type to be rendered.
     await fragmentContains(fragment, [
@@ -424,7 +424,7 @@ test('it renders program plugin function with pdas object', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the plugin function to include pdas.
     await fragmentContains(fragment, ['pdas: { associatedTokenAccount: findAssociatedTokenAccountPda }']);
@@ -449,7 +449,7 @@ test('it renders a plugin with only PDAs', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the fragment to be defined.
     expect(fragment).toBeDefined();
@@ -476,7 +476,7 @@ test('it renders the requirements as object for a PDA-only program', async () =>
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the requirements to be `object` since PDAs need no client capabilities.
     await fragmentContains(fragment, ['export type SplTokenPluginRequirements = object']);
@@ -497,7 +497,7 @@ test('it renders the plugin function with instructions and PDAs but no accounts'
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the plugin type to include both instructions and pdas.
     await fragmentContains(fragment, [
@@ -520,7 +520,7 @@ test('it exposes identifyAccount on the plugin when accounts have discriminators
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then the plugin type and function expose identifyAccount.
     await fragmentContains(fragment, [
@@ -543,7 +543,7 @@ test('it exposes identifyInstruction and parseInstruction when instructions have
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then the plugin type and function expose identifyInstruction and parseInstruction.
     await fragmentContains(fragment, [
@@ -564,7 +564,7 @@ test('it omits identify/parse helpers when nodes have no discriminators', async 
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then the plugin omits identify/parse keys entirely.
     await fragmentDoesNotContain(fragment, ['identifyAccount', 'identifyInstruction', 'parseInstruction']);
@@ -579,7 +579,7 @@ test('it omits the pdas field when program has no PDAs', async () => {
     });
 
     // When we get the program plugin fragment.
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     // Then we expect the plugin type to NOT include a pdas field.
     await fragmentContains(fragment, ['export type SplTokenPlugin = { accounts: SplTokenPluginAccounts }']);
@@ -602,7 +602,7 @@ test('it renders program plugin event types', async () => {
         publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     });
 
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     await fragmentContains(fragment, [
         'export type SplTokenPluginEvents = {',
@@ -627,7 +627,7 @@ test('it renders the plugin type with events field when program has events', asy
         publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     });
 
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     await fragmentContains(fragment, [
         'export type SplTokenPlugin = { accounts: SplTokenPluginAccounts; events: SplTokenPluginEvents; };',
@@ -647,7 +647,7 @@ test('it renders program plugin function with events object', async () => {
         publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     });
 
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     await fragmentContains(fragment, ['events: { guardCreatedEvent: getGuardCreatedEventDecoder() }']);
     await fragmentContainsImports(fragment, {
@@ -667,7 +667,7 @@ test('it renders a plugin with only events', async () => {
         publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     });
 
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     expect(fragment).toBeDefined();
     await fragmentContains(fragment, ['export type SplTokenPlugin = { events: SplTokenPluginEvents }']);
@@ -689,7 +689,7 @@ test('it renders the requirements as object for an events-only program', async (
         publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     });
 
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     await fragmentContains(fragment, ['export type SplTokenPluginRequirements = object']);
 });
@@ -701,7 +701,7 @@ test('it omits the events field when program has no events', async () => {
         publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     });
 
-    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node });
+    const fragment = getProgramPluginPageFragment({ ...getDefaultScope(), programNode: node, programPath: [node] });
 
     await fragmentContains(fragment, ['export type SplTokenPlugin = { accounts: SplTokenPluginAccounts }']);
     await fragmentDoesNotContain(fragment, ['SplTokenPluginEvents']);

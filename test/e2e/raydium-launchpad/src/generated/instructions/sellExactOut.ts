@@ -37,7 +37,7 @@ import {
     type WritableAccount,
 } from '@solana/kit';
 import { getAccountMetaFactory, type ResolvedInstructionAccount } from '@solana/kit/program-client-core';
-import { findAuthorityPda, findEventAuthorityPda } from '../pdas/index.js';
+import { AUTHORITY_PDA_ADDRESS, EVENT_AUTHORITY_PDA_ADDRESS } from '../pdas/index.js';
 import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const SELL_EXACT_OUT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([95, 200, 71, 34, 8, 9, 11, 166]);
@@ -49,7 +49,7 @@ export function getSellExactOutDiscriminatorBytes(): ReadonlyUint8Array {
 export type SellExactOutInstruction<
     TProgram extends string = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPayer extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountGlobalConfig extends string | AccountMeta<string> = string,
     TAccountPlatformConfig extends string | AccountMeta<string> = string,
     TAccountPoolState extends string | AccountMeta<string> = string,
@@ -61,7 +61,7 @@ export type SellExactOutInstruction<
     TAccountQuoteTokenMint extends string | AccountMeta<string> = string,
     TAccountBaseTokenProgram extends string | AccountMeta<string> = string,
     TAccountQuoteTokenProgram extends string | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-    TAccountEventAuthority extends string | AccountMeta<string> = string,
+    TAccountEventAuthority extends string | AccountMeta<string> = '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
     TAccountProgram extends string | AccountMeta<string> = string,
     TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
@@ -134,7 +134,7 @@ export function getSellExactOutInstructionDataCodec(): FixedSizeCodec<
     return combineCodec(getSellExactOutInstructionDataEncoder(), getSellExactOutInstructionDataDecoder());
 }
 
-export type SellExactOutAsyncInput<
+export type SellExactOutInput<
     TAccountPayer extends string = string,
     TAccountAuthority extends string = string,
     TAccountGlobalConfig extends string = string,
@@ -208,219 +208,6 @@ export type SellExactOutAsyncInput<
     /** SPL Token program for quote token transfers */
     quoteTokenProgram?: Address<TAccountQuoteTokenProgram>;
     eventAuthority?: Address<TAccountEventAuthority>;
-    program: Address<TAccountProgram>;
-    amountOut: SellExactOutInstructionDataArgs['amountOut'];
-    maximumAmountIn: SellExactOutInstructionDataArgs['maximumAmountIn'];
-    shareFeeRate: SellExactOutInstructionDataArgs['shareFeeRate'];
-};
-
-export async function getSellExactOutInstructionAsync<
-    TAccountPayer extends string,
-    TAccountAuthority extends string,
-    TAccountGlobalConfig extends string,
-    TAccountPlatformConfig extends string,
-    TAccountPoolState extends string,
-    TAccountUserBaseToken extends string,
-    TAccountUserQuoteToken extends string,
-    TAccountBaseVault extends string,
-    TAccountQuoteVault extends string,
-    TAccountBaseTokenMint extends string,
-    TAccountQuoteTokenMint extends string,
-    TAccountBaseTokenProgram extends string,
-    TAccountQuoteTokenProgram extends string,
-    TAccountEventAuthority extends string,
-    TAccountProgram extends string,
->(
-    input: SellExactOutAsyncInput<
-        TAccountPayer,
-        TAccountAuthority,
-        TAccountGlobalConfig,
-        TAccountPlatformConfig,
-        TAccountPoolState,
-        TAccountUserBaseToken,
-        TAccountUserQuoteToken,
-        TAccountBaseVault,
-        TAccountQuoteVault,
-        TAccountBaseTokenMint,
-        TAccountQuoteTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountEventAuthority,
-        TAccountProgram
-    >,
-): Promise<
-    SellExactOutInstruction<
-        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
-        TAccountPayer,
-        TAccountAuthority,
-        TAccountGlobalConfig,
-        TAccountPlatformConfig,
-        TAccountPoolState,
-        TAccountUserBaseToken,
-        TAccountUserQuoteToken,
-        TAccountBaseVault,
-        TAccountQuoteVault,
-        TAccountBaseTokenMint,
-        TAccountQuoteTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountEventAuthority,
-        TAccountProgram
-    >
-> {
-    // Program address.
-    const programAddress = RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS;
-
-    // Original accounts.
-    const originalAccounts = {
-        payer: { value: input.payer ?? null, isWritable: false },
-        authority: { value: input.authority ?? null, isWritable: false },
-        globalConfig: { value: input.globalConfig ?? null, isWritable: false },
-        platformConfig: { value: input.platformConfig ?? null, isWritable: false },
-        poolState: { value: input.poolState ?? null, isWritable: true },
-        userBaseToken: { value: input.userBaseToken ?? null, isWritable: true },
-        userQuoteToken: { value: input.userQuoteToken ?? null, isWritable: true },
-        baseVault: { value: input.baseVault ?? null, isWritable: true },
-        quoteVault: { value: input.quoteVault ?? null, isWritable: true },
-        baseTokenMint: { value: input.baseTokenMint ?? null, isWritable: false },
-        quoteTokenMint: { value: input.quoteTokenMint ?? null, isWritable: false },
-        baseTokenProgram: { value: input.baseTokenProgram ?? null, isWritable: false },
-        quoteTokenProgram: { value: input.quoteTokenProgram ?? null, isWritable: false },
-        eventAuthority: { value: input.eventAuthority ?? null, isWritable: false },
-        program: { value: input.program ?? null, isWritable: false },
-    };
-    const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
-
-    // Original args.
-    const args = { ...input };
-
-    // Resolve default values.
-    if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
-    }
-    if (!accounts.quoteTokenProgram.value) {
-        accounts.quoteTokenProgram.value =
-            'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
-    }
-    if (!accounts.eventAuthority.value) {
-        accounts.eventAuthority.value = await findEventAuthorityPda();
-    }
-
-    const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
-    return Object.freeze({
-        accounts: [
-            getAccountMeta('payer', accounts.payer),
-            getAccountMeta('authority', accounts.authority),
-            getAccountMeta('globalConfig', accounts.globalConfig),
-            getAccountMeta('platformConfig', accounts.platformConfig),
-            getAccountMeta('poolState', accounts.poolState),
-            getAccountMeta('userBaseToken', accounts.userBaseToken),
-            getAccountMeta('userQuoteToken', accounts.userQuoteToken),
-            getAccountMeta('baseVault', accounts.baseVault),
-            getAccountMeta('quoteVault', accounts.quoteVault),
-            getAccountMeta('baseTokenMint', accounts.baseTokenMint),
-            getAccountMeta('quoteTokenMint', accounts.quoteTokenMint),
-            getAccountMeta('baseTokenProgram', accounts.baseTokenProgram),
-            getAccountMeta('quoteTokenProgram', accounts.quoteTokenProgram),
-            getAccountMeta('eventAuthority', accounts.eventAuthority),
-            getAccountMeta('program', accounts.program),
-        ],
-        data: getSellExactOutInstructionDataEncoder().encode(args as SellExactOutInstructionDataArgs),
-        programAddress,
-    } as SellExactOutInstruction<
-        typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
-        TAccountPayer,
-        TAccountAuthority,
-        TAccountGlobalConfig,
-        TAccountPlatformConfig,
-        TAccountPoolState,
-        TAccountUserBaseToken,
-        TAccountUserQuoteToken,
-        TAccountBaseVault,
-        TAccountQuoteVault,
-        TAccountBaseTokenMint,
-        TAccountQuoteTokenMint,
-        TAccountBaseTokenProgram,
-        TAccountQuoteTokenProgram,
-        TAccountEventAuthority,
-        TAccountProgram
-    >);
-}
-
-export type SellExactOutInput<
-    TAccountPayer extends string = string,
-    TAccountAuthority extends string = string,
-    TAccountGlobalConfig extends string = string,
-    TAccountPlatformConfig extends string = string,
-    TAccountPoolState extends string = string,
-    TAccountUserBaseToken extends string = string,
-    TAccountUserQuoteToken extends string = string,
-    TAccountBaseVault extends string = string,
-    TAccountQuoteVault extends string = string,
-    TAccountBaseTokenMint extends string = string,
-    TAccountQuoteTokenMint extends string = string,
-    TAccountBaseTokenProgram extends string = string,
-    TAccountQuoteTokenProgram extends string = string,
-    TAccountEventAuthority extends string = string,
-    TAccountProgram extends string = string,
-> = {
-    /**
-     * The user performing the swap operation
-     * Must sign the transaction and pay for fees
-     */
-    payer: TransactionSigner<TAccountPayer>;
-    /**
-     * PDA that acts as the authority for pool vault operations
-     * Generated using AUTH_SEED
-     */
-    authority: Address<TAccountAuthority>;
-    /**
-     * Global configuration account containing protocol-wide settings
-     * Used to read protocol fee rates and curve type
-     */
-    globalConfig: Address<TAccountGlobalConfig>;
-    /**
-     * Platform configuration account containing platform-wide settings
-     * Used to read platform fee rate
-     */
-    platformConfig: Address<TAccountPlatformConfig>;
-    /**
-     * The pool state account where the swap will be performed
-     * Contains current pool parameters and balances
-     */
-    poolState: Address<TAccountPoolState>;
-    /**
-     * The user's token account for base tokens (tokens being bought)
-     * Will receive the output tokens after the swap
-     */
-    userBaseToken: Address<TAccountUserBaseToken>;
-    /**
-     * The user's token account for quote tokens (tokens being sold)
-     * Will be debited for the input amount
-     */
-    userQuoteToken: Address<TAccountUserQuoteToken>;
-    /**
-     * The pool's vault for base tokens
-     * Will be debited to send tokens to the user
-     */
-    baseVault: Address<TAccountBaseVault>;
-    /**
-     * The pool's vault for quote tokens
-     * Will receive the input tokens from the user
-     */
-    quoteVault: Address<TAccountQuoteVault>;
-    /**
-     * The mint of the base token
-     * Used for transfer fee calculations if applicable
-     */
-    baseTokenMint: Address<TAccountBaseTokenMint>;
-    /** The mint of the quote token */
-    quoteTokenMint: Address<TAccountQuoteTokenMint>;
-    /** SPL Token program for base token transfers */
-    baseTokenProgram: Address<TAccountBaseTokenProgram>;
-    /** SPL Token program for quote token transfers */
-    quoteTokenProgram?: Address<TAccountQuoteTokenProgram>;
-    eventAuthority: Address<TAccountEventAuthority>;
     program: Address<TAccountProgram>;
     amountOut: SellExactOutInstructionDataArgs['amountOut'];
     maximumAmountIn: SellExactOutInstructionDataArgs['maximumAmountIn'];
@@ -506,9 +293,15 @@ export function getSellExactOutInstruction<
     const args = { ...input };
 
     // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.quoteTokenProgram.value) {
         accounts.quoteTokenProgram.value =
             'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+    }
+    if (!accounts.eventAuthority.value) {
+        accounts.eventAuthority.value = EVENT_AUTHORITY_PDA_ADDRESS;
     }
 
     const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');

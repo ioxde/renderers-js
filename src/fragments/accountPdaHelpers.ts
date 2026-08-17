@@ -6,6 +6,7 @@ import {
     Fragment,
     fragment,
     getPdasWithProgramIdOverride,
+    getPrecomputedPdas,
     RenderScope,
     TypeManifest,
 } from '../utils';
@@ -42,6 +43,10 @@ export function getAccountPdaHelpersFragment(
     const pdaSeedsType = nameApi.pdaSeedsType(pdaNode.name);
     const findPdaFunction = nameApi.pdaFindFunction(pdaNode.name);
     const hasVariableSeeds = (pdaNode.seeds ?? []).filter(isNodeFilter('variablePdaSeedNode')).length > 0;
+    // A finder resolved at generation time derives nothing, so it is synchronous.
+    const findPdaCall = getPrecomputedPdas(pdaPath, linkables).has(pdaNode)
+        ? `${findPdaFunction}()`
+        : `await ${findPdaFunction}(${hasVariableSeeds ? 'seeds' : ''})`;
 
     const fetchFromSeedsFunction = nameApi.accountFetchFromSeedsFunction(accountNode.name);
     const fetchMaybeFromSeedsFunction = nameApi.accountFetchMaybeFromSeedsFunction(accountNode.name);
@@ -63,7 +68,7 @@ export async function ${fetchMaybeFromSeedsFunction}(
   ${hasVariableSeeds ? `seeds: ${pdaSeedsType},` : ''}
   config: FetchAccountConfig = {},
 ): Promise<MaybeAccount<${accountType}>> {
-  const [address] = await ${findPdaFunction}(${hasVariableSeeds ? 'seeds' : ''});
+  const [address] = ${findPdaCall};
   return await ${fetchMaybeFunction}(rpc, address, config);
 }`,
         f => addFragmentImports(f, importFrom, hasVariableSeeds ? [pdaSeedsType, findPdaFunction] : [findPdaFunction]),

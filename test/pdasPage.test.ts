@@ -1,9 +1,11 @@
 import {
+    accountBumpValueNode,
     accountNode,
     accountValueNode,
     constantPdaSeedNodeFromProgramId,
     constantPdaSeedNodeFromString,
     instructionAccountNode,
+    instructionArgumentNode,
     instructionNode,
     numberTypeNode,
     optionTypeNode,
@@ -524,4 +526,336 @@ test('it fetches an account from the seeds of a PDA pinned at generation time', 
 
     // Then the account helper calls the finder with seeds alone.
     await renderMapContains(renderMap, 'accounts/myAccount.ts', ['const [address] = await findFooPda(seeds);']);
+});
+
+const MY_PROGRAM_ADDRESS = 'LanMV9sAd7wArD4vJFi2qDdfnVhFxYSUg6eADduJ3uj';
+const OTHER_PROGRAM_ADDRESS = 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C';
+
+test('it exports the address of a PDA whose seeds are all constant', async () => {
+    // Given a PDA of the program being rendered with a single constant seed.
+    const node = programNode({
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] })],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the address is resolved here. Same one the Rust renderer bakes for this program and seed.
+    await renderMapContains(renderMap, 'pdas/foo.ts', [
+        "export const FOO_PDA_ADDRESS = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh' as Address<'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh'>;",
+        'export function findFooPda(): ProgramDerivedAddress',
+        'return [FOO_PDA_ADDRESS, 250 as ProgramDerivedAddressBump];',
+    ]);
+
+    // And nothing is hashed at runtime.
+    await renderMapDoesNotContain(renderMap, 'pdas/foo.ts', ['getProgramDerivedAddress', 'MY_PROGRAM_PROGRAM_ADDRESS']);
+});
+
+test('it resolves a PDA under the program it is pinned to rather than the one being rendered', async () => {
+    // Given a PDA pinned to a foreign program.
+    const node = programNode({
+        name: 'myProgram',
+        pdas: [
+            pdaNode({
+                name: 'foo',
+                programId: OTHER_PROGRAM_ADDRESS,
+                seeds: [constantPdaSeedNodeFromString('utf8', 'vault_and_lp_mint_auth_seed')],
+            }),
+        ],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the pin decides the derivation, so the constant is the foreign program's PDA.
+    await renderMapContains(renderMap, 'pdas/foo.ts', [
+        "export const FOO_PDA_ADDRESS = 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL' as Address<'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL'>;",
+        'return [FOO_PDA_ADDRESS, 253 as ProgramDerivedAddressBump];',
+    ]);
+});
+
+test('it keeps deriving a PDA with a variable seed at runtime', async () => {
+    // Given a PDA whose address depends on a caller-supplied seed.
+    const node = programNode({
+        name: 'myProgram',
+        pdas: [
+            pdaNode({
+                name: 'foo',
+                seeds: [
+                    constantPdaSeedNodeFromString('utf8', 'vault_auth_seed'),
+                    variablePdaSeedNode('myAccount', publicKeyTypeNode()),
+                ],
+            }),
+        ],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then there is nothing to resolve at generation time.
+    await renderMapContains(renderMap, 'pdas/foo.ts', ['getProgramDerivedAddress({ programAddress:']);
+    await renderMapDoesNotContain(renderMap, 'pdas/foo.ts', ['FOO_PDA_ADDRESS']);
+});
+
+test('it keeps deriving a PDA at runtime when the deriving program is only known then', async () => {
+    // Given constant seeds, but a use-site that derives the PDA under a caller-supplied program.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({ isSigner: false, isWritable: false, name: 'myOtherProgram' }),
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('foo', [], accountValueNode('myOtherProgram')),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'foo',
+                    }),
+                ],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] })],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then constant seeds are not enough: the address depends on the program the caller passes.
+    await renderMapContains(renderMap, 'pdas/foo.ts', [
+        'export async function findFooPda(config: { programAddress: Address; }): Promise<ProgramDerivedAddress>',
+    ]);
+    await renderMapDoesNotContain(renderMap, 'pdas/foo.ts', ['FOO_PDA_ADDRESS']);
+});
+
+test('it assigns the address constant at the use-sites of a resolved PDA', async () => {
+    // Given an instruction that defaults an account to a PDA with only constant seeds.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('foo'),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'foo',
+                    }),
+                ],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] })],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the builder reads the constant instead of awaiting a finder that only returns it.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', ['accounts.foo.value = FOO_PDA_ADDRESS;']);
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', ['await findFooPda()']);
+    await renderMapContainsImports(renderMap, 'instructions/myInstruction.ts', {
+        '../pdas/index.js': ['FOO_PDA_ADDRESS'],
+    });
+});
+
+test('it keeps calling the finder when the instruction reads the bump of the resolved account', async () => {
+    // Given an instruction that also feeds that account's bump into an argument.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('foo'),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'foo',
+                    }),
+                ],
+                arguments: [
+                    instructionArgumentNode({
+                        defaultValue: accountBumpValueNode('foo'),
+                        name: 'fooBump',
+                        type: numberTypeNode('u8'),
+                    }),
+                ],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] })],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the bump reader keeps the whole tuple, and the synchronous finder keeps the builder sync-only.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', ['accounts.foo.value = findFooPda();']);
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', [
+        'accounts.foo.value = FOO_PDA_ADDRESS',
+        'await findFooPda',
+        'getMyInstructionInstructionAsync',
+    ]);
+});
+
+test('it fetches an account from a resolved PDA without seeds', async () => {
+    // Given an account linked to a PDA with only constant seeds.
+    const node = programNode({
+        accounts: [accountNode({ name: 'myAccount', pda: pdaLinkNode('foo') })],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] })],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the fetch helper goes through the finder without awaiting it.
+    await renderMapContains(renderMap, 'accounts/myAccount.ts', ['const [address] = findFooPda();']);
+    await renderMapDoesNotContain(renderMap, 'accounts/myAccount.ts', ['await findFooPda']);
+});
+
+test('it renders no async builder when a resolved PDA was the only asynchronous default', async () => {
+    // Given an instruction whose single default is a PDA with only constant seeds.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('foo'),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'foo',
+                    }),
+                ],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] })],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then there is no async variant: it would await nothing.
+    await renderMapDoesNotContain(renderMap, 'instructions/myInstruction.ts', [
+        'getMyInstructionInstructionAsync',
+        'MyInstructionAsyncInput',
+    ]);
+
+    // And the sync builder applies the default, so the input type marks the account optional.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'export type MyInstructionInput',
+        'foo?: Address<TAccountFoo>;',
+        'accounts.foo.value = FOO_PDA_ADDRESS;',
+    ]);
+});
+
+test('it still renders an async builder when another default remains asynchronous', async () => {
+    // Given the same resolved PDA alongside a PDA that genuinely derives at runtime.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({ isSigner: false, isWritable: false, name: 'authority' }),
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('foo'),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'foo',
+                    }),
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('bar', [
+                            pdaSeedValueNode('authority', accountValueNode('authority')),
+                        ]),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'bar',
+                    }),
+                ],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [
+            pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] }),
+            pdaNode({ name: 'bar', seeds: [variablePdaSeedNode('authority', publicKeyTypeNode())] }),
+        ],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the async variant survives for the PDA that still derives, and resolves both defaults.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'export async function getMyInstructionInstructionAsync',
+        'accounts.bar.value = await findBarPda({',
+        'accounts.foo.value = FOO_PDA_ADDRESS;',
+    ]);
+
+    // And the sync builder resolves only the one that needs nothing at call time.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'export function getMyInstructionInstruction',
+    ]);
+});
+
+test('it names the resolved address in the type parameter of the account it defaults', async () => {
+    // Given one account defaulting to a resolved PDA and one to a PDA with a variable seed.
+    const node = programNode({
+        instructions: [
+            instructionNode({
+                accounts: [
+                    instructionAccountNode({ isSigner: false, isWritable: false, name: 'authority' }),
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('foo'),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'foo',
+                    }),
+                    instructionAccountNode({
+                        defaultValue: pdaValueNode('bar', [
+                            pdaSeedValueNode('authority', accountValueNode('authority')),
+                        ]),
+                        isSigner: false,
+                        isWritable: false,
+                        name: 'bar',
+                    }),
+                ],
+                name: 'myInstruction',
+            }),
+        ],
+        name: 'myProgram',
+        pdas: [
+            pdaNode({ name: 'foo', seeds: [constantPdaSeedNodeFromString('utf8', 'vault_auth_seed')] }),
+            pdaNode({ name: 'bar', seeds: [variablePdaSeedNode('authority', publicKeyTypeNode())] }),
+        ],
+        publicKey: MY_PROGRAM_ADDRESS,
+    });
+
+    // When we render it.
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // Then the resolved account carries its one legal address in the instruction type, and it is the
+    // same address the exported constant holds.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        "TAccountFoo extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh'",
+    ]);
+    await renderMapContains(renderMap, 'pdas/foo.ts', [
+        "export const FOO_PDA_ADDRESS = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh'",
+    ]);
+
+    // And the one that still derives at runtime keeps the widest type it can have.
+    await renderMapContains(renderMap, 'instructions/myInstruction.ts', [
+        'TAccountBar extends string | AccountMeta<string> = string',
+    ]);
 });

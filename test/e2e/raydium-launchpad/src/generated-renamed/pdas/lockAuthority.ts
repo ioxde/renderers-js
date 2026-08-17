@@ -6,19 +6,11 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { getBytesEncoder, getProgramDerivedAddress, type Address, type ProgramDerivedAddress } from '@solana/kit';
+import { type Address, type ProgramDerivedAddress, type ProgramDerivedAddressBump } from '@solana/kit';
 
-export async function findLockAuthorityPda(): Promise<ProgramDerivedAddress> {
-    return await getProgramDerivedAddress({
-        programAddress:
-            'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE' as Address<'LockrWmn6K5twhz3y9w1dQERbmgSaRkfnTeTKbpofwE'>,
-        seeds: [
-            getBytesEncoder().encode(
-                new Uint8Array([
-                    108, 111, 99, 107, 95, 99, 112, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121, 95, 115, 101, 101,
-                    100,
-                ]),
-            ),
-        ],
-    });
+export const LOCK_AUTHORITY_PDA_ADDRESS =
+    '3f7GcQFG397GAaEnv51zR6tsTVihYRydnydDD1cXekxH' as Address<'3f7GcQFG397GAaEnv51zR6tsTVihYRydnydDD1cXekxH'>;
+
+export function findLockAuthorityPda(): ProgramDerivedAddress {
+    return [LOCK_AUTHORITY_PDA_ADDRESS, 255 as ProgramDerivedAddressBump];
 }

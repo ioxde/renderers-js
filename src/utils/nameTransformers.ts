@@ -43,6 +43,7 @@ export type NameTransformerKey =
     | 'instructionSyncInputType'
     | 'instructionType'
     | 'isDiscriminatedUnionFunction'
+    | 'pdaAddressConstant'
     | 'pdaFindFunction'
     | 'pdaSeedsType'
     | 'programAccountsIdentifierFunction'
@@ -132,6 +133,7 @@ export const DEFAULT_NAME_TRANSFORMERS: NameTransformers = {
     instructionSyncInputType: name => `${pascalCase(name)}Input`,
     instructionType: name => `${pascalCase(name)}Instruction`,
     isDiscriminatedUnionFunction: name => `is${pascalCase(name)}`,
+    pdaAddressConstant: name => `${snakeCase(name).toUpperCase()}_PDA_ADDRESS`,
     pdaFindFunction: name => `find${pascalCase(name)}Pda`,
     pdaSeedsType: name => `${pascalCase(name)}Seeds`,
     programAccountsIdentifierFunction: name => `identify${pascalCase(name)}Account`,

@@ -188,7 +188,7 @@ export function getRenderMapVisitor(
                         ...getDefinedTypeNodesToExtract(node.accounts ?? [], customAccountData),
                         ...getDefinedTypeNodesToExtract(node.instructions ?? [], customInstructionData),
                     ];
-                    const scope = { ...renderScope, programNode: node };
+                    const scope = { ...renderScope, programNode: node, programPath: stack.getPath('programNode') };
 
                     // Hoist the shared event-framing constant (e.g. Anchor's CPI event tag) to its own page.
                     const programEventFraming = getProgramEventFraming(node);

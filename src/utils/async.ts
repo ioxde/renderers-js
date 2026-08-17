@@ -14,8 +14,40 @@ import {
     isNode,
     isNodeFilter,
     PayerValueNode,
+    PdaValueNode,
 } from '@codama/nodes';
-import { deduplicateInstructionDependencies, ResolvedInstructionInput } from '@codama/visitors-core';
+import {
+    deduplicateInstructionDependencies,
+    LinkableDictionary,
+    NodePath,
+    ResolvedInstructionInput,
+} from '@codama/visitors-core';
+
+import { isPdaValueResolvedAtGenerationTime } from './pdas';
+
+/** What the renderer reads to decide whether a default value is asynchronous. */
+export type AsyncScope = Readonly<{
+    /** Names of resolvers the caller declared asynchronous. */
+    asyncResolvers: string[];
+    isResolvedPdaValue: (value: PdaValueNode) => boolean;
+}>;
+
+/**
+ * The async policy for one instruction. Every sync/async decision for that instruction must read the
+ * same scope, or its builder and its input type disagree about which defaults are applied.
+ */
+export function getAsyncScope(scope: {
+    asyncResolvers: string[];
+    instructionPath: NodePath<InstructionNode>;
+    linkables: LinkableDictionary;
+}): AsyncScope {
+    const { asyncResolvers, instructionPath, linkables } = scope;
+    return Object.freeze({
+        asyncResolvers,
+        isResolvedPdaValue: (value: PdaValueNode) =>
+            isPdaValueResolvedAtGenerationTime(value, instructionPath, linkables),
+    });
+}
 
 /**
  * The argument shape of an instruction's generated builder.
@@ -32,30 +64,15 @@ export type InstructionInputShape = {
 };
 
 /**
- * Computes whether an instruction's generated builder takes an `input` parameter and what
- * that input carries. An instruction with no accounts and no caller-supplied arguments
- * renders a zero-parameter builder, so callers must not pass one.
- *
- * @param instructionNode - The instruction whose builder is being rendered.
- * @param options - The resolver names, whether the instruction has custom data, and whether
- * the async variant is being rendered — all of which can change the argument shape.
- * @return The flags describing the builder's argument shape.
- *
- * @example
- * ```ts
- * const { hasInput } = getInstructionInputShape(instructionNode, {
- *     asyncResolvers,
- *     hasCustomData: customInstructionData.has(instructionNode.name),
- *     useAsync: false,
- * });
- * ```
+ * An instruction with no accounts and no caller-supplied arguments renders a zero-parameter builder,
+ * so callers must not pass one.
  */
 export function getInstructionInputShape(
     instructionNode: InstructionNode,
-    options: { asyncResolvers: CamelCaseString[]; hasCustomData: boolean; useAsync: boolean },
+    options: { asyncScope: AsyncScope; hasCustomData: boolean; useAsync: boolean },
 ): InstructionInputShape {
-    const { asyncResolvers, hasCustomData, useAsync } = options;
-    const dependencies = getInstructionDependencies(instructionNode, asyncResolvers, useAsync);
+    const { asyncScope, hasCustomData, useAsync } = options;
+    const dependencies = getInstructionDependencies(instructionNode, asyncScope.asyncResolvers, useAsync);
     const argDependencies = dependencies.filter(isNodeFilter('argumentValueNode')).map(node => node.name);
     const argIsNotOmitted = (arg: InstructionArgumentNode) =>
         !(arg.defaultValue && arg.defaultValueStrategy === 'omitted');
@@ -63,7 +80,7 @@ export function getInstructionInputShape(
     const argHasDefaultValue = (arg: InstructionArgumentNode) => {
         if (!arg.defaultValue) return false;
         if (useAsync) return true;
-        return !isAsyncDefaultValue(arg.defaultValue, asyncResolvers);
+        return !isAsyncDefaultValue(arg.defaultValue, asyncScope);
     };
 
     const hasDataArgs = hasCustomData || (instructionNode.arguments ?? []).filter(argIsNotOmitted).length > 0;
@@ -81,8 +98,9 @@ export function getInstructionInputShape(
 export function hasAsyncFunction(
     instructionNode: InstructionNode,
     resolvedInputs: ResolvedInstructionInput[],
-    asyncResolvers: string[],
+    asyncScope: AsyncScope,
 ): boolean {
+    const { asyncResolvers } = asyncScope;
     const hasByteDeltasAsync = (instructionNode.byteDeltas ?? []).some(
         ({ value }) => isNode(value, 'resolverValueNode') && asyncResolvers.includes(value.name),
     );
@@ -90,26 +108,25 @@ export function hasAsyncFunction(
         ({ value }) => isNode(value, 'resolverValueNode') && asyncResolvers.includes(value.name),
     );
 
-    return hasAsyncDefaultValues(resolvedInputs, asyncResolvers) || hasByteDeltasAsync || hasRemainingAccountsAsync;
+    return hasAsyncDefaultValues(resolvedInputs, asyncScope) || hasByteDeltasAsync || hasRemainingAccountsAsync;
 }
 
-export function hasAsyncDefaultValues(resolvedInputs: ResolvedInstructionInput[], asyncResolvers: string[]): boolean {
-    return resolvedInputs.some(
-        input => !!input.defaultValue && isAsyncDefaultValue(input.defaultValue, asyncResolvers),
-    );
+export function hasAsyncDefaultValues(resolvedInputs: ResolvedInstructionInput[], asyncScope: AsyncScope): boolean {
+    return resolvedInputs.some(input => !!input.defaultValue && isAsyncDefaultValue(input.defaultValue, asyncScope));
 }
 
-export function isAsyncDefaultValue(defaultValue: InstructionInputValueNode, asyncResolvers: string[]): boolean {
+export function isAsyncDefaultValue(defaultValue: InstructionInputValueNode, asyncScope: AsyncScope): boolean {
     switch (defaultValue.kind) {
         case 'pdaValueNode':
-            return true;
+            // A resolved PDA has a synchronous finder, so neither form the builder emits awaits.
+            return !asyncScope.isResolvedPdaValue(defaultValue);
         case 'resolverValueNode':
-            return asyncResolvers.includes(defaultValue.name);
+            return asyncScope.asyncResolvers.includes(defaultValue.name);
         case 'conditionalValueNode':
             return (
-                isAsyncDefaultValue(defaultValue.condition, asyncResolvers) ||
-                (defaultValue.ifFalse == null ? false : isAsyncDefaultValue(defaultValue.ifFalse, asyncResolvers)) ||
-                (defaultValue.ifTrue == null ? false : isAsyncDefaultValue(defaultValue.ifTrue, asyncResolvers))
+                isAsyncDefaultValue(defaultValue.condition, asyncScope) ||
+                (defaultValue.ifFalse == null ? false : isAsyncDefaultValue(defaultValue.ifFalse, asyncScope)) ||
+                (defaultValue.ifTrue == null ? false : isAsyncDefaultValue(defaultValue.ifTrue, asyncScope))
             );
         default:
             return false;
@@ -122,10 +139,10 @@ export function isAsyncDefaultValue(defaultValue: InstructionInputValueNode, asy
  */
 export function isDefaultValueSkippedOnSyncPath(
     defaultValue: InstructionInputValueNode | undefined,
-    asyncResolvers: string[],
+    asyncScope: AsyncScope,
     useAsync: boolean,
 ): boolean {
-    return !useAsync && !!defaultValue && isAsyncDefaultValue(defaultValue, asyncResolvers);
+    return !useAsync && !!defaultValue && isAsyncDefaultValue(defaultValue, asyncScope);
 }
 
 /**
@@ -135,12 +152,12 @@ export function isDefaultValueSkippedOnSyncPath(
  */
 export function isDefaultValueAppliedByBuilder(
     defaultValue: InstructionInputValueNode | undefined,
-    asyncResolvers: string[],
+    asyncScope: AsyncScope,
     useAsync: boolean,
 ): defaultValue is Exclude<InstructionInputValueNode, AccountFieldValueNode | IdentityValueNode | PayerValueNode> {
     if (!defaultValue) return false;
     if (isNode(defaultValue, ['accountFieldValueNode', 'identityValueNode', 'payerValueNode'])) return false;
-    return !isDefaultValueSkippedOnSyncPath(defaultValue, asyncResolvers, useAsync);
+    return !isDefaultValueSkippedOnSyncPath(defaultValue, asyncScope, useAsync);
 }
 
 export function getInstructionDependencies(

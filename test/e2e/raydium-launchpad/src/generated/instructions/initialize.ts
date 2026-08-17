@@ -40,9 +40,9 @@ import {
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
 import {
-    findAuthorityPda,
+    AUTHORITY_PDA_ADDRESS,
+    EVENT_AUTHORITY_PDA_ADDRESS,
     findBaseVaultPda,
-    findEventAuthorityPda,
     findPoolStatePda,
     findQuoteVaultPda,
 } from '../pdas/index.js';
@@ -74,7 +74,7 @@ export type InitializeInstruction<
     TAccountCreator extends string | AccountMeta<string> = string,
     TAccountGlobalConfig extends string | AccountMeta<string> = string,
     TAccountPlatformConfig extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountBaseMint extends string | AccountMeta<string> = string,
     TAccountQuoteMint extends string | AccountMeta<string> = string,
@@ -86,7 +86,7 @@ export type InitializeInstruction<
     TAccountMetadataProgram extends string | AccountMeta<string> = 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
     TAccountSystemProgram extends string | AccountMeta<string> = '11111111111111111111111111111111',
     TAccountRentProgram extends string | AccountMeta<string> = 'SysvarRent111111111111111111111111111111111',
-    TAccountEventAuthority extends string | AccountMeta<string> = string,
+    TAccountEventAuthority extends string | AccountMeta<string> = '2DPAtwB8L12vrMRExbLuyGnC7n2J5LNoZQSejeQGpwkr',
     TAccountProgram extends string | AccountMeta<string> = string,
     TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
@@ -349,7 +349,7 @@ export async function getInitializeInstructionAsync<
 
     // Resolve default values.
     if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.poolState.value) {
         accounts.poolState.value = await findPoolStatePda({
@@ -390,7 +390,7 @@ export async function getInitializeInstructionAsync<
             'SysvarRent111111111111111111111111111111111' as Address<'SysvarRent111111111111111111111111111111111'>;
     }
     if (!accounts.eventAuthority.value) {
-        accounts.eventAuthority.value = await findEventAuthorityPda();
+        accounts.eventAuthority.value = EVENT_AUTHORITY_PDA_ADDRESS;
     }
 
     const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
@@ -480,7 +480,7 @@ export type InitializeInput<
      * PDA that acts as the authority for pool vault and mint operations
      * Generated using AUTH_SEED
      */
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -527,7 +527,7 @@ export type InitializeInput<
     systemProgram?: Address<TAccountSystemProgram>;
     /** Required for rent exempt calculations */
     rentProgram?: Address<TAccountRentProgram>;
-    eventAuthority: Address<TAccountEventAuthority>;
+    eventAuthority?: Address<TAccountEventAuthority>;
     program: Address<TAccountProgram>;
     baseMintParam: InitializeInstructionDataArgs['baseMintParam'];
     curveParam: InitializeInstructionDataArgs['curveParam'];
@@ -625,6 +625,9 @@ export function getInitializeInstruction<
     const args = { ...input };
 
     // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.baseTokenProgram.value) {
         accounts.baseTokenProgram.value =
             'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
@@ -644,6 +647,9 @@ export function getInitializeInstruction<
     if (!accounts.rentProgram.value) {
         accounts.rentProgram.value =
             'SysvarRent111111111111111111111111111111111' as Address<'SysvarRent111111111111111111111111111111111'>;
+    }
+    if (!accounts.eventAuthority.value) {
+        accounts.eventAuthority.value = EVENT_AUTHORITY_PDA_ADDRESS;
     }
 
     const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');

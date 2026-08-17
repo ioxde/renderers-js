@@ -59,38 +59,38 @@ import {
     getTradeEventDecoder,
 } from '../events/index.js';
 import {
-    getBuyExactInInstructionAsync,
-    getBuyExactOutInstructionAsync,
+    getBuyExactInInstruction,
+    getBuyExactOutInstruction,
     getClaimPlatformFeeInstructionAsync,
     getClaimVestedTokenInstructionAsync,
-    getCollectFeeInstructionAsync,
-    getCollectMigrateFeeInstructionAsync,
+    getCollectFeeInstruction,
+    getCollectMigrateFeeInstruction,
     getCreateConfigInstructionAsync,
     getCreatePlatformConfigInstructionAsync,
     getCreateVestingAccountInstructionAsync,
     getInitializeInstructionAsync,
     getMigrateToAmmInstructionAsync,
     getMigrateToCpswapInstructionAsync,
-    getSellExactInInstructionAsync,
-    getSellExactOutInstructionAsync,
+    getSellExactInInstruction,
+    getSellExactOutInstruction,
     getUpdateConfigInstruction,
     getUpdatePlatformConfigInstructionAsync,
     identifyInstruction,
     parseInstruction,
-    type BuyExactInAsyncInput,
-    type BuyExactOutAsyncInput,
+    type BuyExactInInput,
+    type BuyExactOutInput,
     type ClaimPlatformFeeAsyncInput,
     type ClaimVestedTokenAsyncInput,
-    type CollectFeeAsyncInput,
-    type CollectMigrateFeeAsyncInput,
+    type CollectFeeInput,
+    type CollectMigrateFeeInput,
     type CreateConfigAsyncInput,
     type CreatePlatformConfigAsyncInput,
     type CreateVestingAccountAsyncInput,
     type InitializeAsyncInput,
     type MigrateToAmmAsyncInput,
     type MigrateToCpswapAsyncInput,
-    type SellExactInAsyncInput,
-    type SellExactOutAsyncInput,
+    type SellExactInInput,
+    type SellExactOutInput,
     type UpdateConfigInput,
     type UpdatePlatformConfigAsyncInput,
 } from '../instructions/index.js';
@@ -145,23 +145,21 @@ export type RaydiumLaunchpadPluginEvents = {
 
 export type RaydiumLaunchpadPluginInstructions = {
     buyExactIn: (
-        input: MakeOptional<BuyExactInAsyncInput, 'payer'>,
-    ) => ReturnType<typeof getBuyExactInInstructionAsync> & SelfPlanAndSendFunctions;
+        input: MakeOptional<BuyExactInInput, 'payer'>,
+    ) => ReturnType<typeof getBuyExactInInstruction> & SelfPlanAndSendFunctions;
     buyExactOut: (
-        input: MakeOptional<BuyExactOutAsyncInput, 'payer'>,
-    ) => ReturnType<typeof getBuyExactOutInstructionAsync> & SelfPlanAndSendFunctions;
+        input: MakeOptional<BuyExactOutInput, 'payer'>,
+    ) => ReturnType<typeof getBuyExactOutInstruction> & SelfPlanAndSendFunctions;
     claimPlatformFee: (
         input: ClaimPlatformFeeAsyncInput,
     ) => ReturnType<typeof getClaimPlatformFeeInstructionAsync> & SelfPlanAndSendFunctions;
     claimVestedToken: (
         input: ClaimVestedTokenAsyncInput,
     ) => ReturnType<typeof getClaimVestedTokenInstructionAsync> & SelfPlanAndSendFunctions;
-    collectFee: (
-        input: CollectFeeAsyncInput,
-    ) => ReturnType<typeof getCollectFeeInstructionAsync> & SelfPlanAndSendFunctions;
+    collectFee: (input: CollectFeeInput) => ReturnType<typeof getCollectFeeInstruction> & SelfPlanAndSendFunctions;
     collectMigrateFee: (
-        input: CollectMigrateFeeAsyncInput,
-    ) => ReturnType<typeof getCollectMigrateFeeInstructionAsync> & SelfPlanAndSendFunctions;
+        input: CollectMigrateFeeInput,
+    ) => ReturnType<typeof getCollectMigrateFeeInstruction> & SelfPlanAndSendFunctions;
     createConfig: (
         input: CreateConfigAsyncInput,
     ) => ReturnType<typeof getCreateConfigInstructionAsync> & SelfPlanAndSendFunctions;
@@ -181,11 +179,11 @@ export type RaydiumLaunchpadPluginInstructions = {
         input: MakeOptional<MigrateToCpswapAsyncInput, 'payer'>,
     ) => ReturnType<typeof getMigrateToCpswapInstructionAsync> & SelfPlanAndSendFunctions;
     sellExactIn: (
-        input: MakeOptional<SellExactInAsyncInput, 'payer'>,
-    ) => ReturnType<typeof getSellExactInInstructionAsync> & SelfPlanAndSendFunctions;
+        input: MakeOptional<SellExactInInput, 'payer'>,
+    ) => ReturnType<typeof getSellExactInInstruction> & SelfPlanAndSendFunctions;
     sellExactOut: (
-        input: MakeOptional<SellExactOutAsyncInput, 'payer'>,
-    ) => ReturnType<typeof getSellExactOutInstructionAsync> & SelfPlanAndSendFunctions;
+        input: MakeOptional<SellExactOutInput, 'payer'>,
+    ) => ReturnType<typeof getSellExactOutInstruction> & SelfPlanAndSendFunctions;
     updateConfig: (
         input: UpdateConfigInput,
     ) => ReturnType<typeof getUpdateConfigInstruction> & SelfPlanAndSendFunctions;
@@ -271,20 +269,20 @@ export function raydiumLaunchpadProgram() {
                     buyExactIn: input =>
                         addSelfPlanAndSendFunctions(
                             client,
-                            getBuyExactInInstructionAsync({ ...input, payer: input.payer ?? client.payer }),
+                            getBuyExactInInstruction({ ...input, payer: input.payer ?? client.payer }),
                         ),
                     buyExactOut: input =>
                         addSelfPlanAndSendFunctions(
                             client,
-                            getBuyExactOutInstructionAsync({ ...input, payer: input.payer ?? client.payer }),
+                            getBuyExactOutInstruction({ ...input, payer: input.payer ?? client.payer }),
                         ),
                     claimPlatformFee: input =>
                         addSelfPlanAndSendFunctions(client, getClaimPlatformFeeInstructionAsync(input)),
                     claimVestedToken: input =>
                         addSelfPlanAndSendFunctions(client, getClaimVestedTokenInstructionAsync(input)),
-                    collectFee: input => addSelfPlanAndSendFunctions(client, getCollectFeeInstructionAsync(input)),
+                    collectFee: input => addSelfPlanAndSendFunctions(client, getCollectFeeInstruction(input)),
                     collectMigrateFee: input =>
-                        addSelfPlanAndSendFunctions(client, getCollectMigrateFeeInstructionAsync(input)),
+                        addSelfPlanAndSendFunctions(client, getCollectMigrateFeeInstruction(input)),
                     createConfig: input => addSelfPlanAndSendFunctions(client, getCreateConfigInstructionAsync(input)),
                     createPlatformConfig: input =>
                         addSelfPlanAndSendFunctions(client, getCreatePlatformConfigInstructionAsync(input)),
@@ -308,12 +306,12 @@ export function raydiumLaunchpadProgram() {
                     sellExactIn: input =>
                         addSelfPlanAndSendFunctions(
                             client,
-                            getSellExactInInstructionAsync({ ...input, payer: input.payer ?? client.payer }),
+                            getSellExactInInstruction({ ...input, payer: input.payer ?? client.payer }),
                         ),
                     sellExactOut: input =>
                         addSelfPlanAndSendFunctions(
                             client,
-                            getSellExactOutInstructionAsync({ ...input, payer: input.payer ?? client.payer }),
+                            getSellExactOutInstruction({ ...input, payer: input.payer ?? client.payer }),
                         ),
                     updateConfig: input => addSelfPlanAndSendFunctions(client, getUpdateConfigInstruction(input)),
                     updatePlatformConfig: input =>

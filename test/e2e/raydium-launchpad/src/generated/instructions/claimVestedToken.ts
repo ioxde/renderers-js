@@ -39,7 +39,7 @@ import {
     getAddressFromResolvedInstructionAccount,
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
-import { findAuthorityPda, findVestingRecordPda } from '../pdas/index.js';
+import { AUTHORITY_PDA_ADDRESS, findVestingRecordPda } from '../pdas/index.js';
 import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const CLAIM_VESTED_TOKEN_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([49, 33, 104, 30, 189, 157, 79, 35]);
@@ -51,7 +51,7 @@ export function getClaimVestedTokenDiscriminatorBytes(): ReadonlyUint8Array {
 export type ClaimVestedTokenInstruction<
     TProgram extends string = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountBeneficiary extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountVestingRecord extends string | AccountMeta<string> = string,
     TAccountBaseVault extends string | AccountMeta<string> = string,
@@ -217,7 +217,7 @@ export async function getClaimVestedTokenInstructionAsync<
 
     // Resolve default values.
     if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.vestingRecord.value) {
         accounts.vestingRecord.value = await findVestingRecordPda({
@@ -287,7 +287,7 @@ export type ClaimVestedTokenInput<
      * PDA that acts as the authority for pool vault and mint operations
      * Generated using AUTH_SEED
      */
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -373,6 +373,9 @@ export function getClaimVestedTokenInstruction<
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
     // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.baseTokenProgram.value) {
         accounts.baseTokenProgram.value =
             'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;

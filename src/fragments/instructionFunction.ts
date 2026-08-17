@@ -10,6 +10,7 @@ import {
 
 import {
     addFragmentImports,
+    AsyncScope,
     Fragment,
     fragment,
     getInstructionInputShape,
@@ -30,6 +31,7 @@ export function getInstructionFunctionFragment(
         RenderScope,
         'asyncResolvers' | 'customInstructionData' | 'getImportFrom' | 'linkables' | 'nameApi' | 'typeManifestVisitor'
     > & {
+        asyncScope: AsyncScope;
         dataArgsManifest: TypeManifest;
         extraArgsManifest: TypeManifest;
         instructionPath: NodePath<InstructionNode>;
@@ -38,17 +40,17 @@ export function getInstructionFunctionFragment(
         useAsync: boolean;
     },
 ): Fragment | undefined {
-    const { useAsync, instructionPath, resolvedInputs, renamedArgs, asyncResolvers, nameApi, customInstructionData } =
+    const { useAsync, instructionPath, resolvedInputs, renamedArgs, asyncScope, nameApi, customInstructionData } =
         scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
     const programNode = findProgramNodeFromPath(instructionPath)!;
-    if (useAsync && !hasAsyncFunction(instructionNode, resolvedInputs, asyncResolvers)) return;
+    if (useAsync && !hasAsyncFunction(instructionNode, resolvedInputs, asyncScope)) return;
 
     const customData = customInstructionData.get(instructionNode.name);
     const hasAccounts = (instructionNode.accounts ?? []).length > 0;
     const hasData = !!customData || (instructionNode.arguments ?? []).length > 0;
     const { hasAnyArgs, hasDataArgs, hasInput } = getInstructionInputShape(instructionNode, {
-        asyncResolvers,
+        asyncScope,
         hasCustomData: !!customData,
         useAsync,
     });

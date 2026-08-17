@@ -13,10 +13,13 @@ import { NodePath, pipe, ResolvedInstructionInput, visit } from '@codama/visitor
 import {
     addFragmentFeatures,
     addFragmentImports,
+    AsyncScope,
     Fragment,
     fragment,
     getPdasWithProgramIdOverride,
     isDefaultValueAppliedByBuilder,
+    isPdaValueFoldedToAddress,
+    isPdaValueResolvedAtGenerationTime,
     mergeFragments,
     RenderScope,
     use,
@@ -24,6 +27,7 @@ import {
 
 export function getInstructionInputDefaultFragment(
     scope: Pick<RenderScope, 'asyncResolvers' | 'getImportFrom' | 'linkables' | 'nameApi' | 'typeManifestVisitor'> & {
+        asyncScope: AsyncScope;
         input: ResolvedInstructionInput;
         instructionPath: NodePath<InstructionNode>;
         optionalAccountStrategy: OptionalAccountStrategy;
@@ -36,6 +40,7 @@ export function getInstructionInputDefaultFragment(
         linkables,
         optionalAccountStrategy,
         asyncResolvers,
+        asyncScope,
         useAsync,
         nameApi,
         typeManifestVisitor,
@@ -45,7 +50,7 @@ export function getInstructionInputDefaultFragment(
         return fragment``;
     }
 
-    if (!isDefaultValueAppliedByBuilder(input.defaultValue, asyncResolvers, useAsync)) {
+    if (!isDefaultValueAppliedByBuilder(input.defaultValue, asyncScope, useAsync)) {
         return fragment``;
     }
 
@@ -154,6 +159,15 @@ export function getInstructionInputDefaultFragment(
                 );
             }
 
+            const linkedPda = linkables.get([...instructionPath, defaultValue.pda]);
+            const linkedPdaPath = linkedPda ? ([...instructionPath, linkedPda] as NodePath<PdaNode>) : undefined;
+
+            if (linkedPda && isPdaValueFoldedToAddress(defaultValue, input, instructionPath, linkables)) {
+                return defaultFragment(
+                    use(nameApi.pdaAddressConstant(linkedPda.name), getImportFrom(defaultValue.pda)),
+                );
+            }
+
             const pdaFunction = use(nameApi.pdaFindFunction(defaultValue.pda.name), getImportFrom(defaultValue.pda));
             const pdaArgs: Fragment[] = [];
             const pdaSeeds = (defaultValue.seeds ?? []).map((seed): Fragment => {
@@ -177,20 +191,17 @@ export function getInstructionInputDefaultFragment(
                 pdaArgs.push(pdaSeedsFragment);
             }
             // Must stay the same predicate the finder's signature uses, or the call site stops matching it.
-            // Un-overridden use-sites still pass an address: the enclosing program is what they derive under.
-            const linkedPda = linkables.get([...instructionPath, defaultValue.pda]);
-            if (linkedPda) {
-                const linkedPdaPath = [...instructionPath, linkedPda] as NodePath<PdaNode>;
-                if (getPdasWithProgramIdOverride(linkedPdaPath, linkables).has(linkedPda)) {
-                    // Object shorthand for the `programAddress` local of the generated builder.
-                    pdaArgs.push(
-                        pdaProgramValue
-                            ? fragment`{ programAddress: ${pdaProgramValue} }`
-                            : fragment`{ programAddress }`,
-                    );
-                }
+            if (linkedPdaPath && linkedPda && getPdasWithProgramIdOverride(linkedPdaPath, linkables).has(linkedPda)) {
+                // Object shorthand for the `programAddress` local of the generated builder.
+                pdaArgs.push(
+                    pdaProgramValue ? fragment`{ programAddress: ${pdaProgramValue} }` : fragment`{ programAddress }`,
+                );
             }
-            return defaultFragment(fragment`await ${pdaFunction}(${mergeFragments(pdaArgs, c => c.join(', '))})`);
+            // A resolved PDA that did not fold still calls the finder, but that finder is synchronous.
+            const pdaAwait = isPdaValueResolvedAtGenerationTime(defaultValue, instructionPath, linkables)
+                ? ''
+                : 'await ';
+            return defaultFragment(fragment`${pdaAwait}${pdaFunction}(${mergeFragments(pdaArgs, c => c.join(', '))})`);
 
         case 'publicKeyValueNode':
             return defaultFragment(

@@ -7,11 +7,13 @@ import {
     isNode,
     ProgramNode,
 } from '@codama/nodes';
-import { getResolvedInstructionInputsVisitor, visit } from '@codama/visitors-core';
+import { getResolvedInstructionInputsVisitor, NodePath, visit } from '@codama/visitors-core';
 
 import {
+    AsyncScope,
     Fragment,
     fragment,
+    getAsyncScope,
     getInstructionInputShape,
     hasAsyncFunction,
     mergeFragments,
@@ -35,20 +37,40 @@ export function hasProgramPluginPage(programNode: ProgramNode): boolean {
  * plugin factory function wiring the generated helpers onto a client.
  */
 export function getProgramPluginPageFragment(
-    scope: Pick<RenderScope, 'asyncResolvers' | 'customInstructionData' | 'nameApi' | 'renderParentInstructions'> & {
+    scope: Pick<
+        RenderScope,
+        'asyncResolvers' | 'customInstructionData' | 'linkables' | 'nameApi' | 'renderParentInstructions'
+    > & {
         programNode: ProgramNode;
+        programPath: NodePath<ProgramNode>;
     },
 ): Fragment | undefined {
     if (!hasProgramPluginPage(scope.programNode)) return;
 
+    // Same policy the instruction pages use, or the plugin advertises builders they never emit.
+    const asyncScopes = new Map<CamelCaseString, AsyncScope>(
+        (scope.programNode.instructions ?? []).map(instruction => [
+            instruction.name,
+            getAsyncScope({
+                asyncResolvers: scope.asyncResolvers,
+                instructionPath: [...scope.programPath, instruction],
+                linkables: scope.linkables,
+            }),
+        ]),
+    );
+
     const resolvedInstructionInputVisitor = getResolvedInstructionInputsVisitor();
     const asyncInstructions: CamelCaseString[] = (scope.programNode.instructions ?? [])
         .filter(instruction =>
-            hasAsyncFunction(instruction, visit(instruction, resolvedInstructionInputVisitor), scope.asyncResolvers),
+            hasAsyncFunction(
+                instruction,
+                visit(instruction, resolvedInstructionInputVisitor),
+                asyncScopes.get(instruction.name)!,
+            ),
         )
         .map(i => i.name);
 
-    const extendedScope = { ...scope, asyncInstructions };
+    const extendedScope = { ...scope, asyncInstructions, asyncScopes };
     return mergeFragments(
         [
             getProgramPluginTypeFragment(extendedScope),
@@ -166,12 +188,13 @@ function getProgramPluginEventsTypeFragment(
 }
 
 function getProgramPluginInstructionsTypeFragment(
-    scope: Pick<RenderScope, 'asyncResolvers' | 'customInstructionData' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
         asyncInstructions: CamelCaseString[];
+        asyncScopes: Map<CamelCaseString, AsyncScope>;
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
-    const { programNode, asyncInstructions, asyncResolvers, customInstructionData, nameApi } = scope;
+    const { programNode, asyncInstructions, asyncScopes, customInstructionData, nameApi } = scope;
     if ((programNode.instructions ?? []).length === 0) return;
     const programPluginInstructionsType = nameApi.programPluginInstructionsType(programNode.name);
     const selfPlanAndSendFunctions = use('type SelfPlanAndSendFunctions', 'solanaProgramClientCore');
@@ -190,7 +213,7 @@ function getProgramPluginInstructionsTypeFragment(
             // Mirrors the builder: an instruction with no accounts and no caller-supplied args
             // renders a zero-parameter builder, so the plugin method takes nothing either.
             const { hasInput } = getInstructionInputShape(instruction, {
-                asyncResolvers,
+                asyncScope: asyncScopes.get(instruction.name)!,
                 hasCustomData: customInstructionData.has(instruction.name),
                 useAsync: isAsync,
             });
@@ -278,8 +301,9 @@ function getProgramPluginRequirementsTypeFragment(
 }
 
 function getProgramPluginFunctionFragment(
-    scope: Pick<RenderScope, 'asyncResolvers' | 'customInstructionData' | 'nameApi' | 'renderParentInstructions'> & {
+    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi' | 'renderParentInstructions'> & {
         asyncInstructions: CamelCaseString[];
+        asyncScopes: Map<CamelCaseString, AsyncScope>;
         programNode: ProgramNode;
     },
 ): Fragment {
@@ -371,12 +395,13 @@ function getProgramPluginEventsObjectFragment(
 }
 
 function getProgramPluginInstructionsObjectFragment(
-    scope: Pick<RenderScope, 'asyncResolvers' | 'customInstructionData' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'customInstructionData' | 'nameApi'> & {
         asyncInstructions: CamelCaseString[];
+        asyncScopes: Map<CamelCaseString, AsyncScope>;
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
-    const { programNode, nameApi, asyncInstructions, asyncResolvers, customInstructionData } = scope;
+    const { programNode, nameApi, asyncInstructions, asyncScopes, customInstructionData } = scope;
     if ((programNode.instructions ?? []).length === 0) return;
 
     const fields = mergeFragments(
@@ -392,7 +417,7 @@ function getProgramPluginInstructionsObjectFragment(
             // An instruction with no accounts and no caller-supplied args renders a
             // zero-parameter builder, so the plugin must not hand it an input object.
             const { hasInput } = getInstructionInputShape(instruction, {
-                asyncResolvers,
+                asyncScope: asyncScopes.get(instruction.name)!,
                 hasCustomData: customInstructionData.has(instruction.name),
                 useAsync: isAsync,
             });

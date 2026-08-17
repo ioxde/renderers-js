@@ -41,7 +41,7 @@ import {
     getAddressFromResolvedInstructionAccount,
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
-import { findAuthorityPda } from '../pdas/index.js';
+import { AUTHORITY_PDA_ADDRESS } from '../pdas/index.js';
 import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const CLAIM_PLATFORM_FEE_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
@@ -55,7 +55,7 @@ export function getClaimPlatformFeeDiscriminatorBytes(): ReadonlyUint8Array {
 export type ClaimPlatformFeeInstruction<
     TProgram extends string = typeof RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
     TAccountPlatformFeeWallet extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountPlatformConfig extends string | AccountMeta<string> = string,
     TAccountQuoteVault extends string | AccountMeta<string> = string,
@@ -210,7 +210,7 @@ export async function getClaimPlatformFeeInstructionAsync<
 
     // Resolve default values.
     if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.recipientTokenAccount.value) {
         accounts.recipientTokenAccount.value = await getProgramDerivedAddress({
@@ -294,7 +294,7 @@ export type ClaimPlatformFeeInput<
      * PDA that acts as the authority for pool vault and mint operations
      * Generated using AUTH_SEED
      */
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /**
      * Account that stores the pool's state and parameters
      * PDA generated using POOL_SEED and both token mints
@@ -371,6 +371,9 @@ export function getClaimPlatformFeeInstruction<
     const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>;
 
     // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.tokenProgram.value) {
         accounts.tokenProgram.value =
             'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;

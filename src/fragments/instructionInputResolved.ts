@@ -2,11 +2,12 @@ import { camelCase, InstructionNode, isNode, parseOptionalAccountStrategy } from
 import { mapFragmentContent } from '@codama/renderers-core';
 import { getLastNodeFromPath, NodePath, ResolvedInstructionInput } from '@codama/visitors-core';
 
-import { Fragment, fragment, mergeFragments, RenderScope } from '../utils';
+import { AsyncScope, Fragment, fragment, mergeFragments, RenderScope } from '../utils';
 import { getInstructionInputDefaultFragment } from './instructionInputDefault';
 
 export function getInstructionInputResolvedFragment(
     scope: Pick<RenderScope, 'asyncResolvers' | 'getImportFrom' | 'linkables' | 'nameApi' | 'typeManifestVisitor'> & {
+        asyncScope: AsyncScope;
         instructionPath: NodePath<InstructionNode>;
         resolvedInputs: ResolvedInstructionInput[];
         useAsync: boolean;

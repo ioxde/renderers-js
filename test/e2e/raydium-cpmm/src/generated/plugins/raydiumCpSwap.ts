@@ -47,28 +47,28 @@ import {
 } from '../accounts/index.js';
 import { getLpChangeEventDecoder, getSwapEventDecoder } from '../events/index.js';
 import {
-    getCollectFundFeeInstructionAsync,
-    getCollectProtocolFeeInstructionAsync,
+    getCollectFundFeeInstruction,
+    getCollectProtocolFeeInstruction,
     getCreateAmmConfigInstructionAsync,
-    getDepositInstructionAsync,
+    getDepositInstruction,
     getInitializeInstructionAsync,
-    getSwapBaseInputInstructionAsync,
-    getSwapBaseOutputInstructionAsync,
+    getSwapBaseInputInstruction,
+    getSwapBaseOutputInstruction,
     getUpdateAmmConfigInstruction,
     getUpdatePoolStatusInstruction,
-    getWithdrawInstructionAsync,
+    getWithdrawInstruction,
     identifyRaydiumCpSwapInstruction,
     parseRaydiumCpSwapInstruction,
-    type CollectFundFeeAsyncInput,
-    type CollectProtocolFeeAsyncInput,
+    type CollectFundFeeInput,
+    type CollectProtocolFeeInput,
     type CreateAmmConfigAsyncInput,
-    type DepositAsyncInput,
+    type DepositInput,
     type InitializeAsyncInput,
-    type SwapBaseInputAsyncInput,
-    type SwapBaseOutputAsyncInput,
+    type SwapBaseInputInput,
+    type SwapBaseOutputInput,
     type UpdateAmmConfigInput,
     type UpdatePoolStatusInput,
-    type WithdrawAsyncInput,
+    type WithdrawInput,
 } from '../instructions/index.js';
 import {
     findAmmConfigPda,
@@ -103,31 +103,31 @@ export type RaydiumCpSwapPluginEvents = {
 
 export type RaydiumCpSwapPluginInstructions = {
     collectFundFee: (
-        input: CollectFundFeeAsyncInput,
-    ) => ReturnType<typeof getCollectFundFeeInstructionAsync> & SelfPlanAndSendFunctions;
+        input: CollectFundFeeInput,
+    ) => ReturnType<typeof getCollectFundFeeInstruction> & SelfPlanAndSendFunctions;
     collectProtocolFee: (
-        input: CollectProtocolFeeAsyncInput,
-    ) => ReturnType<typeof getCollectProtocolFeeInstructionAsync> & SelfPlanAndSendFunctions;
+        input: CollectProtocolFeeInput,
+    ) => ReturnType<typeof getCollectProtocolFeeInstruction> & SelfPlanAndSendFunctions;
     createAmmConfig: (
         input: CreateAmmConfigAsyncInput,
     ) => ReturnType<typeof getCreateAmmConfigInstructionAsync> & SelfPlanAndSendFunctions;
-    deposit: (input: DepositAsyncInput) => ReturnType<typeof getDepositInstructionAsync> & SelfPlanAndSendFunctions;
+    deposit: (input: DepositInput) => ReturnType<typeof getDepositInstruction> & SelfPlanAndSendFunctions;
     initialize: (
         input: InitializeAsyncInput,
     ) => ReturnType<typeof getInitializeInstructionAsync> & SelfPlanAndSendFunctions;
     swapBaseInput: (
-        input: MakeOptional<SwapBaseInputAsyncInput, 'payer'>,
-    ) => ReturnType<typeof getSwapBaseInputInstructionAsync> & SelfPlanAndSendFunctions;
+        input: MakeOptional<SwapBaseInputInput, 'payer'>,
+    ) => ReturnType<typeof getSwapBaseInputInstruction> & SelfPlanAndSendFunctions;
     swapBaseOutput: (
-        input: MakeOptional<SwapBaseOutputAsyncInput, 'payer'>,
-    ) => ReturnType<typeof getSwapBaseOutputInstructionAsync> & SelfPlanAndSendFunctions;
+        input: MakeOptional<SwapBaseOutputInput, 'payer'>,
+    ) => ReturnType<typeof getSwapBaseOutputInstruction> & SelfPlanAndSendFunctions;
     updateAmmConfig: (
         input: UpdateAmmConfigInput,
     ) => ReturnType<typeof getUpdateAmmConfigInstruction> & SelfPlanAndSendFunctions;
     updatePoolStatus: (
         input: UpdatePoolStatusInput,
     ) => ReturnType<typeof getUpdatePoolStatusInstruction> & SelfPlanAndSendFunctions;
-    withdraw: (input: WithdrawAsyncInput) => ReturnType<typeof getWithdrawInstructionAsync> & SelfPlanAndSendFunctions;
+    withdraw: (input: WithdrawInput) => ReturnType<typeof getWithdrawInstruction> & SelfPlanAndSendFunctions;
 };
 
 export type RaydiumCpSwapPluginPdas = {
@@ -176,28 +176,27 @@ export function raydiumCpSwapProgram() {
                 },
                 events: { lpChangeEvent: getLpChangeEventDecoder(), swapEvent: getSwapEventDecoder() },
                 instructions: {
-                    collectFundFee: input =>
-                        addSelfPlanAndSendFunctions(client, getCollectFundFeeInstructionAsync(input)),
+                    collectFundFee: input => addSelfPlanAndSendFunctions(client, getCollectFundFeeInstruction(input)),
                     collectProtocolFee: input =>
-                        addSelfPlanAndSendFunctions(client, getCollectProtocolFeeInstructionAsync(input)),
+                        addSelfPlanAndSendFunctions(client, getCollectProtocolFeeInstruction(input)),
                     createAmmConfig: input =>
                         addSelfPlanAndSendFunctions(client, getCreateAmmConfigInstructionAsync(input)),
-                    deposit: input => addSelfPlanAndSendFunctions(client, getDepositInstructionAsync(input)),
+                    deposit: input => addSelfPlanAndSendFunctions(client, getDepositInstruction(input)),
                     initialize: input => addSelfPlanAndSendFunctions(client, getInitializeInstructionAsync(input)),
                     swapBaseInput: input =>
                         addSelfPlanAndSendFunctions(
                             client,
-                            getSwapBaseInputInstructionAsync({ ...input, payer: input.payer ?? client.payer }),
+                            getSwapBaseInputInstruction({ ...input, payer: input.payer ?? client.payer }),
                         ),
                     swapBaseOutput: input =>
                         addSelfPlanAndSendFunctions(
                             client,
-                            getSwapBaseOutputInstructionAsync({ ...input, payer: input.payer ?? client.payer }),
+                            getSwapBaseOutputInstruction({ ...input, payer: input.payer ?? client.payer }),
                         ),
                     updateAmmConfig: input => addSelfPlanAndSendFunctions(client, getUpdateAmmConfigInstruction(input)),
                     updatePoolStatus: input =>
                         addSelfPlanAndSendFunctions(client, getUpdatePoolStatusInstruction(input)),
-                    withdraw: input => addSelfPlanAndSendFunctions(client, getWithdrawInstructionAsync(input)),
+                    withdraw: input => addSelfPlanAndSendFunctions(client, getWithdrawInstruction(input)),
                 },
                 pdas: {
                     authority: findAuthorityPda,

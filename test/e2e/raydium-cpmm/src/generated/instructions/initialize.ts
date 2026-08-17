@@ -44,7 +44,7 @@ import {
     type ResolvedInstructionAccount,
 } from '@solana/kit/program-client-core';
 import {
-    findAuthorityPda,
+    AUTHORITY_PDA_ADDRESS,
     findLpMintPda,
     findObservationStatePda,
     findToken0VaultPda,
@@ -62,7 +62,7 @@ export type InitializeInstruction<
     TProgram extends string = typeof RAYDIUM_CP_SWAP_PROGRAM_ADDRESS,
     TAccountCreator extends string | AccountMeta<string> = string,
     TAccountAmmConfig extends string | AccountMeta<string> = string,
-    TAccountAuthority extends string | AccountMeta<string> = string,
+    TAccountAuthority extends string | AccountMeta<string> = 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL',
     TAccountPoolState extends string | AccountMeta<string> = string,
     TAccountToken0Mint extends string | AccountMeta<string> = string,
     TAccountToken1Mint extends string | AccountMeta<string> = string,
@@ -334,7 +334,7 @@ export async function getInitializeInstructionAsync<
 
     // Resolve default values.
     if (!accounts.authority.value) {
-        accounts.authority.value = await findAuthorityPda();
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
     }
     if (!accounts.lpMint.value) {
         accounts.lpMint.value = await findLpMintPda({
@@ -473,7 +473,7 @@ export type InitializeInput<
     /** Which config the pool belongs to. */
     ammConfig: Address<TAccountAmmConfig>;
     /** pool vault and lp mint authority */
-    authority: Address<TAccountAuthority>;
+    authority?: Address<TAccountAuthority>;
     /**
      * PDA account:
      * seeds = [
@@ -620,6 +620,9 @@ export function getInitializeInstruction<
     const args = { ...input };
 
     // Resolve default values.
+    if (!accounts.authority.value) {
+        accounts.authority.value = AUTHORITY_PDA_ADDRESS;
+    }
     if (!accounts.createPoolFee.value) {
         accounts.createPoolFee.value =
             'DNXgeM9EiiaAbaWvwjHj9fQQLAX5ZsfHyvmYUNRAdNC8' as Address<'DNXgeM9EiiaAbaWvwjHj9fQQLAX5ZsfHyvmYUNRAdNC8'>;

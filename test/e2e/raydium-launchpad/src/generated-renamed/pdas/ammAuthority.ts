@@ -6,14 +6,11 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { getBytesEncoder, getProgramDerivedAddress, type Address, type ProgramDerivedAddress } from '@solana/kit';
+import { type Address, type ProgramDerivedAddress, type ProgramDerivedAddressBump } from '@solana/kit';
 
-export async function findAmmAuthorityPda(): Promise<ProgramDerivedAddress> {
-    return await getProgramDerivedAddress({
-        programAddress:
-            '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8' as Address<'675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'>,
-        seeds: [
-            getBytesEncoder().encode(new Uint8Array([97, 109, 109, 32, 97, 117, 116, 104, 111, 114, 105, 116, 121])),
-        ],
-    });
+export const AMM_AUTHORITY_PDA_ADDRESS =
+    '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1' as Address<'5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1'>;
+
+export function findAmmAuthorityPda(): ProgramDerivedAddress {
+    return [AMM_AUTHORITY_PDA_ADDRESS, 254 as ProgramDerivedAddressBump];
 }

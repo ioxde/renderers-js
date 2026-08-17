@@ -8,7 +8,7 @@ import {
     visit,
 } from '@codama/visitors-core';
 
-import { Fragment, mergeFragments, RenderScope } from '../utils';
+import { Fragment, getAsyncScope, mergeFragments, RenderScope } from '../utils';
 import { getDiscriminatorConstantsFragment } from './discriminatorConstants';
 import { getInstructionDataFragment } from './instructionData';
 import { getInstructionExtraArgsFragment } from './instructionExtraArgs';
@@ -33,6 +33,11 @@ export function getInstructionPageFragment(
 
     const childScope = {
         ...scope,
+        asyncScope: getAsyncScope({
+            asyncResolvers: scope.asyncResolvers,
+            instructionPath: scope.instructionPath,
+            linkables: scope.linkables,
+        }),
         dataArgsManifest: visit(node, scope.typeManifestVisitor),
         extraArgsManifest: visit(
             definedTypeNode({

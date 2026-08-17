@@ -31,6 +31,12 @@ importers:
       '@codama/visitors-core':
         specifier: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607
         version: https://pkg.pr.new/ioxde/codama/@codama/visitors-core@04f304bd7012bbc7bf7ccdfce63e93bcd18c7607
+      '@noble/curves':
+        specifier: ^2.0.1
+        version: 2.3.0
+      '@noble/hashes':
+        specifier: ^2.0.1
+        version: 2.3.0
       '@solana/codecs-strings':
         specifier: ^7.0.0
         version: 7.1.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)
@@ -701,6 +707,10 @@ packages:
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
+
+  '@noble/curves@2.3.0':
+    resolution: {integrity: sha512-v7cY+4oWYPQszRj6ZFGzTVL7uP2TaLo1xMhWHzYC5wj0ZhOXQ5x+sBre8rF3hi8cAoi0bh1qXoovoOkdFtvqEg==}
+    engines: {node: '>= 20.19.0'}
 
   '@noble/hashes@2.3.0':
     resolution: {integrity: sha512-oN+QwyX7VSHotibwubG3kpzbwKrfnyR6OOO+3Nk/53ADL7FmgHHz4TgrbaYKvvOw09u6QTx0oiH1cNCIOuN0CQ==}
@@ -3822,6 +3832,10 @@ snapshots:
       '@emnapi/runtime': 1.5.0
       '@tybys/wasm-util': 0.10.1
     optional: true
+
+  '@noble/curves@2.3.0':
+    dependencies:
+      '@noble/hashes': 2.3.0
 
   '@noble/hashes@2.3.0': {}
 
