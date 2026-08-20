@@ -6,6 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from './alpha.js';
-export * from './beta.js';
-export * from './dummy.js';
+export * from './alpha.events.js';
+export * from './alphaTradeEvent.js';
+export * from './anchorEventCpiDiscriminator.framing.js';
+export * from './beta.events.js';
+export * from './betaTradeEvent.js';

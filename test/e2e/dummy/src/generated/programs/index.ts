@@ -6,4 +6,6 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './alpha.js';
+export * from './beta.js';
 export * from './dummy.js';

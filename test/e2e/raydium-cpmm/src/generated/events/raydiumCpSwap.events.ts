@@ -6,7 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { containsBytes, type ReadonlyUint8Array } from '@solana/kit';
+import { containsBytes, type Address, type ReadonlyUint8Array } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 import { getLpChangeEventDecoder, LP_CHANGE_EVENT_DISCRIMINATOR, type LpChangeEvent } from './lpChangeEvent.js';
 import { getSwapEventDecoder, SWAP_EVENT_DISCRIMINATOR, type SwapEvent } from './swapEvent.js';
 
@@ -15,9 +16,16 @@ export type RaydiumCpSwapEventType = 'lpChangeEvent' | 'swapEvent';
 
 /**
  * Identifies raydiumCpSwap event data by its discriminators, without decoding.
- * Returns `null` when no known event matches. Never throws.
+ * Returns `null` when the event was emitted by another program or no known event matches.
+ * Never throws.
+ *
+ * Raw bytes carry no emitter and SKIP the program check.
  */
-export function identifyRaydiumCpSwapEvent(data: ReadonlyUint8Array): RaydiumCpSwapEventType | null {
+export function identifyRaydiumCpSwapEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): RaydiumCpSwapEventType | null {
+    if ('data' in event && event.programAddress !== RAYDIUM_CP_SWAP_PROGRAM_ADDRESS) return null;
+    const data = 'data' in event ? event.data : event;
     if (containsBytes(data, LP_CHANGE_EVENT_DISCRIMINATOR, 0)) {
         return 'lpChangeEvent';
     }
@@ -34,11 +42,18 @@ export type ParsedRaydiumCpSwapEvent =
 
 /**
  * Parses raydiumCpSwap event data into its event kind and decoded payload.
- * Returns `null` when no known event matches; throws if a matched event fails to decode.
+ * Returns `null` when the event was emitted by another program or no known event matches;
+ * throws if a matched event fails to decode.
+ *
+ * Raw bytes carry no emitter and SKIP the program check.
  */
-export function parseRaydiumCpSwapEvent(data: ReadonlyUint8Array): ParsedRaydiumCpSwapEvent | null {
-    const eventType = identifyRaydiumCpSwapEvent(data);
+export function parseRaydiumCpSwapEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): ParsedRaydiumCpSwapEvent | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    const eventType = identifyRaydiumCpSwapEvent(checkedEvent);
     if (eventType === null) return null;
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     switch (eventType) {
         case 'lpChangeEvent': {
             return {

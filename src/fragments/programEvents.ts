@@ -52,7 +52,8 @@ function getEventModule(event: EventNode): `./${string}` {
 
 /**
  * Renders a program's aggregate events page: the event-type union plus the `identify*`
- * and `parse*` helpers. Both helpers return `null` when no known event matches.
+ * and `parse*` helpers. Both helpers return `null` when the event was emitted by another
+ * program or no known event matches.
  */
 export function getProgramEventsPageFragment(
     scope: Pick<RenderScope, 'nameApi' | 'renderParentInstructions' | 'typeManifestVisitor'> & {
@@ -194,16 +195,31 @@ function getProgramEventsIdentifierFunctionFragment(
         c.join('\n'),
     );
 
-    const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
-
     return fragment`/**
  * Identifies ${programNode.name} event data by its discriminators, without decoding.
- * Returns \`null\` when no known event matches. Never throws.
+ * Returns \`null\` when the event was emitted by another program or no known event matches.
+ * Never throws.
+ *
+ * Raw bytes carry no emitter and SKIP the program check.
  */
-export function ${programEventsIdentifierFunction}(data: ${readonlyUint8Array}): ${programEventsTypeUnion} | null {
+export function ${programEventsIdentifierFunction}(${getEventParamFragment()}): ${programEventsTypeUnion} | null {
+    if ('data' in event && event.programAddress !== ${use(nameApi.programAddressConstant(programNode.name), 'generatedPrograms')}) return null;
+    const data = 'data' in event ? event.data : event;
     ${conditionsFragment}
     return null;
 }`;
+}
+
+/**
+ * Parameter shared by the aggregate `identify*` and `parse*` helpers: an event object carrying
+ * its emitting program, or the raw bytes, which skip the program check. Discriminators collide
+ * across programs, so the object arm carries its emitter. `programAddress` is required, not
+ * optional: an optional field lets the check be skipped by call shape.
+ */
+function getEventParamFragment(): Fragment {
+    const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
+    const address = use('type Address', 'solanaAddresses');
+    return fragment`event: { data: ${readonlyUint8Array}; programAddress: ${address} } | ${readonlyUint8Array}`;
 }
 
 function getProgramEventsParsedUnionTypeFragment(
@@ -262,17 +278,23 @@ function getProgramEventsParseFunctionFragment(
         c => c.join('\n'),
     );
 
-    const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
-
     // No default case: the switch is exhaustive over the identified event type.
     // Decoder errors propagate: a matched discriminator with a corrupt body should throw, not return null.
+    // The program guard rides in the identifier, which this funnels through, so the two cannot drift.
+    // The object arm is snapshotted before it is identified, then decoded from that snapshot: an
+    // object with getters could otherwise return different bytes to the guard and to the decoder.
     return fragment`/**
  * Parses ${programNode.name} event data into its event kind and decoded payload.
- * Returns \`null\` when no known event matches; throws if a matched event fails to decode.
+ * Returns \`null\` when the event was emitted by another program or no known event matches;
+ * throws if a matched event fails to decode.
+ *
+ * Raw bytes carry no emitter and SKIP the program check.
  */
-export function ${parseFunction}(data: ${readonlyUint8Array}): ${programEventsParsedUnionType} | null {
-    const eventType = ${programEventsIdentifierFunction}(data);
+export function ${parseFunction}(${getEventParamFragment()}): ${programEventsParsedUnionType} | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    const eventType = ${programEventsIdentifierFunction}(checkedEvent);
     if (eventType === null) return null;
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     switch (eventType) {
         ${switchCases}
     }

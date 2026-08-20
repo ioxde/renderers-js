@@ -6,7 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { containsBytes, type ReadonlyUint8Array } from '@solana/kit';
+import { containsBytes, type Address, type ReadonlyUint8Array } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.framing.js';
 import {
     CLAIM_VESTED_EVENT_DISCRIMINATOR,
@@ -26,9 +27,16 @@ export type EventType = 'claimVestedEvent' | 'createVestingEvent' | 'poolCreateE
 
 /**
  * Identifies raydiumLaunchpad event data by its discriminators, without decoding.
- * Returns `null` when no known event matches. Never throws.
+ * Returns `null` when the event was emitted by another program or no known event matches.
+ * Never throws.
+ *
+ * Raw bytes carry no emitter and SKIP the program check.
  */
-export function identifyEvent(data: ReadonlyUint8Array): EventType | null {
+export function identifyEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): EventType | null {
+    if ('data' in event && event.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) return null;
+    const data = 'data' in event ? event.data : event;
     if (containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0)) {
         if (containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)) {
             return 'claimVestedEvent';
@@ -55,11 +63,18 @@ export type ParsedEvent =
 
 /**
  * Parses raydiumLaunchpad event data into its event kind and decoded payload.
- * Returns `null` when no known event matches; throws if a matched event fails to decode.
+ * Returns `null` when the event was emitted by another program or no known event matches;
+ * throws if a matched event fails to decode.
+ *
+ * Raw bytes carry no emitter and SKIP the program check.
  */
-export function parseEvent(data: ReadonlyUint8Array): ParsedEvent | null {
-    const eventType = identifyEvent(data);
+export function parseEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): ParsedEvent | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    const eventType = identifyEvent(checkedEvent);
     if (eventType === null) return null;
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     switch (eventType) {
         case 'claimVestedEvent': {
             return {

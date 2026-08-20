@@ -2,7 +2,9 @@ import test from 'ava';
 import {
   AccountRole,
   address,
+  getAddressEncoder,
   getBase64Decoder,
+  getU64Encoder,
   isSolanaError,
   lamports,
   SOLANA_ERROR__INSTRUCTION__PROGRAM_ID_MISMATCH,
@@ -11,13 +13,19 @@ import {
 } from '@solana/kit';
 
 import {
+  ANCHOR_EVENT_CPI_DISCRIMINATOR,
+  CLAIM_VESTED_EVENT_DISCRIMINATOR,
   decodeVestingRecord,
   getBuyExactInInstructionDataEncoder,
   getSellExactInInstructionDataEncoder,
   getVestingRecordEncoder,
   identifyRaydiumLaunchpadAccount,
+  identifyRaydiumLaunchpadEvent,
   identifyRaydiumLaunchpadInstruction,
+  isClaimVestedEvent,
   parseBuyExactInInstruction,
+  parseClaimVestedEvent,
+  parseRaydiumLaunchpadEvent,
   parseRaydiumLaunchpadInstruction,
   POOL_STATE_DISCRIMINATOR,
   RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS,
@@ -335,4 +343,46 @@ test('identifyRaydiumLaunchpadInstruction rejects an instruction of another prog
     null,
   );
   t.is(identifyRaydiumLaunchpadInstruction(buyExactInData()), 'buyExactIn');
+});
+
+function claimVestedEventData(claimAmount: bigint): ReadonlyUint8Array {
+  return new Uint8Array([
+    ...ANCHOR_EVENT_CPI_DISCRIMINATOR,
+    ...CLAIM_VESTED_EVENT_DISCRIMINATOR,
+    ...getAddressEncoder().encode(SOME_ADDRESS),
+    ...getAddressEncoder().encode(SOME_ADDRESS),
+    ...getU64Encoder().encode(claimAmount),
+  ]);
+}
+
+test('parseClaimVestedEvent returns null for an event emitted by another program', (t) => {
+  const data = claimVestedEventData(123n);
+
+  // Callers scan whole transactions, where another program's event is ordinary rather than erroneous.
+  t.is(parseClaimVestedEvent({ data, programAddress: FOREIGN_PROGRAM_ADDRESS }), null);
+  t.false(isClaimVestedEvent({ data, programAddress: FOREIGN_PROGRAM_ADDRESS }));
+
+  const parsed = parseClaimVestedEvent({ data, programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS });
+  t.is(parsed?.claimAmount, 123n);
+  t.true(isClaimVestedEvent({ data, programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS }));
+
+  // Bytes-only callers opt out of the check explicitly.
+  t.is(parseClaimVestedEvent(data)?.claimAmount, 123n);
+  t.true(isClaimVestedEvent(data));
+});
+
+test('parseRaydiumLaunchpadEvent returns null for an event emitted by another program', (t) => {
+  const data = claimVestedEventData(123n);
+
+  t.is(identifyRaydiumLaunchpadEvent({ data, programAddress: FOREIGN_PROGRAM_ADDRESS }), null);
+  t.is(parseRaydiumLaunchpadEvent({ data, programAddress: FOREIGN_PROGRAM_ADDRESS }), null);
+
+  t.is(identifyRaydiumLaunchpadEvent({ data, programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS }), 'claimVestedEvent');
+  const parsed = parseRaydiumLaunchpadEvent({ data, programAddress: RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS });
+  t.is(parsed?.eventType, 'claimVestedEvent');
+  if (parsed?.eventType === 'claimVestedEvent') t.is(parsed.data.claimAmount, 123n);
+
+  // Bytes-only callers opt out of the check explicitly.
+  t.is(identifyRaydiumLaunchpadEvent(data), 'claimVestedEvent');
+  t.is(parseRaydiumLaunchpadEvent(data)?.eventType, 'claimVestedEvent');
 });

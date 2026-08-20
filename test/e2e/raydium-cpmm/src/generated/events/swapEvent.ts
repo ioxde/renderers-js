@@ -18,6 +18,7 @@ import {
     type FixedSizeDecoder,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const SWAP_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([64, 198, 205, 232, 38, 8, 113, 226]);
 
@@ -59,9 +60,16 @@ export function getSwapEventDecoder(): FixedSizeDecoder<SwapEvent> {
  * Checks whether the event data matches the discriminator bytes of a
  * {@link SwapEvent}, without decoding. Never throws.
  *
+ * Returns `false` unless `event.programAddress` is RAYDIUM_CP_SWAP_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see parseSwapEvent to decode the matching data
  */
-export function isSwapEvent(data: ReadonlyUint8Array): boolean {
+export function isSwapEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): boolean {
+    if ('data' in event && event.programAddress !== RAYDIUM_CP_SWAP_PROGRAM_ADDRESS) return false;
+    const data = 'data' in event ? event.data : event;
     return containsBytes(data, SWAP_EVENT_DISCRIMINATOR, 0);
 }
 
@@ -69,13 +77,20 @@ export function isSwapEvent(data: ReadonlyUint8Array): boolean {
  * Parses raw event data as a {@link SwapEvent}. Returns `null` on discriminator
  * mismatch; throws if the event matches but its body fails to decode.
  *
+ * Returns `null` unless `event.programAddress` is RAYDIUM_CP_SWAP_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see isSwapEvent to check without decoding
  * @see identifyRaydiumCpSwapEvent to identify any program event
  * @see parseRaydiumCpSwapEvent
  */
-export function parseSwapEvent(data: ReadonlyUint8Array): SwapEvent | null {
-    if (!isSwapEvent(data)) {
+export function parseSwapEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): SwapEvent | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    if (!isSwapEvent(checkedEvent)) {
         return null;
     }
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     return getSwapEventDecoder().decode(data, SWAP_EVENT_DISCRIMINATOR.length);
 }

@@ -73,7 +73,7 @@ test('it renders an event with a constant discriminator', async () => {
         /return containsBytes\(data,\s*GUARD_CREATED_EVENT_DISCRIMINATOR,\s*0\);/s,
         'export function parseGuardCreatedEvent',
         'GuardCreatedEvent | null',
-        'if (!isGuardCreatedEvent(data))',
+        'if (!isGuardCreatedEvent(checkedEvent))',
         'return null;',
         /getGuardCreatedEventDecoder\(\)\.decode\(\s*data,\s*GUARD_CREATED_EVENT_DISCRIMINATOR\.length/s,
     ]);
@@ -623,7 +623,7 @@ test('it generates parse that validates both the framing prefix and the event di
         'data: ReadonlyUint8Array',
         'TradeEvent | null',
         /return \(?\s*containsBytes\(data,\s*EVENT_CPI_PREFIX,\s*0\)\s*&&\s*containsBytes\(data,\s*TRADE_EVENT_DISCRIMINATOR,\s*8\)\s*\)?;/s,
-        'if (!isTradeEvent(data))',
+        'if (!isTradeEvent(checkedEvent))',
         'return null;',
         /decode\(\s*data,\s*EVENT_CPI_PREFIX\.length \+ TRADE_EVENT_DISCRIMINATOR\.length,?\s*\)/s,
     ]);
@@ -996,9 +996,10 @@ test('it renders a function that parses events in a program', async () => {
 
     await renderMapContains(renderMap, 'events/myProgram.events.ts', [
         'export function parseMyProgramEvent',
+        "const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;",
         'data: ReadonlyUint8Array',
         'ParsedMyProgramEvent | null',
-        'const eventType = identifyMyProgramEvent(data);',
+        'const eventType = identifyMyProgramEvent(checkedEvent);',
         'if (eventType === null) return null;',
         'switch (eventType)',
         "case 'guardCreatedEvent'",
@@ -1163,7 +1164,7 @@ test('it renders custom event parse names via nameTransformers', async () => {
     await renderMapContains(renderMap, 'events/tradeEvent.ts', [
         'export function matchesTradeEvent',
         'export function extractTradeEvent',
-        'if (!matchesTradeEvent(data))',
+        'if (!matchesTradeEvent(checkedEvent))',
     ]);
     await renderMapDoesNotContain(renderMap, 'events/tradeEvent.ts', ['parseTradeEvent', 'isTradeEvent']);
 });
@@ -1202,4 +1203,112 @@ test('it throws when the parsed event discriminator and data keys are identical'
             }),
         ),
     ).toThrow(/programEventsParsedDiscriminatorKey.*programEventsParsedDataKey/);
+});
+
+test('it guards the per-event helpers with the program address', async () => {
+    const discriminator = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'c80c5f2c6b0b021f'),
+    );
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'guard', type: publicKeyTypeNode() })]),
+                    [discriminator],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator)],
+                name: 'guardCreatedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // The object arm requires `programAddress`, so the check cannot be skipped by call shape,
+    // and the raw-bytes arm stays as the explicit opt-out.
+    await renderMapContains(renderMap, 'events/guardCreatedEvent.ts', [
+        'export function isGuardCreatedEvent',
+        /event:\s*\|?\s*\{\s*data:\s*ReadonlyUint8Array;\s*programAddress:\s*Address\s*\}\s*\|\s*ReadonlyUint8Array/s,
+        /if \(\s*'data' in event &&\s*event\.programAddress !== MY_PROGRAM_PROGRAM_ADDRESS\s*\)\s*return false;/s,
+        "const data = 'data' in event ? event.data : event;",
+        'export function parseGuardCreatedEvent',
+        // Each property is read once into a snapshot, so a getter cannot swap bytes under the guard.
+        "const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;",
+        'if (!isGuardCreatedEvent(checkedEvent))',
+    ]);
+    // No expected-program override: the program address is fixed at generation time.
+    await renderMapDoesNotContain(renderMap, 'events/guardCreatedEvent.ts', [
+        'programAddress: Address =',
+        'programAddress?: Address',
+    ]);
+    // The guard lives in `is*` alone, which `parse*` delegates to, so the two cannot drift.
+    const eventPage = renderMap.get('events/guardCreatedEvent.ts');
+    expect(eventPage?.content.match(/event\.programAddress !==/g)).toHaveLength(1);
+    await renderMapContainsImports(renderMap, 'events/guardCreatedEvent.ts', {
+        '../programs/index.js': ['MY_PROGRAM_PROGRAM_ADDRESS'],
+    });
+});
+
+test('it guards the per-event helpers of an event without framing', async () => {
+    const node = programNode({
+        events: [
+            eventNode({
+                data: structTypeNode([
+                    structFieldTypeNode({
+                        defaultValue: numberValueNode(7),
+                        name: 'eventType',
+                        type: numberTypeNode('u8'),
+                    }),
+                    structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') }),
+                ]),
+                discriminators: [fieldDiscriminatorNode('eventType')],
+                name: 'typedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/typedEvent.ts', [
+        /if \(\s*'data' in event &&\s*event\.programAddress !== MY_PROGRAM_PROGRAM_ADDRESS\s*\)\s*return false;/s,
+        /return containsBytes\(\s*data,\s*getU8Encoder\(\)\.encode\(TYPED_EVENT_EVENT_TYPE\),\s*0,?\s*\)/s,
+        'if (!isTypedEvent(checkedEvent))',
+        /return getTypedEventDecoder\(\)\.decode\(data\);/,
+    ]);
+});
+
+test('it guards the aggregate event helpers with the program address', async () => {
+    const node = programNode({
+        events: [framedEvent('tradeEvent', tradeDisc)],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', [
+        'export function identifyMyProgramEvent',
+        /event:\s*\|?\s*\{\s*data:\s*ReadonlyUint8Array;\s*programAddress:\s*Address\s*\}\s*\|\s*ReadonlyUint8Array/s,
+        // Foreign events are ordinary in a transaction scan, so the aggregate returns null.
+        /if \(\s*'data' in event &&\s*event\.programAddress !== MY_PROGRAM_PROGRAM_ADDRESS\s*\)\s*return null;/s,
+        "const data = 'data' in event ? event.data : event;",
+        'export function parseMyProgramEvent',
+        "const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;",
+        'const eventType = identifyMyProgramEvent(checkedEvent);',
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/myProgram.events.ts', [
+        'programAddress: Address =',
+        'programAddress?: Address',
+    ]);
+    // The guard lives in `identify*` alone, which `parse*` funnels through.
+    const eventsPage = renderMap.get('events/myProgram.events.ts');
+    expect(eventsPage?.content.match(/event\.programAddress !==/g)).toHaveLength(1);
+    await renderMapContainsImports(renderMap, 'events/myProgram.events.ts', {
+        '../programs/index.js': ['MY_PROGRAM_PROGRAM_ADDRESS'],
+    });
 });

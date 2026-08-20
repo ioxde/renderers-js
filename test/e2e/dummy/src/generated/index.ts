@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './events/index.js';
 export * from './instructions/index.js';
 export * from './pdas/index.js';
 export * from './plugins/index.js';

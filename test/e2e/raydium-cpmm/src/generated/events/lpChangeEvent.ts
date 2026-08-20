@@ -18,6 +18,7 @@ import {
     type FixedSizeDecoder,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_CP_SWAP_PROGRAM_ADDRESS } from '../programs/index.js';
 
 export const LP_CHANGE_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([121, 163, 205, 201, 57, 218, 117, 60]);
 
@@ -61,9 +62,16 @@ export function getLpChangeEventDecoder(): FixedSizeDecoder<LpChangeEvent> {
  * Checks whether the event data matches the discriminator bytes of a
  * {@link LpChangeEvent}, without decoding. Never throws.
  *
+ * Returns `false` unless `event.programAddress` is RAYDIUM_CP_SWAP_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see parseLpChangeEvent to decode the matching data
  */
-export function isLpChangeEvent(data: ReadonlyUint8Array): boolean {
+export function isLpChangeEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): boolean {
+    if ('data' in event && event.programAddress !== RAYDIUM_CP_SWAP_PROGRAM_ADDRESS) return false;
+    const data = 'data' in event ? event.data : event;
     return containsBytes(data, LP_CHANGE_EVENT_DISCRIMINATOR, 0);
 }
 
@@ -71,13 +79,20 @@ export function isLpChangeEvent(data: ReadonlyUint8Array): boolean {
  * Parses raw event data as a {@link LpChangeEvent}. Returns `null` on discriminator
  * mismatch; throws if the event matches but its body fails to decode.
  *
+ * Returns `null` unless `event.programAddress` is RAYDIUM_CP_SWAP_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see isLpChangeEvent to check without decoding
  * @see identifyRaydiumCpSwapEvent to identify any program event
  * @see parseRaydiumCpSwapEvent
  */
-export function parseLpChangeEvent(data: ReadonlyUint8Array): LpChangeEvent | null {
-    if (!isLpChangeEvent(data)) {
+export function parseLpChangeEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): LpChangeEvent | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    if (!isLpChangeEvent(checkedEvent)) {
         return null;
     }
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     return getLpChangeEventDecoder().decode(data, LP_CHANGE_EVENT_DISCRIMINATOR.length);
 }

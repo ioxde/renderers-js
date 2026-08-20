@@ -17,6 +17,7 @@ import {
     type FixedSizeDecoder,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.framing.js';
 
 export const CLAIM_VESTED_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
@@ -43,9 +44,16 @@ export function getClaimVestedEventDecoder(): FixedSizeDecoder<ClaimVestedEvent>
  * Checks whether the event data matches the framing and discriminator bytes of a
  * {@link ClaimVestedEvent}, without decoding. Never throws.
  *
+ * Returns `false` unless `event.programAddress` is RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see parseClaimVestedEvent to decode the matching data
  */
-export function isClaimVestedEvent(data: ReadonlyUint8Array): boolean {
+export function isClaimVestedEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): boolean {
+    if ('data' in event && event.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) return false;
+    const data = 'data' in event ? event.data : event;
     return (
         containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
         containsBytes(data, CLAIM_VESTED_EVENT_DISCRIMINATOR, 8)
@@ -56,14 +64,21 @@ export function isClaimVestedEvent(data: ReadonlyUint8Array): boolean {
  * Parses raw event data as a {@link ClaimVestedEvent}. Returns `null` on framing or discriminator
  * mismatch; throws if the event matches but its body fails to decode.
  *
+ * Returns `null` unless `event.programAddress` is RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see isClaimVestedEvent to check without decoding
  * @see identifyEvent to identify any program event
  * @see parseEvent
  */
-export function parseClaimVestedEvent(data: ReadonlyUint8Array): ClaimVestedEvent | null {
-    if (!isClaimVestedEvent(data)) {
+export function parseClaimVestedEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): ClaimVestedEvent | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    if (!isClaimVestedEvent(checkedEvent)) {
         return null;
     }
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     return getClaimVestedEventDecoder().decode(
         data,
         ANCHOR_EVENT_CPI_DISCRIMINATOR.length + CLAIM_VESTED_EVENT_DISCRIMINATOR.length,

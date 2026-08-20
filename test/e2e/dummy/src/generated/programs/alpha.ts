@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from './alpha.js';
-export * from './beta.js';
-export * from './dummy.js';
+import { type Address } from '@solana/kit';
+
+export const ALPHA_PROGRAM_ADDRESS =
+    'FFsTesMW7rBBgGBxEFtkHjiofNRZvTF6NFT27cscEvQZ' as Address<'FFsTesMW7rBBgGBxEFtkHjiofNRZvTF6NFT27cscEvQZ'>;

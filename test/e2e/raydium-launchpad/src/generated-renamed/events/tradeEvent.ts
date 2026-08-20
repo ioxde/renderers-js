@@ -17,6 +17,7 @@ import {
     type FixedSizeDecoder,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 import {
     getPoolStatusDecoder,
     getTradeDirectionDecoder,
@@ -75,9 +76,16 @@ export function getTradeEventDecoder(): FixedSizeDecoder<TradeEvent> {
  * Checks whether the event data matches the framing and discriminator bytes of a
  * {@link TradeEvent}, without decoding. Never throws.
  *
+ * Returns `false` unless `event.programAddress` is RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see parseTradeEvent to decode the matching data
  */
-export function isTradeEvent(data: ReadonlyUint8Array): boolean {
+export function isTradeEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): boolean {
+    if ('data' in event && event.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) return false;
+    const data = 'data' in event ? event.data : event;
     return containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) && containsBytes(data, TRADE_EVENT_DISCRIMINATOR, 8);
 }
 
@@ -85,14 +93,21 @@ export function isTradeEvent(data: ReadonlyUint8Array): boolean {
  * Parses raw event data as a {@link TradeEvent}. Returns `null` on framing or discriminator
  * mismatch; throws if the event matches but its body fails to decode.
  *
+ * Returns `null` unless `event.programAddress` is RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see isTradeEvent to check without decoding
  * @see identifyEvent to identify any program event
  * @see parseEvent
  */
-export function parseTradeEvent(data: ReadonlyUint8Array): TradeEvent | null {
-    if (!isTradeEvent(data)) {
+export function parseTradeEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): TradeEvent | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    if (!isTradeEvent(checkedEvent)) {
         return null;
     }
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     return getTradeEventDecoder().decode(
         data,
         ANCHOR_EVENT_CPI_DISCRIMINATOR.length + TRADE_EVENT_DISCRIMINATOR.length,

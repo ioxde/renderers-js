@@ -471,7 +471,66 @@
     "version": "3.0.1",
     "origin": "shank"
   },
-  "additionalPrograms": [],
+  "additionalPrograms": [
+    {
+      "kind": "programNode",
+      "pdas": [],
+      "accounts": [],
+      "instructions": [],
+      "definedTypes": [],
+      "errors": [],
+      "events": [
+        {
+          "kind": "eventNode",
+          "name": "alphaTradeEvent",
+          "framing": { "kind": "anchorEventCpi", "sharedConstantName": "anchorEventCpiDiscriminator" },
+          "data": {
+            "kind": "hiddenPrefixTypeNode",
+            "type": { "kind": "structTypeNode", "fields": [{ "kind": "structFieldTypeNode", "name": "poolState", "type": { "kind": "publicKeyTypeNode" }, "docs": [] }] },
+            "prefix": [{ "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } }, { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } }]
+          },
+          "discriminators": [
+            { "kind": "constantDiscriminatorNode", "offset": 0, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } } },
+            { "kind": "constantDiscriminatorNode", "offset": 8, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } } }
+          ],
+          "docs": ["Discriminator bddb7fd34ee661ee is sha256(\"event:TradeEvent\")[..8], the bytes Anchor derives for any event named TradeEvent. Its body is a strict prefix of the beta event's, so beta's bytes decode here without error."]
+        }
+      ],
+      "name": "alpha",
+      "prefix": "",
+      "publicKey": "FFsTesMW7rBBgGBxEFtkHjiofNRZvTF6NFT27cscEvQZ",
+      "version": "0.0.0"
+    },
+    {
+      "kind": "programNode",
+      "pdas": [],
+      "accounts": [],
+      "instructions": [],
+      "definedTypes": [],
+      "errors": [],
+      "events": [
+        {
+          "kind": "eventNode",
+          "name": "betaTradeEvent",
+          "framing": { "kind": "anchorEventCpi", "sharedConstantName": "anchorEventCpiDiscriminator" },
+          "data": {
+            "kind": "hiddenPrefixTypeNode",
+            "type": { "kind": "structTypeNode", "fields": [{ "kind": "structFieldTypeNode", "name": "poolState", "type": { "kind": "publicKeyTypeNode" }, "docs": [] }, { "kind": "structFieldTypeNode", "name": "amountIn", "type": { "kind": "numberTypeNode", "format": "u64", "endian": "le" }, "docs": [] }] },
+            "prefix": [{ "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } }, { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } }]
+          },
+          "discriminators": [
+            { "kind": "constantDiscriminatorNode", "offset": 0, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } } },
+            { "kind": "constantDiscriminatorNode", "offset": 8, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } } }
+          ],
+          "docs": ["Its discriminator is deliberately set to alpha's bytes rather than its own sha256(\"event:BetaTradeEvent\")[..8] = 2a77096631cf87ed, modelling two programs that each declare an event named TradeEvent. The two events are then separable only by the emitting program."]
+        }
+      ],
+      "name": "beta",
+      "prefix": "",
+      "publicKey": "BxdrbHijsp5XmeYzH9HZbbcfC7Vquh3vpfu2z7BBx25s",
+      "version": "0.0.0"
+    }
+  ],
   "standard": "codama",
   "version": "1.0.0"
 }

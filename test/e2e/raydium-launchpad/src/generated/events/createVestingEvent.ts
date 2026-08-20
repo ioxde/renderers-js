@@ -17,6 +17,7 @@ import {
     type FixedSizeDecoder,
     type ReadonlyUint8Array,
 } from '@solana/kit';
+import { RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS } from '../programs/index.js';
 import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.framing.js';
 
 export const CREATE_VESTING_EVENT_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
@@ -43,9 +44,16 @@ export function getCreateVestingEventDecoder(): FixedSizeDecoder<CreateVestingEv
  * Checks whether the event data matches the framing and discriminator bytes of a
  * {@link CreateVestingEvent}, without decoding. Never throws.
  *
+ * Returns `false` unless `event.programAddress` is RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see parseCreateVestingEvent to decode the matching data
  */
-export function isCreateVestingEvent(data: ReadonlyUint8Array): boolean {
+export function isCreateVestingEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): boolean {
+    if ('data' in event && event.programAddress !== RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS) return false;
+    const data = 'data' in event ? event.data : event;
     return (
         containsBytes(data, ANCHOR_EVENT_CPI_DISCRIMINATOR, 0) &&
         containsBytes(data, CREATE_VESTING_EVENT_DISCRIMINATOR, 8)
@@ -56,14 +64,21 @@ export function isCreateVestingEvent(data: ReadonlyUint8Array): boolean {
  * Parses raw event data as a {@link CreateVestingEvent}. Returns `null` on framing or discriminator
  * mismatch; throws if the event matches but its body fails to decode.
  *
+ * Returns `null` unless `event.programAddress` is RAYDIUM_LAUNCHPAD_PROGRAM_ADDRESS.
+ * Raw bytes carry no emitter and SKIP that check.
+ *
  * @see isCreateVestingEvent to check without decoding
  * @see identifyRaydiumLaunchpadEvent to identify any program event
  * @see parseRaydiumLaunchpadEvent
  */
-export function parseCreateVestingEvent(data: ReadonlyUint8Array): CreateVestingEvent | null {
-    if (!isCreateVestingEvent(data)) {
+export function parseCreateVestingEvent(
+    event: { data: ReadonlyUint8Array; programAddress: Address } | ReadonlyUint8Array,
+): CreateVestingEvent | null {
+    const checkedEvent = 'data' in event ? { data: event.data, programAddress: event.programAddress } : event;
+    if (!isCreateVestingEvent(checkedEvent)) {
         return null;
     }
+    const data = 'data' in checkedEvent ? checkedEvent.data : checkedEvent;
     return getCreateVestingEventDecoder().decode(
         data,
         ANCHOR_EVENT_CPI_DISCRIMINATOR.length + CREATE_VESTING_EVENT_DISCRIMINATOR.length,
