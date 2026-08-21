@@ -10,19 +10,11 @@
         "seeds": [
           {
             "kind": "constantPdaSeedNode",
-            "type": {
-              "kind": "stringTypeNode",
-              "encoding": "utf8"
-            },
-            "value": {
-              "kind": "stringValueNode",
-              "string": "global_config"
-            }
+            "type": { "kind": "stringTypeNode", "encoding": "utf8" },
+            "value": { "kind": "stringValueNode", "string": "global_config" }
           }
         ],
-        "docs": [
-          "Every seed is constant and the deriving program is pinned, so the address folds at generation time."
-        ]
+        "docs": ["Every seed is constant and the deriving program is pinned, so the address folds at generation time."]
       },
       {
         "kind": "pdaNode",
@@ -31,27 +23,17 @@
         "seeds": [
           {
             "kind": "constantPdaSeedNode",
-            "type": {
-              "kind": "stringTypeNode",
-              "encoding": "utf8"
-            },
-            "value": {
-              "kind": "stringValueNode",
-              "string": "derived"
-            }
+            "type": { "kind": "stringTypeNode", "encoding": "utf8" },
+            "value": { "kind": "stringValueNode", "string": "derived" }
           },
           {
             "kind": "variablePdaSeedNode",
             "name": "source",
-            "type": {
-              "kind": "publicKeyTypeNode"
-            },
+            "type": { "kind": "publicKeyTypeNode" },
             "docs": []
           }
         ],
-        "docs": [
-          "Seeded by an IDL-optional account, which keeps that account's default applied."
-        ]
+        "docs": ["Seeded by an IDL-optional account, which keeps that account's default applied."]
       }
     ],
     "accounts": [],
@@ -60,9 +42,7 @@
         "kind": "instructionNode",
         "name": "instruction1",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with no accounts or arguments"
-        ],
+        "docs": ["Testing instructions with no accounts or arguments"],
         "accounts": [],
         "arguments": [],
         "remainingAccounts": []
@@ -71,9 +51,7 @@
         "kind": "instructionNode",
         "name": "instruction2",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with remaining accounts only"
-        ],
+        "docs": ["Testing instructions with remaining accounts only"],
         "accounts": [],
         "arguments": [],
         "remainingAccounts": [
@@ -92,9 +70,7 @@
         "kind": "instructionNode",
         "name": "instruction3",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with discriminator only"
-        ],
+        "docs": ["Testing instructions with discriminator only"],
         "accounts": [],
         "arguments": [
           {
@@ -106,10 +82,7 @@
               "endian": "le"
             },
             "docs": [],
-            "defaultValue": {
-              "kind": "numberValueNode",
-              "number": 42
-            },
+            "defaultValue": { "kind": "numberValueNode", "number": 42 },
             "defaultValueStrategy": "omitted"
           }
         ],
@@ -125,9 +98,7 @@
         "kind": "instructionNode",
         "name": "instruction4",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with arguments only"
-        ],
+        "docs": ["Testing instructions with arguments only"],
         "accounts": [],
         "arguments": [
           {
@@ -146,9 +117,7 @@
         "kind": "instructionNode",
         "name": "instruction5",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with optional arguments only"
-        ],
+        "docs": ["Testing instructions with optional arguments only"],
         "accounts": [],
         "arguments": [
           {
@@ -159,10 +128,7 @@
               "format": "u64",
               "endian": "le"
             },
-            "defaultValue": {
-              "kind": "numberValueNode",
-              "number": 42
-            },
+            "defaultValue": { "kind": "numberValueNode", "number": 42 },
             "docs": []
           }
         ]
@@ -171,9 +137,7 @@
         "kind": "instructionNode",
         "name": "instruction6",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with accounts only"
-        ],
+        "docs": ["Testing instructions with accounts only"],
         "accounts": [
           {
             "kind": "instructionAccountNode",
@@ -190,9 +154,7 @@
         "kind": "instructionNode",
         "name": "instruction7",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with optional accounts only"
-        ],
+        "docs": ["Testing instructions with optional accounts only"],
         "accounts": [
           {
             "kind": "instructionAccountNode",
@@ -209,9 +171,7 @@
         "kind": "instructionNode",
         "name": "instruction8",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with remaining accounts that can optionally be signers"
-        ],
+        "docs": ["Testing instructions with remaining accounts that can optionally be signers"],
         "accounts": [],
         "arguments": [],
         "remainingAccounts": [
@@ -230,9 +190,7 @@
         "kind": "instructionNode",
         "name": "instruction9",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with conflicting account and argument names both set as the payer"
-        ],
+        "docs": ["Testing instructions with conflicting account and argument names both set as the payer"],
         "accounts": [
           {
             "kind": "instructionAccountNode",
@@ -240,21 +198,15 @@
             "isWritable": false,
             "isSigner": false,
             "isOptional": false,
-            "defaultValue": {
-              "kind": "payerValueNode"
-            }
+            "defaultValue": { "kind": "payerValueNode" }
           }
         ],
         "arguments": [
           {
             "kind": "instructionArgumentNode",
             "name": "authority",
-            "defaultValue": {
-              "kind": "payerValueNode"
-            },
-            "type": {
-              "kind": "publicKeyTypeNode"
-            }
+            "defaultValue": { "kind": "payerValueNode" },
+            "type": { "kind": "publicKeyTypeNode" }
           }
         ],
         "remainingAccounts": []
@@ -263,9 +215,7 @@
         "kind": "instructionNode",
         "name": "instruction10",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing instructions with enum field discriminator"
-        ],
+        "docs": ["Testing instructions with enum field discriminator"],
         "accounts": [],
         "arguments": [
           {
@@ -278,10 +228,7 @@
             "docs": [],
             "defaultValue": {
               "kind": "enumValueNode",
-              "enum": {
-                "kind": "definedTypeLinkNode",
-                "name": "key"
-              },
+              "enum": { "kind": "definedTypeLinkNode", "name": "key" },
               "variant": "asset"
             },
             "defaultValueStrategy": "omitted"
@@ -299,9 +246,7 @@
         "kind": "instructionNode",
         "name": "instruction11",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing IDL-optional accounts whose defaults resolve to one address at generation time"
-        ],
+        "docs": ["Testing IDL-optional accounts whose defaults resolve to one address at generation time"],
         "accounts": [
           {
             "kind": "instructionAccountNode",
@@ -333,10 +278,7 @@
             "docs": [],
             "defaultValue": {
               "kind": "pdaValueNode",
-              "pda": {
-                "kind": "pdaLinkNode",
-                "name": "globalConfig"
-              },
+              "pda": { "kind": "pdaLinkNode", "name": "globalConfig" },
               "seeds": []
             }
           },
@@ -347,9 +289,7 @@
             "isSigner": false,
             "isOptional": true,
             "docs": [],
-            "defaultValue": {
-              "kind": "programIdValueNode"
-            }
+            "defaultValue": { "kind": "programIdValueNode" }
           }
         ],
         "arguments": [],
@@ -359,9 +299,7 @@
         "kind": "instructionNode",
         "name": "instruction12",
         "optionalAccountStrategy": "omitted",
-        "docs": [
-          "Testing the same IDL-optional defaults under the omitted strategy"
-        ],
+        "docs": ["Testing the same IDL-optional defaults under the omitted strategy"],
         "accounts": [
           {
             "kind": "instructionAccountNode",
@@ -393,10 +331,7 @@
             "docs": [],
             "defaultValue": {
               "kind": "pdaValueNode",
-              "pda": {
-                "kind": "pdaLinkNode",
-                "name": "globalConfig"
-              },
+              "pda": { "kind": "pdaLinkNode", "name": "globalConfig" },
               "seeds": []
             }
           },
@@ -407,9 +342,7 @@
             "isSigner": false,
             "isOptional": true,
             "docs": [],
-            "defaultValue": {
-              "kind": "programIdValueNode"
-            }
+            "defaultValue": { "kind": "programIdValueNode" }
           }
         ],
         "arguments": [],
@@ -419,9 +352,7 @@
         "kind": "instructionNode",
         "name": "instruction13",
         "optionalAccountStrategy": "programId",
-        "docs": [
-          "Testing an IDL-optional account whose default another account's PDA seeds read"
-        ],
+        "docs": ["Testing an IDL-optional account whose default another account's PDA seeds read"],
         "accounts": [
           {
             "kind": "instructionAccountNode",
@@ -453,18 +384,12 @@
             "docs": [],
             "defaultValue": {
               "kind": "pdaValueNode",
-              "pda": {
-                "kind": "pdaLinkNode",
-                "name": "derivedFromSource"
-              },
+              "pda": { "kind": "pdaLinkNode", "name": "derivedFromSource" },
               "seeds": [
                 {
                   "kind": "pdaSeedValueNode",
                   "name": "source",
-                  "value": {
-                    "kind": "accountValueNode",
-                    "name": "optionalSource"
-                  }
+                  "value": { "kind": "accountValueNode", "name": "optionalSource" }
                 }
               ]
             }
@@ -477,9 +402,7 @@
         "kind": "instructionNode",
         "name": "instruction14",
         "optionalAccountStrategy": "omitted",
-        "docs": [
-          "Testing the same read IDL-optional account under the omitted strategy"
-        ],
+        "docs": ["Testing the same read IDL-optional account under the omitted strategy"],
         "accounts": [
           {
             "kind": "instructionAccountNode",
@@ -511,18 +434,12 @@
             "docs": [],
             "defaultValue": {
               "kind": "pdaValueNode",
-              "pda": {
-                "kind": "pdaLinkNode",
-                "name": "derivedFromSource"
-              },
+              "pda": { "kind": "pdaLinkNode", "name": "derivedFromSource" },
               "seeds": [
                 {
                   "kind": "pdaSeedValueNode",
                   "name": "source",
-                  "value": {
-                    "kind": "accountValueNode",
-                    "name": "optionalSource"
-                  }
+                  "value": { "kind": "accountValueNode", "name": "optionalSource" }
                 }
               ]
             }
@@ -539,20 +456,10 @@
         "type": {
           "kind": "enumTypeNode",
           "variants": [
-            {
-              "kind": "enumEmptyVariantTypeNode",
-              "name": "uninitialized"
-            },
-            {
-              "kind": "enumEmptyVariantTypeNode",
-              "name": "asset"
-            }
+            { "kind": "enumEmptyVariantTypeNode", "name": "uninitialized" },
+            { "kind": "enumEmptyVariantTypeNode", "name": "asset" }
           ],
-          "size": {
-            "kind": "numberTypeNode",
-            "format": "u8",
-            "endian": "le"
-          }
+          "size": { "kind": "numberTypeNode", "format": "u8", "endian": "le" }
         },
         "docs": []
       }
@@ -576,177 +483,30 @@
         {
           "kind": "eventNode",
           "name": "alphaTradeEvent",
-          "framing": {
-            "kind": "anchorEventCpi",
-            "sharedConstantName": "anchorEventCpiDiscriminator"
-          },
+          "framing": { "kind": "anchorEventCpi", "sharedConstantName": "anchorEventCpiDiscriminator" },
           "data": {
             "kind": "hiddenPrefixTypeNode",
-            "type": {
-              "kind": "structTypeNode",
-              "fields": [
-                {
-                  "kind": "structFieldTypeNode",
-                  "name": "poolState",
-                  "type": {
-                    "kind": "publicKeyTypeNode"
-                  },
-                  "docs": []
-                }
-              ]
-            },
-            "prefix": [
-              {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "e445a52e51cb9a1d",
-                  "encoding": "base16"
-                }
-              },
-              {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "bddb7fd34ee661ee",
-                  "encoding": "base16"
-                }
-              }
-            ]
+            "type": { "kind": "structTypeNode", "fields": [{ "kind": "structFieldTypeNode", "name": "poolState", "type": { "kind": "publicKeyTypeNode" }, "docs": [] }] },
+            "prefix": [{ "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } }, { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } }]
           },
           "discriminators": [
-            {
-              "kind": "constantDiscriminatorNode",
-              "offset": 0,
-              "constant": {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "e445a52e51cb9a1d",
-                  "encoding": "base16"
-                }
-              }
-            },
-            {
-              "kind": "constantDiscriminatorNode",
-              "offset": 8,
-              "constant": {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "bddb7fd34ee661ee",
-                  "encoding": "base16"
-                }
-              }
-            }
+            { "kind": "constantDiscriminatorNode", "offset": 0, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } } },
+            { "kind": "constantDiscriminatorNode", "offset": 8, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } } }
           ],
-          "docs": [
-            "Discriminator bddb7fd34ee661ee is sha256(\"event:TradeEvent\")[..8], the bytes Anchor derives for any event named TradeEvent. Its body is a strict prefix of the beta event's, so beta's bytes decode here without error."
-          ]
+          "docs": ["Discriminator bddb7fd34ee661ee is sha256(\"event:TradeEvent\")[..8], the bytes Anchor derives for any event named TradeEvent. Its body is a strict prefix of the beta event's, so beta's bytes decode here without error."]
         },
         {
           "kind": "eventNode",
           "name": "skewedEvent",
           "data": {
             "kind": "hiddenPrefixTypeNode",
-            "type": {
-              "kind": "structTypeNode",
-              "fields": [
-                {
-                  "kind": "structFieldTypeNode",
-                  "name": "amount",
-                  "type": {
-                    "kind": "numberTypeNode",
-                    "format": "u64",
-                    "endian": "le"
-                  },
-                  "docs": []
-                }
-              ]
-            },
-            "prefix": [
-              {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "1111111111111111",
-                  "encoding": "base16"
-                }
-              },
-              {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "2222222222222222",
-                  "encoding": "base16"
-                }
-              }
-            ]
+            "type": { "kind": "structTypeNode", "fields": [{ "kind": "structFieldTypeNode", "name": "amount", "type": { "kind": "numberTypeNode", "format": "u64", "endian": "le" }, "docs": [] }] },
+            "prefix": [{ "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "1111111111111111", "encoding": "base16" } }, { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "2222222222222222", "encoding": "base16" } }]
           },
           "discriminators": [
-            {
-              "kind": "constantDiscriminatorNode",
-              "offset": 0,
-              "constant": {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "1111111111111111",
-                  "encoding": "base16"
-                }
-              }
-            }
+            { "kind": "constantDiscriminatorNode", "offset": 0, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "1111111111111111", "encoding": "base16" } } }
           ],
-          "docs": []
+          "docs": ["Discriminator on only the first of two prefix entries: the gate proves 8 bytes, the body decodes from 16. Anchor declares every prefix entry, so only a hand-written IDL reaches this."]
         }
       ],
       "name": "alpha",
@@ -765,111 +525,17 @@
         {
           "kind": "eventNode",
           "name": "betaTradeEvent",
-          "framing": {
-            "kind": "anchorEventCpi",
-            "sharedConstantName": "anchorEventCpiDiscriminator"
-          },
+          "framing": { "kind": "anchorEventCpi", "sharedConstantName": "anchorEventCpiDiscriminator" },
           "data": {
             "kind": "hiddenPrefixTypeNode",
-            "type": {
-              "kind": "structTypeNode",
-              "fields": [
-                {
-                  "kind": "structFieldTypeNode",
-                  "name": "poolState",
-                  "type": {
-                    "kind": "publicKeyTypeNode"
-                  },
-                  "docs": []
-                },
-                {
-                  "kind": "structFieldTypeNode",
-                  "name": "amountIn",
-                  "type": {
-                    "kind": "numberTypeNode",
-                    "format": "u64",
-                    "endian": "le"
-                  },
-                  "docs": []
-                }
-              ]
-            },
-            "prefix": [
-              {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "e445a52e51cb9a1d",
-                  "encoding": "base16"
-                }
-              },
-              {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "bddb7fd34ee661ee",
-                  "encoding": "base16"
-                }
-              }
-            ]
+            "type": { "kind": "structTypeNode", "fields": [{ "kind": "structFieldTypeNode", "name": "poolState", "type": { "kind": "publicKeyTypeNode" }, "docs": [] }, { "kind": "structFieldTypeNode", "name": "amountIn", "type": { "kind": "numberTypeNode", "format": "u64", "endian": "le" }, "docs": [] }] },
+            "prefix": [{ "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } }, { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } }]
           },
           "discriminators": [
-            {
-              "kind": "constantDiscriminatorNode",
-              "offset": 0,
-              "constant": {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "e445a52e51cb9a1d",
-                  "encoding": "base16"
-                }
-              }
-            },
-            {
-              "kind": "constantDiscriminatorNode",
-              "offset": 8,
-              "constant": {
-                "kind": "constantValueNode",
-                "type": {
-                  "kind": "fixedSizeTypeNode",
-                  "size": 8,
-                  "type": {
-                    "kind": "bytesTypeNode"
-                  }
-                },
-                "value": {
-                  "kind": "bytesValueNode",
-                  "data": "bddb7fd34ee661ee",
-                  "encoding": "base16"
-                }
-              }
-            }
+            { "kind": "constantDiscriminatorNode", "offset": 0, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "e445a52e51cb9a1d", "encoding": "base16" } } },
+            { "kind": "constantDiscriminatorNode", "offset": 8, "constant": { "kind": "constantValueNode", "type": { "kind": "fixedSizeTypeNode", "size": 8, "type": { "kind": "bytesTypeNode" } }, "value": { "kind": "bytesValueNode", "data": "bddb7fd34ee661ee", "encoding": "base16" } } }
           ],
-          "docs": [
-            "Its discriminator is deliberately set to alpha's bytes rather than its own sha256(\"event:BetaTradeEvent\")[..8] = 2a77096631cf87ed, modelling two programs that each declare an event named TradeEvent. The two events are then separable only by the emitting program."
-          ]
+          "docs": ["Its discriminator is deliberately set to alpha's bytes rather than its own sha256(\"event:BetaTradeEvent\")[..8] = 2a77096631cf87ed, modelling two programs that each declare an event named TradeEvent. The two events are then separable only by the emitting program."]
         }
       ],
       "name": "beta",

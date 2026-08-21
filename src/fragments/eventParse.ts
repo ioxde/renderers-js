@@ -17,7 +17,7 @@ import { getEventSkip } from './eventSkip';
  * event data, returning `null` on mismatch and letting decoder errors propagate.
  */
 export function getEventParseFragment(
-    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
+    scope: Pick<RenderScope, 'linkables' | 'nameApi' | 'typeManifestVisitor'> & {
         eventNode: EventNode;
         programEventFraming?: ResolvedProgramEventFraming;
         programNode?: ProgramNode;

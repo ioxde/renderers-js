@@ -265,7 +265,7 @@ export function getRenderMapVisitor(
                         ...eventsToExport,
                         ...[...eventFramingFileNames].map(name => ({ name })),
                         ...programsToExport
-                            .filter(hasProgramEventsPage)
+                            .filter(program => hasProgramEventsPage(program, linkables))
                             .map(program => ({ name: getProgramEventsFileName(program) })),
                     ];
 

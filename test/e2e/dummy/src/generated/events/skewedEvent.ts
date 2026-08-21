@@ -24,6 +24,7 @@ export function getSkewedEventDiscriminatorBytes(): ReadonlyUint8Array {
     return fixEncoderSize(getBytesEncoder(), 8).encode(SKEWED_EVENT_DISCRIMINATOR);
 }
 
+/** Discriminator on only the first of two prefix entries: the gate proves 8 bytes, the body decodes from 16. Anchor declares every prefix entry, so only a hand-written IDL reaches this. */
 export type SkewedEvent = { amount: bigint };
 
 let getSkewedEventDecoderCache: FixedSizeDecoder<SkewedEvent> | undefined;

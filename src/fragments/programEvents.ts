@@ -9,6 +9,7 @@ import {
     type StructTypeNode,
     structTypeNode,
 } from '@codama/nodes';
+import { LinkableDictionary } from '@codama/visitors-core';
 
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConditionFragment } from './discriminatorCondition';
@@ -27,9 +28,9 @@ import { getEventSkip, isEventParsable } from './eventSkip';
  * CPI framing would match every framed event; one whose decode offset has no statically known
  * width cannot be sized. Both are excluded here and on their own page.
  */
-function getParsableEvents(programNode: ProgramNode): EventNode[] {
+function getParsableEvents(programNode: ProgramNode, linkables: LinkableDictionary): EventNode[] {
     const programEventFraming = getProgramEventFraming(programNode);
-    return (programNode.events ?? []).filter(event => isEventParsable(event, programEventFraming));
+    return (programNode.events ?? []).filter(event => isEventParsable(event, programEventFraming, linkables));
 }
 
 /**
@@ -41,8 +42,8 @@ export function getProgramEventsFileName(programNode: ProgramNode): `${string}.e
 }
 
 /** Whether the aggregate events page renders for this program. */
-export function hasProgramEventsPage(programNode: ProgramNode): boolean {
-    return getParsableEvents(programNode).length > 0;
+export function hasProgramEventsPage(programNode: ProgramNode, linkables: LinkableDictionary): boolean {
+    return getParsableEvents(programNode, linkables).length > 0;
 }
 
 /** Import path of an event's page, relative to the events folder. */
@@ -56,11 +57,11 @@ function getEventModule(event: EventNode): `./${string}` {
  * program or no known event matches.
  */
 export function getProgramEventsPageFragment(
-    scope: Pick<RenderScope, 'nameApi' | 'renderParentInstructions' | 'typeManifestVisitor'> & {
+    scope: Pick<RenderScope, 'linkables' | 'nameApi' | 'renderParentInstructions' | 'typeManifestVisitor'> & {
         programNode: ProgramNode;
     },
 ): Fragment | undefined {
-    if (!hasProgramEventsPage(scope.programNode)) return;
+    if (!hasProgramEventsPage(scope.programNode, scope.linkables)) return;
 
     const discriminatorKey = scope.nameApi.programEventsParsedDiscriminatorKey(scope.programNode.name);
     const dataKey = scope.nameApi.programEventsParsedDataKey(scope.programNode.name);
@@ -71,7 +72,7 @@ export function getProgramEventsPageFragment(
         );
     }
 
-    const events = getParsableEvents(scope.programNode);
+    const events = getParsableEvents(scope.programNode, scope.linkables);
     assertNoExportNameConflicts({ ...scope, events });
     const programEventFraming = getProgramEventFraming(scope.programNode);
     return mergeFragments(
@@ -153,7 +154,7 @@ export type ${programEventsTypeUnion} = ${programEventsTypeVariants.join(' | ')}
 }
 
 function getProgramEventsIdentifierFunctionFragment(
-    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
+    scope: Pick<RenderScope, 'linkables' | 'nameApi' | 'typeManifestVisitor'> & {
         events: EventNode[];
         programEventFraming: ResolvedProgramEventFraming | undefined;
         programNode: ProgramNode;
@@ -258,13 +259,13 @@ export type ${programEventsParsedUnionType} =`,
 }
 
 function getProgramEventsParseFunctionFragment(
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'linkables' | 'nameApi'> & {
         events: EventNode[];
         programEventFraming: ResolvedProgramEventFraming | undefined;
         programNode: ProgramNode;
     },
 ): Fragment {
-    const { programNode, nameApi, events, programEventFraming } = scope;
+    const { programNode, linkables, nameApi, events, programEventFraming } = scope;
 
     const programEventsIdentifierFunction = nameApi.programEventsIdentifierFunction(programNode.name);
     const programEventsParsedUnionType = nameApi.programEventsParsedUnionType(programNode.name);
@@ -277,9 +278,11 @@ function getProgramEventsParseFunctionFragment(
             const variant = nameApi.programEventsTypeVariant(event.name);
             const decoderFn = use(nameApi.decoderFunction(event.name), getEventModule(event));
             const resolved = resolveNestedTypeNode(event.data);
+            // Offset only: the identifier this switch dispatches on already proved those bytes.
             const skipExpr = getEventSkip({
                 constantSource: getEventModule(event),
                 event,
+                linkables,
                 nameApi,
                 programEventFraming,
                 struct: isNode(resolved, 'structTypeNode') ? resolved : structTypeNode([]),

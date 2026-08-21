@@ -23,7 +23,7 @@ import { isEventParsable } from './eventSkip';
 import { getTypeDecoderFragment } from './typeDecoder';
 
 export function getEventPageFragment(
-    scope: Pick<RenderScope, 'nameApi' | 'typeManifestVisitor'> & {
+    scope: Pick<RenderScope, 'linkables' | 'nameApi' | 'typeManifestVisitor'> & {
         eventNode: EventNode;
         programEventFraming?: ResolvedProgramEventFraming;
         programNode?: ProgramNode;
@@ -40,7 +40,7 @@ export function getEventPageFragment(
     const discriminatorNodes = getEventOwnDiscriminators(node, scope.programEventFraming);
     const fields = isNode(innerType, 'structTypeNode') ? (innerType.fields ?? []) : [];
     const isIdentifiable = isEventIdentifiable(node, scope.programEventFraming);
-    const shouldGenerateParse = isEventParsable(node, scope.programEventFraming);
+    const shouldGenerateParse = isEventParsable(node, scope.programEventFraming, scope.linkables);
     if (!isIdentifiable && cpiFraming) {
         logWarn(
             `Event [${node.name}] has no discriminator beyond the shared CPI framing, which is ` +
@@ -50,10 +50,11 @@ export function getEventPageFragment(
         );
     } else if (isIdentifiable && !shouldGenerateParse) {
         logWarn(
-            `Event [${node.name}] has a hidden prefix entry with no statically known width, so the ` +
-                `offset its body decodes from cannot be proven present by the check in front of it. Its ` +
-                `parse helper will be skipped and it will be excluded from the program's identify/parse ` +
-                `event helpers. Give every prefix entry a fixed size to make the offset provable.`,
+            `Event [${node.name}] has no offset its body can be decoded from: either a hidden prefix ` +
+                `entry has no fixed width, or the body sits behind a wrapper that may add leading bytes ` +
+                `the offset cannot count. Its parse helper will be skipped and it will be excluded from ` +
+                `the program's identify/parse event helpers. Give every prefix entry a fixed size, and ` +
+                `reach the body through hidden prefixes alone, to make the offset computable.`,
         );
     }
 

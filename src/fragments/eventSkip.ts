@@ -1,6 +1,16 @@
-import { DiscriminatorNode, EventNode, isNode, isNodeFilter, StructTypeNode, TypeNode } from '@codama/nodes';
+import {
+    ConstantValueNode,
+    DiscriminatorNode,
+    EventNode,
+    isNode,
+    isNodeFilter,
+    resolveNestedTypeNode,
+    StructTypeNode,
+    TypeNode,
+} from '@codama/nodes';
+import { getByteSizeVisitor, LinkableDictionary, visit } from '@codama/visitors-core';
 
-import { Fragment, fragment, RenderScope, use } from '../utils';
+import { Fragment, fragment, getBytesFromBytesValueNode, RenderScope, use } from '../utils';
 import { getDiscriminatorConstantName } from './discriminatorConstants';
 import {
     getCpiFramedSkipExprFragment,
@@ -10,90 +20,68 @@ import {
     ResolvedProgramEventFraming,
 } from './eventFraming';
 
-const NUMBER_BYTE_SIZES: Record<string, number> = {
-    f32: 4,
-    f64: 8,
-    i128: 16,
-    i16: 2,
-    i32: 4,
-    i64: 8,
-    i8: 1,
-    u128: 16,
-    u16: 2,
-    u32: 4,
-    u64: 8,
-    u8: 1,
-};
-
-function getTypeByteSize(type: TypeNode): number | null {
-    if (isNode(type, 'fixedSizeTypeNode')) return type.size;
-    if (isNode(type, 'numberTypeNode')) return NUMBER_BYTE_SIZES[type.format] ?? null;
-    if (
-        isNode(type, 'arrayTypeNode') &&
-        isNode(type.item, 'numberTypeNode') &&
-        type.item.format === 'u8' &&
-        isNode(type.count, 'fixedCountNode')
-    ) {
-        return type.count.value;
+/** Byte width, or `null` when not fixed. An unrecorded link throws; that reads as unknown width, not a render failure. */
+function getTypeByteSize(type: TypeNode, linkables: LinkableDictionary): number | null {
+    try {
+        return visit(type, getByteSizeVisitor(linkables));
+    } catch {
+        return null;
     }
-    return null;
 }
 
 /**
  * Leading bytes the decode offset consumes, or `null` when a prefix entry has no statically
  * known width — the offset then cannot be reconciled with the gate in front of it.
  *
+ * Measured from the hidden prefix, never from the discriminators: an entry nobody declared a
+ * discriminator for still sits between the data and the body.
+ *
  * @see {@link isEventParsable}
  */
-export function getEventSkipExtent(
-    event: EventNode,
-    programEventFraming: ResolvedProgramEventFraming | undefined,
-): number | null {
-    const cpiFraming = getEventCpiFraming(event, programEventFraming);
-    if (cpiFraming) {
-        const framingSize = getTypeByteSize(cpiFraming.constant.type);
-        if (framingSize === null) return null;
-        let total = framingSize;
-        for (const discriminator of getEventOwnDiscriminators(event, programEventFraming).filter(
-            isNodeFilter('constantDiscriminatorNode'),
-        )) {
-            const size = getTypeByteSize(discriminator.constant.type);
+export function getEventSkipExtent(event: EventNode, linkables: LinkableDictionary): number | null {
+    let total = 0;
+    // Nested prefixes stack: the decoder is built from the innermost type, so every level is skipped.
+    for (let node = event.data; ; node = node.type) {
+        if (!isNode(node, 'hiddenPrefixTypeNode')) {
+            // Any other wrapper the decoder resolves through may add leading bytes this cannot count.
+            return resolveNestedTypeNode(node) === node ? total : null;
+        }
+        for (const entry of node.prefix ?? []) {
+            const size = getTypeByteSize(entry.type, linkables);
             if (size === null) return null;
             total += size;
         }
-        return total;
     }
-    if (!isNode(event.data, 'hiddenPrefixTypeNode')) return 0;
-    let total = 0;
-    for (const entry of event.data.prefix ?? []) {
-        const size = getTypeByteSize(entry.type);
-        if (size === null) return null;
-        total += size;
-    }
-    return total;
 }
 
 /** Bytes the gate proves present: the furthest end offset any check requires. */
 function getGateByteExtent(scope: {
     discriminators: DiscriminatorNode[];
     framingSize: number | null;
+    linkables: LinkableDictionary;
     struct: StructTypeNode;
 }): number {
     return scope.discriminators.reduce((extent, discriminator) => {
-        const end = getDiscriminatorEndOffset(discriminator, scope.struct);
+        const end = getDiscriminatorEndOffset(discriminator, scope.struct, scope.linkables);
         return end !== null && end > extent ? end : extent;
     }, scope.framingSize ?? 0);
 }
 
-function getDiscriminatorEndOffset(discriminator: DiscriminatorNode, struct: StructTypeNode): number | null {
+function getDiscriminatorEndOffset(
+    discriminator: DiscriminatorNode,
+    struct: StructTypeNode,
+    linkables: LinkableDictionary,
+): number | null {
     if (isNode(discriminator, 'sizeDiscriminatorNode')) return discriminator.size;
     if (isNode(discriminator, 'constantDiscriminatorNode')) {
-        const size = getTypeByteSize(discriminator.constant.type);
+        // `containsBytes` compares the emitted constant, so it proves its rendered length, not the
+        // type's wire width. Field discriminators encode at the use site and do reach that width.
+        const size = getRenderedByteLength(discriminator.constant);
         return size === null ? null : discriminator.offset + size;
     }
     if (isNode(discriminator, 'fieldDiscriminatorNode')) {
         const field = (struct.fields ?? []).find(f => f.name === discriminator.name);
-        const size = field ? getTypeByteSize(field.type) : null;
+        const size = field ? getTypeByteSize(field.type, linkables) : null;
         return size === null ? null : discriminator.offset + size;
     }
     return null;
@@ -113,11 +101,11 @@ export type EventSkip = {
 
 /**
  * Offset and clause come back together so a caller cannot gate on the checks while sizing its
- * offset from somewhere else. `containsBytes` proves `offset + constant.length` bytes, so a gate
- * whose checks already reach the offset gets no clause.
+ * offset from somewhere else. A gate whose checks already reach the offset gets no clause, and the
+ * clause covers the skipped bytes only — a matching event with a short body still throws on decode.
  */
 export function getEventSkip(
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'linkables' | 'nameApi'> & {
         /** Module hosting the per-event constants; omit when they live on the same page. */
         constantSource?: `./${string}`;
         event: EventNode;
@@ -125,27 +113,28 @@ export function getEventSkip(
         struct: StructTypeNode;
     },
 ): EventSkip {
-    const { constantSource, event, nameApi, programEventFraming, struct } = scope;
-    const extent = getEventSkipExtent(event, programEventFraming);
+    const { constantSource, event, linkables, nameApi, programEventFraming, struct } = scope;
+    const extent = getEventSkipExtent(event, linkables);
     if (extent === null || extent === 0) {
         return { lengthClause: undefined, offset: undefined };
     }
 
     const cpiFraming = getEventCpiFraming(event, programEventFraming);
     const discriminators = getEventOwnDiscriminators(event, programEventFraming);
-    const offset = cpiFraming
-        ? getCpiFramedSkipExprFragment({
-              constantSource,
-              discriminators,
-              eventName: event.name,
-              nameApi,
-              programEventFraming: cpiFraming,
-          })
-        : getUnframedOffsetFragment({ constantSource, discriminators, event, extent, nameApi });
+    const offset = getOffsetFragment({
+        constantSource,
+        cpiFraming,
+        discriminators,
+        event,
+        extent,
+        linkables,
+        nameApi,
+    });
 
     const gateExtent = getGateByteExtent({
         discriminators,
-        framingSize: cpiFraming ? getTypeByteSize(cpiFraming.constant.type) : null,
+        framingSize: cpiFraming ? getRenderedByteLength(cpiFraming.constant) : null,
+        linkables,
         struct,
     });
     return {
@@ -154,18 +143,63 @@ export function getEventSkip(
     };
 }
 
-function getUnframedOffsetFragment(
-    scope: Pick<RenderScope, 'nameApi'> & {
+/**
+ * Byte count of the emitted constant, which is what `CONST.length` and `containsBytes` read — not
+ * the type's wire width. The constant holds the raw value while its encoder pads to the declared
+ * size, so a short `bytesValueNode` renders shorter than its type. `null` when it does not render
+ * as a `ReadonlyUint8Array` at all: an `Address` is base58, so `.length` is 43, not 32.
+ */
+function getRenderedByteLength(constant: ConstantValueNode): number | null {
+    if (!isNode(constant.type, 'fixedSizeTypeNode')) return null;
+    if (!isNode(constant.type.type, 'bytesTypeNode')) return null;
+    if (!isNode(constant.value, 'bytesValueNode')) return null;
+    // Same helper `visitBytesValue` builds the emitted array from, so the count cannot drift from it.
+    return getBytesFromBytesValueNode(constant.value).length;
+}
+
+/** Width of a constant whose `.length` may stand in for it: only when rendered and wire widths agree. */
+function getNamedByteSize(constant: ConstantValueNode, linkables: LinkableDictionary): number | null {
+    const rendered = getRenderedByteLength(constant);
+    return rendered !== null && rendered === getTypeByteSize(constant.type, linkables) ? rendered : null;
+}
+
+/**
+ * Names the constants when their `.length`s sum to the full prefix width, else emits the width as a
+ * literal. Only byte-rendering constants qualify, so the named form always evaluates to `extent`.
+ */
+function getOffsetFragment(
+    scope: Pick<RenderScope, 'linkables' | 'nameApi'> & {
         constantSource?: `./${string}`;
+        cpiFraming: ResolvedProgramEventFraming | undefined;
         discriminators: DiscriminatorNode[];
         event: EventNode;
         extent: number;
     },
 ): Fragment {
-    const { constantSource, discriminators, event, extent, nameApi } = scope;
-    const leading = discriminators
-        .filter(isNodeFilter('constantDiscriminatorNode'))
-        .find(d => d.offset === 0 && getTypeByteSize(d.constant.type) === extent);
+    const { constantSource, cpiFraming, discriminators, event, extent, linkables, nameApi } = scope;
+    const constants = discriminators.filter(isNodeFilter('constantDiscriminatorNode'));
+
+    if (cpiFraming) {
+        let named = getNamedByteSize(cpiFraming.constant, linkables);
+        for (const discriminator of constants) {
+            const size = getNamedByteSize(discriminator.constant, linkables);
+            if (named === null || size === null) {
+                named = null;
+                break;
+            }
+            named += size;
+        }
+        if (named !== extent) return fragment`${String(extent)}`;
+        return getCpiFramedSkipExprFragment({
+            constantSource,
+            discriminators,
+            eventName: event.name,
+            nameApi,
+            programEventFraming: cpiFraming,
+        });
+    }
+
+    const leading = constants.find(d => d.offset === 0 && getNamedByteSize(d.constant, linkables) === extent);
     if (!leading) return fragment`${String(extent)}`;
     const name = nameApi.constant(getDiscriminatorConstantName(event.name, leading, discriminators));
     const constant = constantSource ? use(name, constantSource) : fragment`${name}`;
@@ -182,6 +216,7 @@ function getUnframedOffsetFragment(
 export function isEventParsable(
     event: EventNode,
     programEventFraming: ResolvedProgramEventFraming | undefined,
+    linkables: LinkableDictionary,
 ): boolean {
-    return isEventIdentifiable(event, programEventFraming) && getEventSkipExtent(event, programEventFraming) !== null;
+    return isEventIdentifiable(event, programEventFraming) && getEventSkipExtent(event, linkables) !== null;
 }

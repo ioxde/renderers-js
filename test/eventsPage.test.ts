@@ -17,8 +17,12 @@ import {
     numberValueNode,
     programNode,
     publicKeyTypeNode,
+    publicKeyValueNode,
     rootNode,
     sizeDiscriminatorNode,
+    sizePrefixTypeNode,
+    stringTypeNode,
+    stringValueNode,
     structFieldTypeNode,
     structTypeNode,
 } from '@codama/nodes';
@@ -1396,5 +1400,300 @@ test('it drops parse helpers when a hidden prefix entry has no statically known 
     await renderMapDoesNotContain(renderMap, 'events/unsizedEvent.ts', [
         'export function parseUnsizedEvent',
         'export function isUnsizedEvent',
+    ]);
+});
+
+test('it sizes a fixed-width prefix entry that is not a fixedSizeTypeNode', async () => {
+    const discriminator = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const authority = constantValueNode(publicKeyTypeNode(), publicKeyValueNode('11111111111111111111111111111111'));
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
+                    [discriminator, authority],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator)],
+                name: 'authorityPrefixedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/authorityPrefixedEvent.ts', [
+        'export function parseAuthorityPrefixedEvent',
+        'data.length >= 40',
+        /decode\(\s*data,\s*40\s*\)/s,
+    ]);
+});
+
+test('it covers a framed prefix entry no discriminator was declared for', async () => {
+    const undeclared = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', '9999999999999999'),
+    );
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+                        [framingPrefix, tradeDisc, undeclared],
+                    ),
+                    discriminators: [
+                        constantDiscriminatorNode(framingPrefix, 0),
+                        constantDiscriminatorNode(tradeDisc, 8),
+                    ],
+                    framing: cpiFraming,
+                    name: 'gapEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/gapEvent.ts', ['data.length >= 24', /decode\(\s*data,\s*24\s*\)/s]);
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', ['data.length >= 24']);
+});
+
+test('it keeps the named constant sum for a framed prefix the discriminators span', async () => {
+    const node = rootNode(
+        programNode({
+            events: [framedEvent('spannedEvent', tradeDisc)],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/spannedEvent.ts', [
+        /decode\(\s*data,\s*EVENT_CPI_PREFIX\.length \+ SPANNED_EVENT_DISCRIMINATOR\.length\s*\)/s,
+    ]);
+    await renderMapDoesNotContain(renderMap, 'events/spannedEvent.ts', ['data.length >=']);
+});
+
+test('it emits a literal offset when a prefix constant does not render as bytes', async () => {
+    const authority = constantValueNode(
+        publicKeyTypeNode(),
+        publicKeyValueNode('BPFLoaderUpgradeab1e11111111111111111111111'),
+    );
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+                        [framingPrefix, authority],
+                    ),
+                    discriminators: [
+                        constantDiscriminatorNode(framingPrefix, 0),
+                        constantDiscriminatorNode(authority, 8),
+                    ],
+                    framing: cpiFraming,
+                    name: 'addressPrefixedEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // `.length` of a base58 Address is 43, not 32, so the named form cannot spell this offset.
+    await renderMapContains(renderMap, 'events/addressPrefixedEvent.ts', [/decode\(\s*data,\s*40\s*\)/s]);
+    await renderMapDoesNotContain(renderMap, 'events/addressPrefixedEvent.ts', [
+        'ADDRESS_PREFIXED_EVENT_DISCRIMINATOR.length',
+    ]);
+});
+
+test('it emits a literal offset for a fixed-size non-bytes prefix constant', async () => {
+    const label = constantValueNode(fixedSizeTypeNode(stringTypeNode('utf8'), 8), stringValueNode('hi'));
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+                        [framingPrefix, label],
+                    ),
+                    discriminators: [constantDiscriminatorNode(framingPrefix, 0), constantDiscriminatorNode(label, 8)],
+                    framing: cpiFraming,
+                    name: 'labelPrefixedEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/labelPrefixedEvent.ts', [/decode\(\s*data,\s*16\s*\)/s]);
+});
+
+test('it ignores a constant whose value is shorter than its declared size', async () => {
+    // The constant renders un-padded while its encoder pads, so `.length` is 2 where the wire is 8.
+    const short = constantValueNode(fixedSizeTypeNode(bytesTypeNode(), 8), bytesValueNode('base16', '1122'));
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+                        [short],
+                    ),
+                    discriminators: [constantDiscriminatorNode(short, 0)],
+                    name: 'shortValueEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/shortValueEvent.ts', ['data.length >= 8', /decode\(\s*data,\s*8\s*\)/s]);
+    await renderMapDoesNotContain(renderMap, 'events/shortValueEvent.ts', ['SHORT_VALUE_EVENT_DISCRIMINATOR.length']);
+});
+
+test('it does not credit a short constant with the bytes its declared size implies', async () => {
+    const pad = constantValueNode(fixedSizeTypeNode(bytesTypeNode(), 4), bytesValueNode('base16', 'aabbccdd'));
+    const short = constantValueNode(fixedSizeTypeNode(bytesTypeNode(), 8), bytesValueNode('base16', '1122'));
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+                        [pad, short],
+                    ),
+                    discriminators: [constantDiscriminatorNode(short, 4)],
+                    name: 'underProvenEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // containsBytes proves 4 + 2, not 4 + 8, so the clause is required.
+    await renderMapContains(renderMap, 'events/underProvenEvent.ts', [
+        'data.length >= 12',
+        /decode\(\s*data,\s*12\s*\)/s,
+    ]);
+});
+
+test('it does not credit a short framing constant with its declared size', async () => {
+    const shortFraming = constantValueNode(fixedSizeTypeNode(bytesTypeNode(), 8), bytesValueNode('base16', '1122'));
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        structTypeNode([
+                            structFieldTypeNode({
+                                defaultValue: numberValueNode(7),
+                                name: 'kind',
+                                type: numberTypeNode('u8'),
+                            }),
+                        ]),
+                        [shortFraming],
+                    ),
+                    discriminators: [constantDiscriminatorNode(shortFraming, 0), fieldDiscriminatorNode('kind', 0)],
+                    framing: cpiFraming,
+                    name: 'shortFramingEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/shortFramingEvent.ts', ['data.length >= 8']);
+});
+
+test('it skips every level of a nested hidden prefix', async () => {
+    const outer = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const inner = constantValueNode(fixedSizeTypeNode(bytesTypeNode(), 4), bytesValueNode('base16', 'deadbeef'));
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        hiddenPrefixTypeNode(
+                            structTypeNode([structFieldTypeNode({ name: 'kind', type: numberTypeNode('u8') })]),
+                            [inner],
+                        ),
+                        [outer],
+                    ),
+                    discriminators: [constantDiscriminatorNode(outer, 0)],
+                    name: 'nestedPrefixEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    // The decoder is built from the innermost struct, so both prefix levels are skipped.
+    await renderMapContains(renderMap, 'events/nestedPrefixEvent.ts', [
+        'data.length >= 12',
+        /decode\(\s*data,\s*12\s*\)/s,
+    ]);
+});
+
+test('it drops parse helpers when a wrapper the decoder resolves through may add leading bytes', async () => {
+    // The decoder is built from the resolved inner struct, so a size prefix contributes leading
+    // bytes the offset cannot count. Dropping beats emitting an offset that lands inside them.
+    const discriminator = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const node = rootNode(
+        programNode({
+            events: [
+                eventNode({
+                    data: hiddenPrefixTypeNode(
+                        sizePrefixTypeNode(
+                            structTypeNode([structFieldTypeNode({ name: 'amount', type: numberTypeNode('u64') })]),
+                            numberTypeNode('u32'),
+                        ),
+                        [discriminator],
+                    ),
+                    discriminators: [constantDiscriminatorNode(discriminator, 0)],
+                    name: 'sizePrefixedBodyEvent',
+                }),
+            ],
+            name: 'myProgram',
+            publicKey: '1111',
+        }),
+    );
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapDoesNotContain(renderMap, 'events/sizePrefixedBodyEvent.ts', [
+        'export function parseSizePrefixedBodyEvent',
+        'export function isSizePrefixedBodyEvent',
     ]);
 });
