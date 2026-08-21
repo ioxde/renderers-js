@@ -10,9 +10,10 @@ import { containsBytes, type Address, type ReadonlyUint8Array } from '@solana/ki
 import { ALPHA_PROGRAM_ADDRESS } from '../programs/index.js';
 import { ALPHA_TRADE_EVENT_DISCRIMINATOR, getAlphaTradeEventDecoder, type AlphaTradeEvent } from './alphaTradeEvent.js';
 import { ANCHOR_EVENT_CPI_DISCRIMINATOR } from './anchorEventCpiDiscriminator.framing.js';
+import { getSkewedEventDecoder, SKEWED_EVENT_DISCRIMINATOR, type SkewedEvent } from './skewedEvent.js';
 
 /** Event kinds of the alpha program. */
-export type AlphaEventType = 'alphaTradeEvent';
+export type AlphaEventType = 'alphaTradeEvent' | 'skewedEvent';
 
 /**
  * Identifies alpha event data by its discriminators, without decoding.
@@ -31,11 +32,16 @@ export function identifyAlphaEvent(
             return 'alphaTradeEvent';
         }
     }
+    if (containsBytes(data, SKEWED_EVENT_DISCRIMINATOR, 0) && data.length >= 16) {
+        return 'skewedEvent';
+    }
     return null;
 }
 
 /** Parsed alpha event: the event kind tag plus its decoded payload. */
-export type ParsedAlphaEvent = { eventType: 'alphaTradeEvent'; data: AlphaTradeEvent };
+export type ParsedAlphaEvent =
+    | { eventType: 'alphaTradeEvent'; data: AlphaTradeEvent }
+    | { eventType: 'skewedEvent'; data: SkewedEvent };
 
 /**
  * Parses alpha event data into its event kind and decoded payload.
@@ -60,6 +66,9 @@ export function parseAlphaEvent(
                     ANCHOR_EVENT_CPI_DISCRIMINATOR.length + ALPHA_TRADE_EVENT_DISCRIMINATOR.length,
                 ),
             };
+        }
+        case 'skewedEvent': {
+            return { eventType: 'skewedEvent', data: getSkewedEventDecoder().decode(data, 16) };
         }
     }
 }

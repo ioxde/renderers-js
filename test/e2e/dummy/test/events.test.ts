@@ -10,8 +10,11 @@ import {
   DUMMY_PROGRAM_ADDRESS,
   identifyAlphaEvent,
   isAlphaTradeEvent,
+  isSkewedEvent,
   parseAlphaEvent,
   parseAlphaTradeEvent,
+  parseSkewedEvent,
+  SKEWED_EVENT_DISCRIMINATOR,
 } from '../src/index.js';
 
 // Both events carry sha256("event:TradeEvent")[..8] — the bytes Anchor derives for any event named
@@ -171,4 +174,34 @@ test('a getter-backed event is read once, so its bytes cannot change under the g
   t.deepEqual(parseAlphaTradeEvent(bothFlip()), parseAlphaTradeEvent(snapshot));
   t.is(identifyAlphaEvent(bothFlip()), identifyAlphaEvent(snapshot));
   t.deepEqual(parseAlphaEvent(bothFlip()), parseAlphaEvent(snapshot));
+});
+
+// `skewedEvent` declares a discriminator on only the first of its two 8-byte prefix entries, so its
+// gate proves 8 bytes while its body decodes from 16. Only a hand-written IDL gets here; Anchor
+// declares every prefix entry.
+function skewedEventBytes(): ReadonlyUint8Array {
+  return new Uint8Array([
+    ...SKEWED_EVENT_DISCRIMINATOR,
+    ...new Uint8Array(8),
+    ...getU64Encoder().encode(42n),
+  ]);
+}
+
+test('a buffer carrying the discriminator but not the decode offset is a miss, not a throw', (t) => {
+  for (const length of [8, 12, 15]) {
+    const data = skewedEventBytes().slice(0, length);
+    const event = { data, programAddress: ALPHA_PROGRAM_ADDRESS };
+    t.false(isSkewedEvent(event));
+    t.is(parseSkewedEvent(event), null);
+    t.is(identifyAlphaEvent(event), null);
+    t.is(parseAlphaEvent(event), null);
+  }
+});
+
+test('a skewed event decodes from past its full prefix', (t) => {
+  const event = { data: skewedEventBytes(), programAddress: ALPHA_PROGRAM_ADDRESS };
+  t.true(isSkewedEvent(event));
+  t.deepEqual(parseSkewedEvent(event), { amount: 42n });
+  t.is(identifyAlphaEvent(event), 'skewedEvent');
+  t.deepEqual(parseAlphaEvent(event), { data: { amount: 42n }, eventType: 'skewedEvent' });
 });

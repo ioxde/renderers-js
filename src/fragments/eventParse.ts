@@ -1,23 +1,15 @@
-import {
-    camelCase,
-    DiscriminatorNode,
-    EventNode,
-    isNode,
-    ProgramNode,
-    resolveNestedTypeNode,
-    structTypeNode,
-} from '@codama/nodes';
+import { EventNode, isNode, ProgramNode, resolveNestedTypeNode, structTypeNode } from '@codama/nodes';
 
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConditionExprFragment } from './discriminatorCondition';
 import {
-    getCpiFramedSkipExprFragment,
     getEventCpiFraming,
     getEventFramingConstantFragment,
     getEventFramingFileName,
     getEventOwnDiscriminators,
     ResolvedProgramEventFraming,
 } from './eventFraming';
+import { getEventSkip } from './eventSkip';
 
 /**
  * Renders the per-event `is*` and `parse*` functions: `is*` checks the emitting program,
@@ -44,6 +36,7 @@ export function getEventParseFragment(
               fragment`${use('containsBytes', 'solanaCodecsCore')}(data, ${getEventFramingConstantFragment(cpiFraming.framing, nameApi, `./${getEventFramingFileName(cpiFraming.framing)}`)}, 0)`,
           ]
         : [];
+    const skip = getEventSkip({ ...scope, event: eventNode, programEventFraming, struct });
     const condition = getDiscriminatorConditionExprFragment({
         ...scope,
         constantSource: 'generatedEvents',
@@ -52,6 +45,7 @@ export function getEventParseFragment(
         leadingConditions,
         prefix: eventNode.name,
         struct,
+        trailingConditions: skip.lengthClause ? [skip.lengthClause] : [],
     });
 
     const isFunction = nameApi.eventIsFunction(eventNode.name);
@@ -60,8 +54,7 @@ export function getEventParseFragment(
     const decoderFunction = nameApi.decoderFunction(eventNode.name);
     const readonlyUint8Array = use('type ReadonlyUint8Array', 'solanaCodecsCore');
 
-    const skipExpr = getDecodeSkipExpr(eventNode, nameApi, cpiFraming, discriminators);
-    const decodeArgs = skipExpr ? fragment`data, ${skipExpr}` : fragment`data`;
+    const decodeArgs = skip.offset ? fragment`data, ${skip.offset}` : fragment`data`;
     const isFramed = cpiFraming !== undefined;
     const isDocblock = getIsDocblock(eventNode, nameApi, isFramed, programNode);
     const parseDocblock = getParseDocblock(eventNode, nameApi, isFramed, programNode);
@@ -111,31 +104,6 @@ ${parseDocblock}
 export function ${parseFunction}(${params}): ${strictType} | null {
   ${parseBody}
 }`;
-}
-
-/** Offset of the borsh body: the validated prefixes are skipped, the rest is decoded. */
-function getDecodeSkipExpr(
-    eventNode: EventNode,
-    nameApi: RenderScope['nameApi'],
-    cpiFraming: ResolvedProgramEventFraming | undefined,
-    discriminators: DiscriminatorNode[],
-): Fragment | undefined {
-    if (cpiFraming) {
-        return getCpiFramedSkipExprFragment({
-            discriminators,
-            eventName: eventNode.name,
-            nameApi,
-            programEventFraming: cpiFraming,
-        });
-    }
-    if (!isNode(eventNode.data, 'hiddenPrefixTypeNode')) return undefined;
-    const prefix = eventNode.data.prefix ?? [];
-    if (prefix.length === 1) {
-        const firstDiscConstant = nameApi.constant(camelCase(`${eventNode.name}_discriminator`));
-        return fragment`${firstDiscConstant}.length`;
-    }
-    const totalSize = prefix.reduce((sum, p) => sum + (isNode(p.type, 'fixedSizeTypeNode') ? p.type.size : 0), 0);
-    return fragment`${String(totalSize)}`;
 }
 
 function getIsDocblock(

@@ -1312,3 +1312,89 @@ test('it guards the aggregate event helpers with the program address', async () 
         '../programs/index.js': ['MY_PROGRAM_PROGRAM_ADDRESS'],
     });
 });
+
+test('it makes the gate prove a decode offset the discriminators fall short of', async () => {
+    const prefix1 = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const prefix2 = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', '5566778899aabbcc'),
+    );
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
+                    [prefix1, prefix2],
+                ),
+                discriminators: [constantDiscriminatorNode(prefix1)],
+                name: 'skewedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/skewedEvent.ts', ['data.length >= 16', /decode\(\s*data,\s*16\s*\)/s]);
+    await renderMapContains(renderMap, 'events/myProgram.events.ts', ['data.length >= 16']);
+});
+
+test('it omits the length clause when the discriminators already prove the decode offset', async () => {
+    const discriminator = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
+                    [discriminator],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator)],
+                name: 'coveredEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapContains(renderMap, 'events/coveredEvent.ts', ['COVERED_EVENT_DISCRIMINATOR.length']);
+    await renderMapDoesNotContain(renderMap, 'events/coveredEvent.ts', ['data.length >=']);
+    await renderMapDoesNotContain(renderMap, 'events/myProgram.events.ts', ['data.length >=']);
+});
+
+test('it drops parse helpers when a hidden prefix entry has no statically known width', async () => {
+    const discriminator = constantValueNode(
+        fixedSizeTypeNode(bytesTypeNode(), 8),
+        bytesValueNode('base16', 'aabbccdd11223344'),
+    );
+    const unsized = constantValueNode(bytesTypeNode(), bytesValueNode('base16', 'aabb'));
+    const node = programNode({
+        events: [
+            eventNode({
+                data: hiddenPrefixTypeNode(
+                    structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('u64') })]),
+                    [discriminator, unsized],
+                ),
+                discriminators: [constantDiscriminatorNode(discriminator)],
+                name: 'unsizedEvent',
+            }),
+        ],
+        name: 'myProgram',
+        publicKey: '1111',
+    });
+
+    const renderMap = visit(node, getRenderMapVisitor());
+
+    await renderMapDoesNotContain(renderMap, 'events/unsizedEvent.ts', [
+        'export function parseUnsizedEvent',
+        'export function isUnsizedEvent',
+    ]);
+});

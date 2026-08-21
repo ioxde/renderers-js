@@ -1,0 +1,11 @@
+---
+'@codama/renderers-js': patch
+---
+
+Make generated event gates prove the bytes their parse helpers skip
+
+`parse<Event>` and `parse<Program>Event` decode an event's body from an offset past its hidden prefix, which is only sound when the check in front of them has already proven at least that many bytes. The check was built from `discriminators` while the offset was the full width of the prefix, so an IDL that declares fewer discriminators than the prefix carries produced a check proving less than the offset consumes. An event with a `[const8, const8]` prefix and a single discriminator on the first entry rendered an `is<Event>` proving 8 bytes in front of `decode(data, 16)`, and any buffer of length 8–15 carrying that discriminator made `is<Event>` return `true` and `parse<Event>` throw `SolanaError: SOLANA_ERROR__CODECS__INVALID_BYTE_LENGTH` instead of returning `null`. Anchor-extracted IDLs declare every prefix entry, so no existing fixture reached it.
+
+The decode offset and the byte count it consumes are now produced together as one value, and the offset is reconciled against the check at generation time: when the discriminators already prove the full width the output is unchanged, and when they fall short the gate gains a `data.length >= N` clause covering the remainder. `is<Event>` is therefore `true` exactly when `parse<Event>` is non-null again, so the short buffer is rejected as a mismatch rather than throwing, and the aggregate arms in `identify<Program>Event` gain the same clause since that function owns every byte comparison the arms' offsets depend on.
+
+Two narrower defects fall out of the same reconciliation. A prefix entry with no statically known width silently contributed zero to the offset, decoding the body from too early a position; such an event now drops its parse helpers with a warning and is excluded from the program's identify/parse helpers rather than emitting an offset the gate cannot cover. A single-entry prefix took its offset from the first discriminator constant's length rather than the entry's own width, which decoded from the wrong position whenever the entry was wider than the discriminator declared on it; the offset now comes from the prefix, and still renders as `<EVENT>_DISCRIMINATOR.length` when that constant spans the entry.

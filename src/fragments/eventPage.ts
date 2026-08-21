@@ -19,6 +19,7 @@ import {
     ResolvedProgramEventFraming,
 } from './eventFraming';
 import { getEventParseFragment } from './eventParse';
+import { isEventParsable } from './eventSkip';
 import { getTypeDecoderFragment } from './typeDecoder';
 
 export function getEventPageFragment(
@@ -38,13 +39,21 @@ export function getEventPageFragment(
     // Drop the hoisted framing discriminator so generated constants match the IDL `events[].discriminator` bytes.
     const discriminatorNodes = getEventOwnDiscriminators(node, scope.programEventFraming);
     const fields = isNode(innerType, 'structTypeNode') ? (innerType.fields ?? []) : [];
-    const shouldGenerateParse = isEventIdentifiable(node, scope.programEventFraming);
-    if (!shouldGenerateParse && cpiFraming) {
+    const isIdentifiable = isEventIdentifiable(node, scope.programEventFraming);
+    const shouldGenerateParse = isEventParsable(node, scope.programEventFraming);
+    if (!isIdentifiable && cpiFraming) {
         logWarn(
             `Event [${node.name}] has no discriminator beyond the shared CPI framing, which is ` +
                 `common to all framed events and cannot identify it. Its parse helper will be skipped ` +
                 `and it will be excluded from the program's identify/parse event helpers. Add a constant ` +
                 `or field discriminator after the framing prefix to make it identifiable.`,
+        );
+    } else if (isIdentifiable && !shouldGenerateParse) {
+        logWarn(
+            `Event [${node.name}] has a hidden prefix entry with no statically known width, so the ` +
+                `offset its body decodes from cannot be proven present by the check in front of it. Its ` +
+                `parse helper will be skipped and it will be excluded from the program's identify/parse ` +
+                `event helpers. Give every prefix entry a fixed size to make the offset provable.`,
         );
     }
 

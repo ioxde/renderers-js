@@ -7,18 +7,23 @@
  */
 
 import { extendClient, type ExtendedClient } from '@solana/kit';
-import { getAlphaTradeEventDecoder } from '../events/index.js';
+import { getAlphaTradeEventDecoder, getSkewedEventDecoder } from '../events/index.js';
 
 export type AlphaPlugin = { events: AlphaPluginEvents };
 
-export type AlphaPluginEvents = { alphaTradeEvent: ReturnType<typeof getAlphaTradeEventDecoder> };
+export type AlphaPluginEvents = {
+    alphaTradeEvent: ReturnType<typeof getAlphaTradeEventDecoder>;
+    skewedEvent: ReturnType<typeof getSkewedEventDecoder>;
+};
 
 export type AlphaPluginRequirements = object;
 
 export function alphaProgram() {
     return <T extends AlphaPluginRequirements>(client: T): ExtendedClient<T, { alpha: AlphaPlugin }> => {
         return extendClient(client, {
-            alpha: <AlphaPlugin>{ events: { alphaTradeEvent: getAlphaTradeEventDecoder() } },
+            alpha: <AlphaPlugin>{
+                events: { alphaTradeEvent: getAlphaTradeEventDecoder(), skewedEvent: getSkewedEventDecoder() },
+            },
         });
     };
 }

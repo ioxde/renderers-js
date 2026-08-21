@@ -13,23 +13,23 @@ import {
 import { Fragment, fragment, mergeFragments, RenderScope, use } from '../utils';
 import { getDiscriminatorConditionFragment } from './discriminatorCondition';
 import {
-    getCpiFramedSkipExprFragment,
     getEventCpiFraming,
     getEventFramingConstantFragment,
     getEventFramingFileName,
     getEventOwnDiscriminators,
     getProgramEventFraming,
-    isEventIdentifiable,
     ResolvedProgramEventFraming,
 } from './eventFraming';
+import { getEventSkip, isEventParsable } from './eventSkip';
 
 /**
- * Events the identify/parse helpers can match. An event whose only discriminator is the
- * shared CPI framing would match every framed event, so it is excluded here and on its own page.
+ * Events the identify/parse helpers can match. An event whose only discriminator is the shared
+ * CPI framing would match every framed event; one whose decode offset has no statically known
+ * width cannot be sized. Both are excluded here and on their own page.
  */
 function getParsableEvents(programNode: ProgramNode): EventNode[] {
     const programEventFraming = getProgramEventFraming(programNode);
-    return (programNode.events ?? []).filter(event => isEventIdentifiable(event, programEventFraming));
+    return (programNode.events ?? []).filter(event => isEventParsable(event, programEventFraming));
 }
 
 /**
@@ -168,6 +168,13 @@ function getProgramEventsIdentifierFunctionFragment(
         const variant = nameApi.programEventsTypeVariant(event.name);
         const resolved = resolveNestedTypeNode(event.data);
         const struct: StructTypeNode = isNode(resolved, 'structTypeNode') ? resolved : structTypeNode([]);
+        const skip = getEventSkip({
+            ...scope,
+            constantSource: getEventModule(event),
+            event,
+            programEventFraming,
+            struct,
+        });
         return getDiscriminatorConditionFragment({
             ...scope,
             constantSource: getEventModule(event),
@@ -176,6 +183,7 @@ function getProgramEventsIdentifierFunctionFragment(
             ifTrue: `return '${variant}';`,
             prefix: event.name,
             struct,
+            trailingConditions: skip.lengthClause ? [skip.lengthClause] : [],
         });
     };
 
@@ -268,7 +276,14 @@ function getProgramEventsParseFunctionFragment(
         events.map((event): Fragment => {
             const variant = nameApi.programEventsTypeVariant(event.name);
             const decoderFn = use(nameApi.decoderFunction(event.name), getEventModule(event));
-            const skipExpr = getHiddenPrefixSkipExpr(event, nameApi, programEventFraming);
+            const resolved = resolveNestedTypeNode(event.data);
+            const skipExpr = getEventSkip({
+                constantSource: getEventModule(event),
+                event,
+                nameApi,
+                programEventFraming,
+                struct: isNode(resolved, 'structTypeNode') ? resolved : structTypeNode([]),
+            }).offset;
 
             if (skipExpr) {
                 return fragment`case '${variant}': { return { ${discriminatorKey}: '${variant}', ${dataKey}: ${decoderFn}().decode(data, ${skipExpr}) }; }`;
@@ -299,33 +314,4 @@ export function ${parseFunction}(${getEventParamFragment()}): ${programEventsPar
         ${switchCases}
     }
 }`;
-}
-
-function getHiddenPrefixSkipExpr(
-    event: EventNode,
-    nameApi: RenderScope['nameApi'],
-    programEventFraming: ResolvedProgramEventFraming | undefined,
-): Fragment | null {
-    const cpiFraming = getEventCpiFraming(event, programEventFraming);
-    const discriminators = getEventOwnDiscriminators(event, programEventFraming);
-    const hasConstantDiscriminator = discriminators.some(d => isNode(d, 'constantDiscriminatorNode'));
-    if ((!hasConstantDiscriminator && !cpiFraming) || !isNode(event.data, 'hiddenPrefixTypeNode')) {
-        return null;
-    }
-    if (cpiFraming) {
-        return getCpiFramedSkipExprFragment({
-            constantSource: getEventModule(event),
-            discriminators,
-            eventName: event.name,
-            nameApi,
-            programEventFraming: cpiFraming,
-        });
-    }
-    const prefixes = event.data.prefix ?? [];
-    if (prefixes.length === 1) {
-        const discConstant = use(nameApi.constant(camelCase(`${event.name}_discriminator`)), getEventModule(event));
-        return fragment`${discConstant}.length`;
-    }
-    const totalSize = prefixes.reduce((sum, p) => sum + (isNode(p.type, 'fixedSizeTypeNode') ? p.type.size : 0), 0);
-    return fragment`${String(totalSize)}`;
 }

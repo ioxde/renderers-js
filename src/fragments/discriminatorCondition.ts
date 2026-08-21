@@ -102,6 +102,8 @@ export function getDiscriminatorConditionFragment(
         leadingConditions?: Fragment[];
         prefix: string;
         struct: StructTypeNode;
+        /** Conditions ANDed in after the discriminator checks. */
+        trailingConditions?: Fragment[];
     },
 ): Fragment {
     return pipe(getDiscriminatorConditionExprFragment(scope), f =>
@@ -122,10 +124,13 @@ export function getDiscriminatorConditionExprFragment(
         leadingConditions?: Fragment[];
         prefix: string;
         struct: StructTypeNode;
+        /** Conditions ANDed in after the discriminator checks. */
+        trailingConditions?: Fragment[];
     },
 ): Fragment {
-    return mergeFragments([...(scope.leadingConditions ?? []), ...getDiscriminatorConditions(scope)], c =>
-        c.join(' && '),
+    return mergeFragments(
+        [...(scope.leadingConditions ?? []), ...getDiscriminatorConditions(scope), ...(scope.trailingConditions ?? [])],
+        c => c.join(' && '),
     );
 }
 

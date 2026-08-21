@@ -11,3 +11,4 @@ export * from './alphaTradeEvent.js';
 export * from './anchorEventCpiDiscriminator.framing.js';
 export * from './beta.events.js';
 export * from './betaTradeEvent.js';
+export * from './skewedEvent.js';
